@@ -1067,6 +1067,25 @@ bool Device::GetSuitability(bool requires_swapchain) {
     // Base Vulkan 1.0 features are always valid regardless of instance version.
     features.features = features2.features;
 
+#if defined(__ANDROID__)
+    // Some Android Vulkan stacks have been observed returning a corrupted base feature snapshot
+    // when a large pNext feature chain is queried. Re-query the base feature block without any
+    // pNext structs before trusting a suspicious multiViewport=false result.
+    if (!features.features.multiViewport) {
+        const VkPhysicalDeviceFeatures clean_features = physical.GetFeatures();
+        LOG_WARNING(Render_Vulkan,
+                    "[Moonwitch] Android Vulkan feature recheck: chained multiViewport={}, "
+                    "clean(no-pNext) multiViewport={}",
+                    features.features.multiViewport, clean_features.multiViewport);
+        if (clean_features.multiViewport) {
+            LOG_WARNING(Render_Vulkan,
+                        "[Moonwitch] Recovered inconsistent Vulkan base feature snapshot; "
+                        "using clean no-pNext feature query");
+            features.features = clean_features;
+        }
+    }
+#endif
+
 // Some features are mandatory. Check those.
 #define CHECK_FEATURE(feature, name)                                                               \
     if (!features.feature.name) {                                                                  \
@@ -1148,6 +1167,26 @@ bool Device::GetSuitability(bool requires_swapchain) {
 
     // Store base properties
     properties.properties = properties2.properties;
+
+#if defined(__ANDROID__)
+    // The base VkPhysicalDeviceProperties returned through a pNext property chain must agree
+    // with vkGetPhysicalDeviceProperties. If the chained query reports an impossible viewport
+    // limit, cross-check the core query and only recover when the core snapshot is sane.
+    if (properties.properties.limits.maxViewports < 16) {
+        const VkPhysicalDeviceProperties clean_properties = physical.GetProperties();
+        LOG_WARNING(Render_Vulkan,
+                    "[Moonwitch] Android Vulkan property recheck: chained maxViewports={}, "
+                    "core maxViewports={}",
+                    properties.properties.limits.maxViewports,
+                    clean_properties.limits.maxViewports);
+        if (clean_properties.limits.maxViewports >= 16) {
+            LOG_WARNING(Render_Vulkan,
+                        "[Moonwitch] Recovered inconsistent Vulkan base property snapshot; "
+                        "using core property query");
+            properties.properties = clean_properties;
+        }
+    }
+#endif
 
     // Unload extensions if feature support is insufficient.
     RemoveUnsuitableExtensions();
