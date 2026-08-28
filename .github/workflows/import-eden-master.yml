@@ -1,0 +1,40 @@
+name: Import Eden master base
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - bootstrap-eden-master
+    paths:
+      - .github/workflows/import-eden-master.yml
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Moonwitch bootstrap branch
+        uses: actions/checkout@v4
+        with:
+          ref: bootstrap-eden-master
+          fetch-depth: 1
+
+      - name: Fetch pinned Eden master
+        shell: bash
+        run: |
+          set -euxo pipefail
+          git remote add eden https://git.eden-emu.dev/eden-emu/eden.git
+          git fetch --depth=1 eden master
+          expected=119291dc77fbe8e4a23eaafa8420c1c8577d1b59
+          actual=$(git rev-parse FETCH_HEAD)
+          echo "Pinned Eden commit: $expected"
+          echo "Fetched Eden commit: $actual"
+          test "$actual" = "$expected"
+
+      - name: Publish clean Eden base branch
+        shell: bash
+        run: |
+          set -euxo pipefail
+          git push origin FETCH_HEAD:refs/heads/eden-master-base --force
