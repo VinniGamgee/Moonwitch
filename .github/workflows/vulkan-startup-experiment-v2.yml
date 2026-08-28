@@ -1,0 +1,146 @@
+name: Moonwitch Vulkan Startup Experiment V2
+
+on:
+  push:
+    branches:
+      - fix/android-vulkan-startup
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-build:
+    if: github.event_name == 'workflow_dispatch' || github.event.head_commit.message != 'Android recover inconsistent Vulkan core capability queries'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout Moonwitch experiment branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/android-vulkan-startup
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Apply Android Vulkan capability recovery
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('src/video_core/vulkan_common/vulkan_device.cpp')
+          s = p.read_text()
+
+          feature_old = '''    // Base Vulkan 1.0 features are always valid regardless of instance version.\n    features.features = features2.features;\n'''
+          feature_new = '''    // Base Vulkan 1.0 features are always valid regardless of instance version.\n    features.features = features2.features;\n\n#if defined(__ANDROID__)\n    // Some Android Vulkan stacks have been observed returning a corrupted base feature snapshot\n    // when a large pNext feature chain is queried. Re-query the base feature block without any\n    // pNext structs before trusting a suspicious multiViewport=false result.\n    if (!features.features.multiViewport) {\n        const VkPhysicalDeviceFeatures clean_features = physical.GetFeatures();\n        LOG_WARNING(Render_Vulkan,\n                    "[Moonwitch] Android Vulkan feature recheck: chained multiViewport={}, "\n                    "clean(no-pNext) multiViewport={}",\n                    features.features.multiViewport, clean_features.multiViewport);\n        if (clean_features.multiViewport) {\n            LOG_WARNING(Render_Vulkan,\n                        "[Moonwitch] Recovered inconsistent Vulkan base feature snapshot; "\n                        "using clean no-pNext feature query");\n            features.features = clean_features;\n        }\n    }\n#endif\n'''
+
+          property_old = '''    // Store base properties\n    properties.properties = properties2.properties;\n'''
+          property_new = '''    // Store base properties\n    properties.properties = properties2.properties;\n\n#if defined(__ANDROID__)\n    // The base VkPhysicalDeviceProperties returned through a pNext property chain must agree\n    // with vkGetPhysicalDeviceProperties. If the chained query reports an impossible viewport\n    // limit, cross-check the core query and only recover when the core snapshot is sane.\n    if (properties.properties.limits.maxViewports < 16) {\n        const VkPhysicalDeviceProperties clean_properties = physical.GetProperties();\n        LOG_WARNING(Render_Vulkan,\n                    "[Moonwitch] Android Vulkan property recheck: chained maxViewports={}, "\n                    "core maxViewports={}",\n                    properties.properties.limits.maxViewports,\n                    clean_properties.limits.maxViewports);\n        if (clean_properties.limits.maxViewports >= 16) {\n            LOG_WARNING(Render_Vulkan,\n                        "[Moonwitch] Recovered inconsistent Vulkan base property snapshot; "\n                        "using core property query");\n            properties.properties = clean_properties;\n        }\n    }\n#endif\n'''
+
+          if '[Moonwitch] Android Vulkan feature recheck' not in s:
+              if feature_old not in s:
+                  raise SystemExit('Feature insertion point not found')
+              s = s.replace(feature_old, feature_new, 1)
+
+          if '[Moonwitch] Android Vulkan property recheck' not in s:
+              if property_old not in s:
+                  raise SystemExit('Property insertion point not found')
+              s = s.replace(property_old, property_new, 1)
+
+          p.write_text(s)
+          PY
+
+      - name: Commit Vulkan recovery experiment
+        shell: bash
+        run: |
+          git config user.name "Moonwitch CI"
+          git config user.email "actions@users.noreply.github.com"
+          git add src/video_core/vulkan_common/vulkan_device.cpp
+          if git diff --cached --quiet; then
+            echo "No source changes to commit"
+          else
+            git commit -m "Android recover inconsistent Vulkan core capability queries"
+            git push origin HEAD:fix/android-vulkan-startup
+          fi
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup host shader tools
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y glslang-tools spirv-tools
+          glslangValidator --version
+          spirv-opt --version
+
+      - name: Setup Android SDK packages
+        shell: bash
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            "platforms;android-36" \
+            "build-tools;36.0.0" \
+            "ndk;28.2.13676358" \
+            "cmake;3.31.6"
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/28.2.13676358" >> "$GITHUB_ENV"
+
+      - name: Apply build-environment compatibility
+        shell: bash
+        run: |
+          sed -i '/^org\.gradle\.java\.home=/d' src/android/gradle.properties
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('src/android/app/build.gradle.kts')
+          s = p.read_text()
+          old = '''    externalNativeBuild {\n        cmake {\n            path = file("${edenDir}/CMakeLists.txt")\n        }\n    }'''
+          new = '''    externalNativeBuild {\n        cmake {\n            path = file("${edenDir}/CMakeLists.txt")\n            version = "3.31.6"\n        }\n    }'''
+          if old in s:
+              s = s.replace(old, new, 1)
+          elif 'version = "3.31.6"' not in s:
+              raise SystemExit('Gradle CMake block not found')
+          p.write_text(s)
+          PY
+
+      - name: Build Vulkan experiment APK
+        id: experiment_build
+        continue-on-error: true
+        shell: bash
+        env:
+          CCACHE: 'false'
+        run: |
+          chmod +x .ci/android/build.sh src/android/gradlew
+          set +e
+          .ci/android/build.sh -n -t standard -b Release > "$GITHUB_WORKSPACE/moonwitch-vulkan-experiment.log" 2>&1
+          rc=$?
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Print concise build failure
+        if: steps.experiment_build.outputs.rc != '0'
+        shell: bash
+        run: |
+          echo '===== MOONWITCH VULKAN EXPERIMENT ERROR ====='
+          tail -n 220 "$GITHUB_WORKSPACE/moonwitch-vulkan-experiment.log"
+          echo '===== END ERROR ====='
+
+      - name: Fail when compiler failed
+        if: steps.experiment_build.outputs.rc != '0'
+        shell: bash
+        run: exit 1
+
+      - name: Upload Vulkan experiment APK
+        if: steps.experiment_build.outputs.rc == '0'
+        uses: actions/upload-artifact@v4
+        with:
+          name: MOONWITCH-0.1.1-vulkan-startup-experiment
+          path: |
+            artifacts/*.apk
+            artifacts/*.aab
+          if-no-files-found: error
+          retention-days: 7
