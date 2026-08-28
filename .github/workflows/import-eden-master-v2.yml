@@ -1,0 +1,54 @@
+name: Import Eden master snapshot V2
+
+on:
+  push:
+    branches:
+      - bootstrap-eden-master
+    paths:
+      - .github/workflows/import-eden-master-v2.yml
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Moonwitch bootstrap branch
+        uses: actions/checkout@v4
+        with:
+          ref: bootstrap-eden-master
+          fetch-depth: 1
+
+      - name: Fetch pinned Eden master
+        shell: bash
+        run: |
+          set -euxo pipefail
+          git remote add eden https://git.eden-emu.dev/eden-emu/eden.git
+          git fetch --depth=1 eden master
+          expected=119291dc77fbe8e4a23eaafa8420c1c8577d1b59
+          actual=$(git rev-parse FETCH_HEAD)
+          echo "Pinned Eden commit: $expected"
+          echo "Fetched Eden commit: $actual"
+          test "$actual" = "$expected"
+          git tag -f moonwitch-eden-source "$actual"
+
+      - name: Create clean Eden snapshot commit
+        shell: bash
+        run: |
+          set -euxo pipefail
+          git config user.name "Moonwitch CI"
+          git config user.email "actions@users.noreply.github.com"
+          source_sha=$(git rev-parse moonwitch-eden-source)
+          git switch --orphan eden-master-base
+          git rm -rf . >/dev/null 2>&1 || true
+          git checkout "$source_sha" -- .
+          printf 'Eden upstream source commit: %s\nImported: 2026-08-28\n' "$source_sha" > MOONWITCH_BASE.md
+          git add -A
+          git commit -m "Moonwitch: reset base to Eden master $source_sha"
+
+      - name: Publish clean Eden base branch
+        shell: bash
+        run: |
+          set -euxo pipefail
+          git push origin HEAD:refs/heads/eden-master-base --force
