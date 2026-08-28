@@ -1160,6 +1160,12 @@ bool Device::GetSuitability(bool requires_swapchain) {
     };
 
     const VkPhysicalDeviceLimits& limits{properties.properties.limits};
+#if defined(__ANDROID__)
+    LOG_WARNING(Render_Vulkan,
+                "[Moonwitch] Android Vulkan snapshot: multiViewport={}, maxViewports={}, apiVersion={}, vendorID={:#x}, deviceID={:#x}",
+                features.features.multiViewport, limits.maxViewports, properties.properties.apiVersion,
+                properties.properties.vendorID, properties.properties.deviceID);
+#endif
     const std::array limits_report{
                                    Limit{65536, limits.maxUniformBufferRange, "maxUniformBufferRange"},
                                    Limit{16, limits.maxViewports, "maxViewports"},

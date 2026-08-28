@@ -49,7 +49,7 @@ object CrashHandler {
                     defaultHandler?.uncaughtException(thread, throwable)
                 }
             }
-            Log.i(TAG, "STORM EDEN CrashHandler installed successfully")
+            Log.i(TAG, "Moonwitch CrashHandler installed successfully")
         }
     }
 
@@ -70,7 +70,7 @@ object CrashHandler {
 
         val sb = StringBuilder()
         sb.append("=======================================================\n")
-        sb.append("STORM EDEN Android - Emergency Crash Report\n")
+        sb.append("Moonwitch Android - Emergency Crash Report\n")
         sb.append("=======================================================\n")
         sb.append("Timestamp: ").append(dateStr).append("\n")
         sb.append("Package: ").append(context?.packageName ?: "dev.eden.eden_emulator").append("\n\n")
@@ -190,7 +190,7 @@ object CrashHandler {
             val logContent = if (logFile.exists()) {
                 logFile.readText(Charsets.UTF_8)
             } else {
-                "STORM EDEN Session Log\nTimestamp: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())}\n"
+                "Moonwitch Session Log\nTimestamp: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())}\n"
             }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {

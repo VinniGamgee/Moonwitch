@@ -483,7 +483,7 @@ class HomeSettingsFragment : Fragment() {
             val f = java.io.File(logDir, "storm_eden_log.txt")
             try {
                 f.writeText(buildString {
-                    appendLine("=== STORM EDEN v${NativeLibrary.getBuildVersion()} Debug Log ===")
+                    appendLine("=== Moonwitch v${NativeLibrary.getBuildVersion()} Debug Log ===")
                     appendLine("Date: ${java.util.Date()}")
                     appendLine("Device: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL} (${android.os.Build.DEVICE})")
                     appendLine("Android OS: ${android.os.Build.VERSION.RELEASE} (API ${android.os.Build.VERSION.SDK_INT})")
@@ -546,7 +546,7 @@ class HomeSettingsFragment : Fragment() {
             val f = java.io.File(logDir, "storm_eden_gpu.log")
             try {
                 f.writeText(buildString {
-                    appendLine("=== STORM EDEN v${NativeLibrary.getBuildVersion()} GPU Log ===")
+                    appendLine("=== Moonwitch v${NativeLibrary.getBuildVersion()} GPU Log ===")
                     appendLine("Date: ${java.util.Date()}")
                     appendLine("GPU Model: ${try { NativeLibrary.getGpuModel() } catch (_: Exception) { "Unknown" }}")
                     appendLine("Vulkan API: ${try { NativeLibrary.getVulkanApiVersion() } catch (_: Exception) { "Unknown" }}")

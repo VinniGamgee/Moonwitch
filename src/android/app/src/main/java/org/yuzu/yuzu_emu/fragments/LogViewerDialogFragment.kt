@@ -92,7 +92,7 @@ class LogViewerDialogFragment : DialogFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         val isRunning = NativeLibrary.isRunning()
-        val gameName = game?.title?.ifBlank { null } ?: game?.programIdHex ?: "STORM EDEN"
+        val gameName = game?.title?.ifBlank { null } ?: game?.programIdHex ?: "Moonwitch"
         val progId = game?.programIdHex ?: ""
         binding.textLogSubtitle.text = "$gameName ${if (progId.isNotEmpty()) "[$progId]" else ""} | ${if (isRunning) "⚡ В игре" else "⚪ Оффлайн"}"
 
@@ -237,7 +237,7 @@ class LogViewerDialogFragment : DialogFragment() {
         }
 
         val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = ClipData.newPlainText("STORM EDEN Log", text)
+        val clip = ClipData.newPlainText("Moonwitch Log", text)
         clipboard.setPrimaryClip(clip)
         Toast.makeText(requireContext(), "📋 Лог скопирован в буфер обмена", Toast.LENGTH_SHORT).show()
     }
@@ -275,7 +275,7 @@ class LogViewerDialogFragment : DialogFragment() {
                     val intent = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
                         putExtra(Intent.EXTRA_STREAM, uri)
-                        putExtra(Intent.EXTRA_SUBJECT, "STORM EDEN Log - ${game?.title ?: "Switch"}$filterSuffix")
+                        putExtra(Intent.EXTRA_SUBJECT, "Moonwitch Log - ${game?.title ?: "Switch"}$filterSuffix")
                         putExtra(Intent.EXTRA_TEXT, textToShare.take(5000))
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }

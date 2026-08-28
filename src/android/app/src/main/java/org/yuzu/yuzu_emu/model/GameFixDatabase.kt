@@ -100,8 +100,8 @@ object GameFixDatabase {
             "Warhammer 40,000: Mechanicus",
             "• Невозможно сохранить прогресс игры (ошибка сохранения)",
             "• Unable to save game progress (infinite save loop)",
-            "✓ Поддержка RenameDirectory в STORM EDEN 4.6.0+\n✓ Быстрая память (Fastmem): Включено\n✓ Асинхронные шейдеры: Включено",
-            "✓ RenameDirectory support in STORM EDEN 4.6.0+\n✓ Fastmem: Enabled\n✓ Asynchronous Shaders: Enabled",
+            "✓ Поддержка RenameDirectory в Moonwitch 4.6.0+\n✓ Быстрая память (Fastmem): Включено\n✓ Асинхронные шейдеры: Включено",
+            "✓ RenameDirectory support in Moonwitch 4.6.0+\n✓ Fastmem: Enabled\n✓ Asynchronous Shaders: Enabled",
             mapOf(
                 "Cpu\\cpuopt_fastmem" to "true",
                 "Renderer\\use_asynchronous_shaders" to "true"

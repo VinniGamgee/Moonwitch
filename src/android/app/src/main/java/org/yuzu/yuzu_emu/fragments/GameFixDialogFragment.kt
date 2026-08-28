@@ -55,7 +55,7 @@ class GameFixDialogFragment : DialogFragment() {
                 GameFixDatabase.setDontAskAgain(requireContext(), currentGame, true)
             }
             GameFixDatabase.applyFix(currentGame)
-            Toast.makeText(requireContext(), "⚡ Оптимизации STORM EDEN применены!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "⚡ Оптимизации Moonwitch применены!", Toast.LENGTH_SHORT).show()
             dismiss()
             onLaunchCallback?.invoke(true)
         }
