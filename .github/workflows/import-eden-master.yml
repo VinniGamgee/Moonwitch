@@ -32,9 +32,24 @@ jobs:
           echo "Pinned Eden commit: $expected"
           echo "Fetched Eden commit: $actual"
           test "$actual" = "$expected"
+          git tag -f moonwitch-eden-source "$actual"
+
+      - name: Create clean Eden snapshot commit
+        shell: bash
+        run: |
+          set -euxo pipefail
+          git config user.name "Moonwitch CI"
+          git config user.email "actions@users.noreply.github.com"
+          source_sha=$(git rev-parse moonwitch-eden-source)
+          git switch --orphan eden-master-base
+          git rm -rf . >/dev/null 2>&1 || true
+          git checkout "$source_sha" -- .
+          printf 'Eden upstream source commit: %s\nImported: 2026-08-28\n' "$source_sha" > MOONWITCH_BASE.md
+          git add -A
+          git commit -m "Moonwitch: reset base to Eden master $source_sha"
 
       - name: Publish clean Eden base branch
         shell: bash
         run: |
           set -euxo pipefail
-          git push origin FETCH_HEAD:refs/heads/eden-master-base --force
+          git push origin HEAD:refs/heads/eden-master-base --force
