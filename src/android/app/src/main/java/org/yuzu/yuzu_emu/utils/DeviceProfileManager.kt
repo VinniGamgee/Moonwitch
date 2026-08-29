@@ -39,7 +39,8 @@ object DeviceProfileManager {
         @StringRes val driverNameId: Int,
         val integerSettings: Map<IntSetting, Int>,
         val booleanSettings: Map<BooleanSetting, Boolean>,
-        val driverIntegerSettings: Map<IntSetting, Int> = emptyMap()
+        val driverIntegerSettings: Map<IntSetting, Int> = emptyMap(),
+        val driverBooleanSettings: Map<BooleanSetting, Boolean> = emptyMap()
     )
 
     data class ApplyResult(
@@ -105,8 +106,10 @@ object DeviceProfileManager {
             SettingsFile.loadCustomConfig(game)
 
             val integerSettingsToApply = LinkedHashMap(recommendation.integerSettings)
+            val booleanSettingsToApply = LinkedHashMap(recommendation.booleanSettings)
             if (recommendedDriver != null) {
                 integerSettingsToApply.putAll(recommendation.driverIntegerSettings)
+                booleanSettingsToApply.putAll(recommendation.driverBooleanSettings)
             }
 
             val targetDynamicState = integerSettingsToApply[IntSetting.RENDERER_DYNA_STATE]
@@ -116,10 +119,21 @@ object DeviceProfileManager {
                     IntSetting.RENDERER_DYNA_STATE.getInt(needsGlobal) != targetDynamicState
             }
 
+            val targetVertexInputDynamicState =
+                booleanSettingsToApply[BooleanSetting.RENDERER_VERTEX_INPUT_DYNAMIC_STATE]
+            if (targetVertexInputDynamicState != null) {
+                val needsGlobal = NativeConfig.usingGlobal(
+                    BooleanSetting.RENDERER_VERTEX_INPUT_DYNAMIC_STATE.key
+                )
+                pipelineBehaviorChanged = pipelineBehaviorChanged ||
+                    BooleanSetting.RENDERER_VERTEX_INPUT_DYNAMIC_STATE.getBoolean(needsGlobal) !=
+                    targetVertexInputDynamicState
+            }
+
             integerSettingsToApply.forEach { (setting, value) ->
                 setting.setInt(value)
             }
-            recommendation.booleanSettings.forEach { (setting, value) ->
+            booleanSettingsToApply.forEach { (setting, value) ->
                 setting.setBoolean(value)
             }
 
@@ -181,10 +195,15 @@ object DeviceProfileManager {
                     IntSetting.ANDROID_PIPELINE_WORKERS to POCO_F5_TOTK_PIPELINE_WORKERS,
                     IntSetting.RENDERER_DYNA_STATE to 0 // Safe fallback when T30 is unavailable
                 ),
-                booleanSettings = baseBooleanSettings() +
-                    (BooleanSetting.RENDERER_FRAME_GEN to false),
+                booleanSettings = baseBooleanSettings() + mapOf(
+                    BooleanSetting.RENDERER_FRAME_GEN to false,
+                    BooleanSetting.RENDERER_VERTEX_INPUT_DYNAMIC_STATE to false
+                ),
                 driverIntegerSettings = linkedMapOf(
                     IntSetting.RENDERER_DYNA_STATE to POCO_F5_TOTK_EDS_LEVEL
+                ),
+                driverBooleanSettings = linkedMapOf(
+                    BooleanSetting.RENDERER_VERTEX_INPUT_DYNAMIC_STATE to true
                 )
             )
         } else {
