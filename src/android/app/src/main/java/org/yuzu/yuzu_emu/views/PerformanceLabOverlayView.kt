@@ -13,6 +13,7 @@ import org.yuzu.yuzu_emu.NativeLibrary
 import org.yuzu.yuzu_emu.features.settings.model.BooleanSetting
 import org.yuzu.yuzu_emu.utils.NativeConfig
 import org.yuzu.yuzu_emu.utils.PerformanceLabNative
+import org.yuzu.yuzu_emu.utils.PipelineWorkerAutoTuner
 import java.util.Locale
 
 /**
@@ -20,7 +21,7 @@ import java.util.Locale
  *
  * The normal Eden overlay samples aggregate performance counters every 800 ms. This view reads the
  * rolling native frame history instead, so P95/P99 are calculated from individual system frames.
- * It is deliberately display-only: no settings are changed while emulation is running.
+ * On the validated TOTK/POCO F5 target it also feeds the cross-session pipeline-worker tuner.
  */
 class PerformanceLabOverlayView @JvmOverloads constructor(
     context: Context,
@@ -67,17 +68,38 @@ class PerformanceLabOverlayView @JvmOverloads constructor(
         }
 
         visibility = View.VISIBLE
-        text = if (!snapshot.ready) {
-            "MW LAB | warm-up ${snapshot.samples}/$READY_SAMPLES"
+        if (!snapshot.ready) {
+            text = "MW LAB | warm-up ${snapshot.samples}/$READY_SAMPLES"
+            return
+        }
+
+        val metrics = String.format(
+            Locale.US,
+            "MW LAB | Mean %.1fms | P95 %.1f | P99 %.1f | Max %.1f",
+            snapshot.meanMs,
+            snapshot.p95Ms,
+            snapshot.p99Ms,
+            snapshot.maxMs
+        )
+
+        val tuningStatus = runCatching {
+            PipelineWorkerAutoTuner.observe(context, snapshot)
+        }.getOrNull()
+
+        text = if (tuningStatus == null) {
+            metrics
         } else {
-            String.format(
-                Locale.US,
-                "MW LAB | Mean %.1fms | P95 %.1f | P99 %.1f | Max %.1f",
-                snapshot.meanMs,
-                snapshot.p95Ms,
-                snapshot.p99Ms,
-                snapshot.maxMs
-            )
+            val tuningText = when {
+                tuningStatus.winner != null ->
+                    "TUNE | W${tuningStatus.activeWorker} done | winner W${tuningStatus.winner} • restart"
+
+                tuningStatus.nextWorker != null ->
+                    "TUNE | W${tuningStatus.activeWorker} done | next W${tuningStatus.nextWorker} • restart"
+
+                else ->
+                    "TUNE | W${tuningStatus.activeWorker} ${tuningStatus.windowsCollected}/${tuningStatus.windowsRequired}"
+            }
+            "$metrics\n$tuningText"
         }
     }
 
