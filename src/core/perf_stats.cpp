@@ -13,6 +13,7 @@
 #include <thread>
 #include <fmt/chrono.h>
 #include <fmt/ranges.h>
+#include "common/adpf.h"
 #include "common/fs/file.h"
 #include "common/fs/fs.h"
 #include "common/fs/path_util.h"
@@ -74,6 +75,12 @@ void PerfStats::EndSystemFrame() {
     const auto frame_time = frame_end - frame_begin;
     const double frame_time_ms =
         std::chrono::duration<double, std::milli>(frame_time).count();
+
+    // Feed Android Dynamic Performance Framework with the same work-only duration used by the
+    // emulator's frametime metric. This excludes frame-limiter/v-sync sleeps, so the hint session
+    // receives actual emulation work instead of an inflated wall-clock frame interval.
+    Common::ADPF::ReportActualWorkDuration(
+        std::chrono::duration_cast<std::chrono::nanoseconds>(frame_time));
 
     if (current_index < perf_history.size()) {
         perf_history[current_index++] = frame_time_ms;
