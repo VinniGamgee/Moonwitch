@@ -109,7 +109,7 @@ object PipelineWorkerAutoTuner {
         )
         saveScore(prefs, identity, score)
 
-        val scores = candidates.mapNotNull { loadScore(prefs, identity, it) }
+        val scores = candidates.map { loadScore(prefs, identity, it) }.filterNotNull()
         val missing = candidates.firstOrNull { candidate -> scores.none { it.worker == candidate } }
 
         finalStatus = if (missing != null) {
