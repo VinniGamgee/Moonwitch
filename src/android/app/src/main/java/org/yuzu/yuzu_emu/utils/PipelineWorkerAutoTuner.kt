@@ -54,7 +54,7 @@ object PipelineWorkerAutoTuner {
 
     fun observe(
         context: Context,
-        snapshot: PerformanceLabNative.Snapshot
+        snapshot: PerformanceLabNative.FrameTimeSnapshot
     ): Status? {
         if (!isPocoF5() || !snapshot.fullWindow || !NativeLibrary.isRunning()) {
             return null
@@ -70,7 +70,7 @@ object PipelineWorkerAutoTuner {
         }.getOrDefault("unknown-driver")
         val identity = "$titleId|$driverFingerprint"
 
-        if (sessionIdentity != identity || snapshot.sequence < lastRecordedFrame) {
+        if (sessionIdentity != identity || snapshot.totalFrames < lastRecordedFrame) {
             resetSession(identity)
         }
 
@@ -86,7 +86,7 @@ object PipelineWorkerAutoTuner {
         }
 
         if (lastRecordedFrame != 0L &&
-            snapshot.sequence - lastRecordedFrame < FRAMES_PER_WINDOW
+            snapshot.totalFrames - lastRecordedFrame < FRAMES_PER_WINDOW
         ) {
             return Status(activeWorker, p99Samples.size)
         }
@@ -94,7 +94,7 @@ object PipelineWorkerAutoTuner {
         p99Samples += snapshot.p99Ms
         p95Samples += snapshot.p95Ms
         meanSamples += snapshot.meanMs
-        lastRecordedFrame = snapshot.sequence
+        lastRecordedFrame = snapshot.totalFrames
 
         if (p99Samples.size < WINDOWS_PER_CANDIDATE) {
             return Status(activeWorker, p99Samples.size)
