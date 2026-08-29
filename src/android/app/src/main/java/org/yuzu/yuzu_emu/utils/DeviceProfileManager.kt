@@ -24,6 +24,7 @@ import org.yuzu.yuzu_emu.model.Game
 object DeviceProfileManager {
     private const val TOTK_TITLE_ID = "0100F2C0115B6000"
     private const val POCO_F5_TOTK_PIPELINE_WORKERS = 4
+    private const val POCO_F5_TOTK_EDS_LEVEL = 1
     private val pocoF5Models = setOf("23049PCD8G", "23049PCD8I")
 
     data class Preview(
@@ -37,7 +38,8 @@ object DeviceProfileManager {
         @StringRes val changesId: Int,
         @StringRes val driverNameId: Int,
         val integerSettings: Map<IntSetting, Int>,
-        val booleanSettings: Map<BooleanSetting, Boolean>
+        val booleanSettings: Map<BooleanSetting, Boolean>,
+        val driverIntegerSettings: Map<IntSetting, Int> = emptyMap()
     )
 
     data class ApplyResult(
@@ -95,13 +97,26 @@ object DeviceProfileManager {
 
         val recommendedDriver = findRecommendedDriver()
         var driverChanged = false
+        var pipelineBehaviorChanged = false
         var driverOutcome = DriverOutcome.NOT_INSTALLED
         var applied = false
 
         try {
             SettingsFile.loadCustomConfig(game)
 
-            recommendation.integerSettings.forEach { (setting, value) ->
+            val integerSettingsToApply = LinkedHashMap(recommendation.integerSettings)
+            if (recommendedDriver != null) {
+                integerSettingsToApply.putAll(recommendation.driverIntegerSettings)
+            }
+
+            val targetDynamicState = integerSettingsToApply[IntSetting.RENDERER_DYNA_STATE]
+            if (targetDynamicState != null) {
+                val needsGlobal = NativeConfig.usingGlobal(IntSetting.RENDERER_DYNA_STATE.key)
+                pipelineBehaviorChanged =
+                    IntSetting.RENDERER_DYNA_STATE.getInt(needsGlobal) != targetDynamicState
+            }
+
+            integerSettingsToApply.forEach { (setting, value) ->
                 setting.setInt(value)
             }
             recommendation.booleanSettings.forEach { (setting, value) ->
@@ -135,7 +150,7 @@ object DeviceProfileManager {
             runCatching { NativeConfig.reloadGlobalConfig() }
         }
 
-        if (applied && driverChanged) {
+        if (applied && (driverChanged || pipelineBehaviorChanged)) {
             wipeShaderCache(context, game)
         }
 
@@ -163,10 +178,14 @@ object DeviceProfileManager {
                     IntSetting.RENDERER_VRAM_USAGE_MODE to 0, // Conservative
                     IntSetting.RENDERER_ASTC_DECODE_METHOD to 1, // GPU
                     IntSetting.RENDERER_NVDEC_EMULATION to 2, // GPU
-                    IntSetting.ANDROID_PIPELINE_WORKERS to POCO_F5_TOTK_PIPELINE_WORKERS
+                    IntSetting.ANDROID_PIPELINE_WORKERS to POCO_F5_TOTK_PIPELINE_WORKERS,
+                    IntSetting.RENDERER_DYNA_STATE to 0 // Safe fallback when T30 is unavailable
                 ),
                 booleanSettings = baseBooleanSettings() +
-                    (BooleanSetting.RENDERER_FRAME_GEN to false)
+                    (BooleanSetting.RENDERER_FRAME_GEN to false),
+                driverIntegerSettings = linkedMapOf(
+                    IntSetting.RENDERER_DYNA_STATE to POCO_F5_TOTK_EDS_LEVEL
+                )
             )
         } else {
             Recommendation(
