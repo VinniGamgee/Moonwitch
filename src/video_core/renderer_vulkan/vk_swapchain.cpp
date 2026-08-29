@@ -115,6 +115,36 @@ VkCompositeAlphaFlagBitsKHR ChooseAlphaFlags(const VkSurfaceCapabilitiesKHR& cap
     }
 }
 
+#ifdef __ANDROID__
+
+double RequestedFramePacingFps(Settings::FramePacingMode mode) {
+    switch (mode) {
+    case Settings::FramePacingMode::Target_30:
+        return 30.0;
+    case Settings::FramePacingMode::Target_60:
+        return 60.0;
+    case Settings::FramePacingMode::Target_90:
+        return 90.0;
+    case Settings::FramePacingMode::Target_120:
+        return 120.0;
+    case Settings::FramePacingMode::Target_Auto:
+    default:
+        return 0.0;
+    }
+}
+
+bool AdaptiveFramePacingEnabled() {
+    // Frame generation has its own dedicated pacing path. Likewise, non-standard speed modes must
+    // be free to run faster/slower than real time. The Moonwitch pacer only owns ordinary 100%
+    // gameplay on Android 11+ where Eden currently bypasses its legacy pacing loop entirely.
+    return android_get_device_api_level() >= 30 &&
+           Settings::values.use_speed_limit.GetValue() && Settings::SpeedLimit() == 100 &&
+           Settings::values.current_speed_mode.GetValue() == Settings::SpeedMode::Standard &&
+           !Settings::values.frame_gen.GetValue();
+}
+
+#endif
+
 } // Anonymous namespace
 
 Swapchain::Swapchain(
@@ -201,6 +231,8 @@ bool Swapchain::AcquireNextImage() {
 
 #ifdef __ANDROID__
     if (android_get_device_api_level() >= 30) {
+        // Android 11+ is paced immediately before vkQueuePresentKHR instead of here. Waiting only
+        // for the image's GPU resource avoids double-pacing and keeps Acquire responsive.
         scheduler.Wait(resource_ticks[image_index]);
     } else {
         wait_with_frame_pacing();
@@ -215,6 +247,13 @@ bool Swapchain::AcquireNextImage() {
 }
 
 void Swapchain::Present(VkSemaphore render_semaphore) {
+#ifdef __ANDROID__
+    const auto pacing_mode = Settings::values.frame_pacing_mode.GetValue();
+    adaptive_frame_pacer.Pace(
+        AdaptiveFramePacingEnabled(), pacing_mode == Settings::FramePacingMode::Target_Auto,
+        RequestedFramePacingFps(pacing_mode), Settings::values.async_presentation.GetValue());
+#endif
+
     const auto present_queue{device.GetPresentQueue()};
     const VkPresentInfoKHR present_info{
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -322,7 +361,7 @@ void Swapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities) {
 #endif
     };
     VkImageFormatListCreateInfo format_list{
-        .sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO_KHR,
+        .sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO,
         .pNext = nullptr,
         .viewFormatCount = static_cast<u32>(view_formats.size()),
         .pViewFormats = view_formats.data(),
@@ -359,6 +398,7 @@ void Swapchain::CreateSemaphores() {
 }
 
 void Swapchain::Destroy() {
+    adaptive_frame_pacer.Reset();
     frame_index = 0;
     present_semaphores.clear();
     render_semaphores.clear();
