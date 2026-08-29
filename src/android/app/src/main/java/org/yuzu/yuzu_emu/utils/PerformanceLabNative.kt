@@ -6,10 +6,9 @@ package org.yuzu.yuzu_emu.utils
 /**
  * Lightweight JNI bridge for Moonwitch Performance Lab metrics.
  *
- * Frame-time values come from individual system-frame measurements in the native core. ADPF
- * telemetry comes directly from the native PerformanceHint session used by the emulation threads,
- * so the overlay can prove whether the optimization is actually active instead of merely showing a
- * frontend toggle.
+ * Frame-time values come from individual system-frame measurements in the native core. ADPF and
+ * frame-pacing telemetry are read from the native systems that actually drive the emulator, so the
+ * overlay reports real behavior rather than frontend switch state.
  */
 object PerformanceLabNative {
     data class FrameTimeSnapshot(
@@ -27,7 +26,13 @@ object PerformanceLabNative {
         val adpfBackgroundThreads: Int,
         val adpfReports: Long,
         val adpfTargetMs: Double,
-        val adpfActualMs: Double
+        val adpfActualMs: Double,
+        val pacingActive: Boolean,
+        val pacingTargetFps: Double,
+        val pacingProducerFps: Double,
+        val pacingFrames: Long,
+        val pacingResyncs: Long,
+        val pacingDelayMs: Double
     ) {
         val ready: Boolean
             get() = samples >= 120
@@ -40,10 +45,11 @@ object PerformanceLabNative {
 
     fun snapshot(): FrameTimeSnapshot {
         val values = getRecentFrameTimeStats()
-        if (values.size < 15) {
+        if (values.size < 21) {
             return FrameTimeSnapshot(
                 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0L,
-                false, false, false, 0, 0, 0L, 0.0, 0.0
+                false, false, false, 0, 0, 0L, 0.0, 0.0,
+                false, 0.0, 0.0, 0L, 0L, 0.0
             )
         }
 
@@ -62,7 +68,13 @@ object PerformanceLabNative {
             adpfBackgroundThreads = values[11].toInt(),
             adpfReports = values[12].toLong(),
             adpfTargetMs = values[13],
-            adpfActualMs = values[14]
+            adpfActualMs = values[14],
+            pacingActive = values[15] != 0.0,
+            pacingTargetFps = values[16],
+            pacingProducerFps = values[17],
+            pacingFrames = values[18].toLong(),
+            pacingResyncs = values[19].toLong(),
+            pacingDelayMs = values[20]
         )
     }
 }
