@@ -138,6 +138,7 @@ RecentFrameTimeStats PerfStats::GetRecentFrameTimeStats() const {
         .p99_ms = nearest_rank(99),
         .max_ms = sorted_samples[recent_frame_count - 1],
         .sample_count = static_cast<u32>(recent_frame_count),
+        .total_system_frames = lifetime_system_frames,
     };
 }
 
