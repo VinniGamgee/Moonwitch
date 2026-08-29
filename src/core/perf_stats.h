@@ -32,6 +32,7 @@ struct RecentFrameTimeStats {
     double p99_ms{};
     double max_ms{};
     u32 sample_count{};
+    u64 total_system_frames{};
 };
 
 /**
