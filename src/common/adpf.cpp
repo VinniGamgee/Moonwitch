@@ -22,6 +22,7 @@ namespace Common::ADPF {
 namespace {
 
 constexpr std::chrono::nanoseconds DEFAULT_TARGET = std::chrono::nanoseconds{16'666'667};
+constexpr std::int64_t MAX_REPORTED_TARGETS = 4;
 
 struct AHintManager;
 struct AHintSession;
@@ -101,9 +102,9 @@ struct SessionState {
 std::mutex g_mutex;
 std::array<SessionState, 2> g_sessions;
 
-constexpr s64 MAX_REPORTED_TARGETS = 4;
-
 std::atomic<s64> g_target_ns{DEFAULT_TARGET.count()};
+std::atomic<s64> g_last_actual_ns{0};
+std::atomic<std::uint64_t> g_successful_reports{0};
 thread_local std::chrono::steady_clock::time_point t_last_frame{};
 
 SessionState& StateOf(Session session) {
@@ -123,7 +124,7 @@ void CloseLocked(SessionState& state) {
 
 AHintSession* CreateSessionFor(Session session, const std::vector<pid_t>& threads) {
     const Api& api = Resolve();
-    const s64 target = session == Session::Render ? g_target_ns.load(std::memory_order_relaxed) : 0;
+    const s64 target = g_target_ns.load(std::memory_order_relaxed);
 
     std::vector<s32> ids;
     ids.reserve(threads.size());
@@ -132,9 +133,6 @@ AHintSession* CreateSessionFor(Session session, const std::vector<pid_t>& thread
     }
 
     AHintSession* handle = api.create_session(api.manager, ids.data(), ids.size(), target);
-    if (handle == nullptr && target == 0) {
-        handle = api.create_session(api.manager, ids.data(), ids.size(), DEFAULT_TARGET.count());
-    }
     if (handle == nullptr) {
         return nullptr;
     }
@@ -250,6 +248,28 @@ void SetTargetWorkDuration(std::chrono::nanoseconds target) {
     }
 }
 
+void ReportActualWorkDuration(std::chrono::nanoseconds actual_duration) {
+    const Api& api = Resolve();
+    if (!api.usable || actual_duration.count() <= 0) {
+        return;
+    }
+
+    const s64 target = g_target_ns.load(std::memory_order_relaxed);
+    const s64 ceiling = target * MAX_REPORTED_TARGETS;
+    const s64 actual = (std::min)(static_cast<s64>(actual_duration.count()), ceiling);
+
+    std::scoped_lock lock{g_mutex};
+    SessionState& state = StateOf(Session::Render);
+    if (state.handle == nullptr) {
+        return;
+    }
+
+    if (api.report_actual(state.handle, actual) == 0) {
+        g_last_actual_ns.store(actual, std::memory_order_relaxed);
+        g_successful_reports.fetch_add(1, std::memory_order_relaxed);
+    }
+}
+
 void ReportFrameInterval() {
     const Api& api = Resolve();
     if (!api.usable) {
@@ -263,31 +283,46 @@ void ReportFrameInterval() {
         return;
     }
 
-    s64 actual = std::chrono::duration_cast<std::chrono::nanoseconds>(now - previous).count();
-    if (actual <= 0) {
-        return;
-    }
+    ReportActualWorkDuration(
+        std::chrono::duration_cast<std::chrono::nanoseconds>(now - previous));
+}
 
-    const s64 ceiling = g_target_ns.load(std::memory_order_relaxed) * MAX_REPORTED_TARGETS;
-    actual = (std::min)(actual, ceiling);
+Telemetry GetTelemetry() {
+    const Api& api = Resolve();
+    Telemetry telemetry{
+        .available = api.usable,
+        .successful_reports = g_successful_reports.load(std::memory_order_relaxed),
+        .target_work_duration =
+            std::chrono::nanoseconds{g_target_ns.load(std::memory_order_relaxed)},
+        .last_actual_work_duration =
+            std::chrono::nanoseconds{g_last_actual_ns.load(std::memory_order_relaxed)},
+    };
+    if (!api.usable) {
+        return telemetry;
+    }
 
     std::scoped_lock lock{g_mutex};
-    SessionState& state = StateOf(Session::Render);
-    if (state.handle != nullptr) {
-        api.report_actual(state.handle, actual);
-    }
+    const SessionState& render = StateOf(Session::Render);
+    const SessionState& background = StateOf(Session::Background);
+    telemetry.render_active = render.handle != nullptr;
+    telemetry.background_active = background.handle != nullptr;
+    telemetry.render_thread_count = render.threads.size();
+    telemetry.background_thread_count = background.threads.size();
+    return telemetry;
 }
 
 void Shutdown() {
-    if (!Resolve().usable) {
-        return;
+    if (Resolve().usable) {
+        std::scoped_lock lock{g_mutex};
+        for (SessionState& state : g_sessions) {
+            CloseLocked(state);
+            state.threads.clear();
+            state.unsupported = false;
+        }
     }
-    std::scoped_lock lock{g_mutex};
-    for (SessionState& state : g_sessions) {
-        CloseLocked(state);
-        state.threads.clear();
-        state.unsupported = false;
-    }
+    g_target_ns.store(DEFAULT_TARGET.count(), std::memory_order_relaxed);
+    g_last_actual_ns.store(0, std::memory_order_relaxed);
+    g_successful_reports.store(0, std::memory_order_relaxed);
 }
 
 } // namespace Common::ADPF
@@ -308,7 +343,13 @@ void RemoveCurrentThread() {}
 
 void SetTargetWorkDuration(std::chrono::nanoseconds) {}
 
+void ReportActualWorkDuration(std::chrono::nanoseconds) {}
+
 void ReportFrameInterval() {}
+
+Telemetry GetTelemetry() {
+    return {};
+}
 
 void Shutdown() {}
 
