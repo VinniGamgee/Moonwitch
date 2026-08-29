@@ -252,44 +252,44 @@
         <item name="android:elevation">0dp</item>
         <item name="android:padding">16dp</item>
     </style>
-    <!-- Synthwave Text Styles -->
+    <!-- Moonwitch typography. The legacy style names are retained for binding compatibility. -->
     <style name="SynthwaveText.Title" parent="TextAppearance.Material3.DisplayLarge">
         <item name="android:textColor">@color/eden_on_background</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:letterSpacing">0.1</item>
-        <item name="android:fontFamily">monospace</item>
+        <item name="android:letterSpacing">0.06</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
         <item name="android:shadowColor">@color/eden_glow_pink</item>
         <item name="android:shadowDx">0</item>
         <item name="android:shadowDy">0</item>
-        <item name="android:shadowRadius">8</item>
+        <item name="android:shadowRadius">3</item>
     </style>
     <style name="SynthwaveText.Header" parent="TextAppearance.Material3.DisplaySmall">
         <item name="android:textColor">@color/eden_primary</item>
         <item name="android:textStyle">bold</item>
         <item name="android:letterSpacing">0.05</item>
-        <item name="android:fontFamily">monospace</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
         <item name="android:shadowColor">@color/eden_glow_pink</item>
         <item name="android:shadowDx">0</item>
         <item name="android:shadowDy">0</item>
-        <item name="android:shadowRadius">6</item>
+        <item name="android:shadowRadius">3</item>
     </style>
     <style name="SynthwaveText.Body" parent="TextAppearance.Material3.BodyLarge">
         <item name="android:textColor">@color/eden_on_background</item>
-        <item name="android:fontFamily">monospace</item>
-        <item name="android:letterSpacing">0.02</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:letterSpacing">0.01</item>
     </style>
     <style name="SynthwaveText.Secondary" parent="TextAppearance.Material3.BodyMedium">
         <item name="android:textColor">@color/eden_secondary</item>
-        <item name="android:fontFamily">monospace</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
         <item name="android:shadowColor">@color/eden_glow_cyan</item>
         <item name="android:shadowDx">0</item>
         <item name="android:shadowDy">0</item>
-        <item name="android:shadowRadius">4</item>
+        <item name="android:shadowRadius">2</item>
     </style>
     <style name="SynthwaveText.Accent" parent="TextAppearance.Material3.LabelLarge">
         <item name="android:textColor">@color/eden_accent_orange</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:fontFamily">monospace</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
         <item name="android:letterSpacing">0.1</item>
         <item name="android:shadowColor">@color/eden_glow_orange</item>
         <item name="android:shadowDx">0</item>
@@ -299,8 +299,8 @@
     <!-- Shape appearance for carousel images -->
     <style name="ShapeAppearance.Eden.CarouselImage" parent="">
         <item name="cornerFamily">rounded</item>
-        <item name="cornerSizeTopLeft">8dp</item>
-        <item name="cornerSizeTopRight">8dp</item>
+        <item name="cornerSizeTopLeft">20dp</item>
+        <item name="cornerSizeTopRight">20dp</item>
         <item name="cornerSizeBottomLeft">0dp</item>
         <item name="cornerSizeBottomRight">0dp</item>
     </style>

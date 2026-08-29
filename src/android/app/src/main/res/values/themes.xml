@@ -3,8 +3,8 @@
 
     <style name="Theme.Yuzu.Splash.Main" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/eden_background</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_yuzu_splash</item>
-        <item name="postSplashScreenTheme">@style/Theme.Yuzu.Main</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_moonwitch_splash</item>
+        <item name="postSplashScreenTheme">@style/Theme.Moonwitch.Main</item>
     </style>
 
     <style name="Theme.Yuzu.Main" parent="Theme.Material3.DayNight.NoActionBar">
@@ -27,7 +27,7 @@
         <item name="popupMenuStyle">@style/YuzuPopupMenu</item>
     </style>
 
-    <style name="Theme.Eden.Main" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.Moonwitch.Main" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Primary colors -->
         <item name="colorPrimary">@color/eden_primary</item>
         <item name="colorOnPrimary">@color/eden_on_primary</item>

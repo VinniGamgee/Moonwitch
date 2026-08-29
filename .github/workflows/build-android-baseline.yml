@@ -1,9 +1,10 @@
-name: Eden Master Android Baseline
+name: Moonwitch V1 Android
 
 on:
+  workflow_dispatch:
   push:
     branches:
-      - main
+      - ui/moonwitch-v1
 
 jobs:
   build:
@@ -30,23 +31,18 @@ jobs:
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0" "ndk;28.2.13676358" "cmake;3.31.6"
 
-      - name: Use CMake 3.31.6 in CI
-        shell: bash
-        run: |
-          sed -i '/path = file("${edenDir}\/CMakeLists.txt")/a\            version = "3.31.6"' src/android/app/build.gradle.kts
-
       - name: Build
         shell: bash
         env:
           CCACHE: 'false'
         run: |
           chmod +x .ci/android/build.sh src/android/gradlew
-          .ci/android/build.sh -n -t standard -b Release
+          .ci/android/build.sh -t standard -b Release
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: EDEN-MASTER-BASELINE-119291dc
-          path: artifacts/*
+          name: MOONWITCH-V1-ANDROID
+          path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7

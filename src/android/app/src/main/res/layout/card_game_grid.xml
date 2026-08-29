@@ -12,7 +12,8 @@
         android:id="@+id/card_game_grid"
         app:cardElevation="0dp"
         app:cardBackgroundColor="@color/eden_card_background"
-        app:strokeWidth="0dp"
+        app:strokeWidth="1dp"
+        app:strokeColor="@color/moonwitch_border_soft"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
@@ -21,17 +22,13 @@
         android:clipToPadding="true"
         android:focusable="true"
         android:transitionName="card_game"
-        app:cardCornerRadius="16dp"
-        app:rippleColor="@color/game_card_ripple"
-        android:foreground="@color/eden_border_gradient_start">
+        app:cardCornerRadius="22dp"
+        app:rippleColor="@color/game_card_ripple">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingTop="4dp"
-            android:paddingLeft="4dp"
-            android:paddingRight="4dp"
-            android:paddingBottom="2dp">
+            android:padding="6dp">
 
             <com.google.android.material.imageview.ShapeableImageView
                 android:id="@+id/image_game_screen"
@@ -49,12 +46,13 @@
                 style="@style/SynthwaveText.Body"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="5dp"
                 android:gravity="center"
                 android:requiresFadingEdge="horizontal"
                 android:textAlignment="center"
                 android:textSize="14sp"
-                android:textStyle="bold"
+                android:fontFamily="sans-serif-medium"
                 android:maxLines="1"
                 android:ellipsize="end"
                 app:layout_constraintEnd_toEndOf="@+id/image_game_screen"

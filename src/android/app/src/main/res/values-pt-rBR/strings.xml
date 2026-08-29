@@ -229,6 +229,10 @@
     <string name="add_games_warning_description">Os jogos não serão exibidos na lista de jogos se nenhuma pasta for selecionada.</string>
     <string name="add_games_warning_help">https://yuzu-mirror.github.io/help/quickstart/#dumping-games</string>
     <string name="home_search_games">Procurar jogos</string>
+    <string name="moonwitch_library_label">BIBLIOTECA DE JOGOS</string>
+    <string name="moonwitch_select_game">SELECIONE UM JOGO</string>
+    <string name="moonwitch_system_menu">Menu do sistema</string>
+    <string name="moonwitch_manage_library">Biblioteca</string>
     <string name="search_settings">Procurar nas configurações</string>
     <string name="install_prod_keys">Instalar a chave prod.keys</string>
     <string name="install_prod_keys_description">Necessário para descriptografar jogos comerciais</string>

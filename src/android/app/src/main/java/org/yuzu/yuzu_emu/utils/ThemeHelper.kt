@@ -54,7 +54,7 @@ object ThemeHelper {
     private fun getSelectedStaticThemeColor(): Int {
         val themeIndex = IntSetting.STATIC_THEME_COLOR.getInt(false)
         val themes = arrayOf(
-            R.style.Theme_Eden_Main,
+            R.style.Theme_Moonwitch_Main,
             R.style.Theme_Yuzu_Main_Violet,
             R.style.Theme_Yuzu_Main_Blue,
             R.style.Theme_Yuzu_Main_Cyan,
@@ -100,6 +100,15 @@ object ThemeHelper {
             }
             AppCompatDelegate.MODE_NIGHT_NO -> setLightModeSystemBars(windowController)
             AppCompatDelegate.MODE_NIGHT_YES -> setDarkModeSystemBars(windowController)
+        }
+
+        // Moonwitch is intentionally dark in both system modes. Keep system-bar icons readable
+        // while still allowing every other color theme to follow the user's light/dark setting.
+        if (
+            Theme.from(IntSetting.THEME.getInt()) == Theme.Default &&
+            IntSetting.STATIC_THEME_COLOR.getInt(false) == 0
+        ) {
+            setDarkModeSystemBars(windowController)
         }
     }
 
