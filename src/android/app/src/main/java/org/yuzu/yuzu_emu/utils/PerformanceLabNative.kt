@@ -6,8 +6,10 @@ package org.yuzu.yuzu_emu.utils
 /**
  * Lightweight JNI bridge for Moonwitch Performance Lab metrics.
  *
- * These values come from individual system-frame measurements in the native core. They are not
- * percentiles calculated from the Android overlay's 800 ms aggregate samples.
+ * Frame-time values come from individual system-frame measurements in the native core. ADPF
+ * telemetry comes directly from the native PerformanceHint session used by the emulation threads,
+ * so the overlay can prove whether the optimization is actually active instead of merely showing a
+ * frontend toggle.
  */
 object PerformanceLabNative {
     data class FrameTimeSnapshot(
@@ -17,7 +19,15 @@ object PerformanceLabNative {
         val p99Ms: Double,
         val maxMs: Double,
         val samples: Int,
-        val totalFrames: Long
+        val totalFrames: Long,
+        val adpfAvailable: Boolean,
+        val adpfRenderActive: Boolean,
+        val adpfBackgroundActive: Boolean,
+        val adpfRenderThreads: Int,
+        val adpfBackgroundThreads: Int,
+        val adpfReports: Long,
+        val adpfTargetMs: Double,
+        val adpfActualMs: Double
     ) {
         val ready: Boolean
             get() = samples >= 120
@@ -30,8 +40,11 @@ object PerformanceLabNative {
 
     fun snapshot(): FrameTimeSnapshot {
         val values = getRecentFrameTimeStats()
-        if (values.size < 7) {
-            return FrameTimeSnapshot(0.0, 0.0, 0.0, 0.0, 0.0, 0, 0L)
+        if (values.size < 15) {
+            return FrameTimeSnapshot(
+                0.0, 0.0, 0.0, 0.0, 0.0, 0, 0L,
+                false, false, false, 0, 0, 0L, 0.0, 0.0
+            )
         }
 
         return FrameTimeSnapshot(
@@ -41,7 +54,15 @@ object PerformanceLabNative {
             p99Ms = values[3],
             maxMs = values[4],
             samples = values[5].toInt(),
-            totalFrames = values[6].toLong()
+            totalFrames = values[6].toLong(),
+            adpfAvailable = values[7] != 0.0,
+            adpfRenderActive = values[8] != 0.0,
+            adpfBackgroundActive = values[9] != 0.0,
+            adpfRenderThreads = values[10].toInt(),
+            adpfBackgroundThreads = values[11].toInt(),
+            adpfReports = values[12].toLong(),
+            adpfTargetMs = values[13],
+            adpfActualMs = values[14]
         )
     }
 }

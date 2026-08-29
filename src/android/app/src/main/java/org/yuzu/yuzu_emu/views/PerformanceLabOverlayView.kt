@@ -22,7 +22,7 @@ import java.util.Locale
  *
  * The normal Eden overlay samples aggregate performance counters every 800 ms. This view reads the
  * rolling native frame history instead, so P95/P99 are calculated from individual system frames.
- * On the validated TOTK/POCO F5 target it also feeds the cross-session pipeline-worker tuner.
+ * It also exposes native ADPF telemetry so scheduler optimization can be validated on-device.
  */
 class PerformanceLabOverlayView @JvmOverloads constructor(
     context: Context,
@@ -110,6 +110,19 @@ class PerformanceLabOverlayView @JvmOverloads constructor(
             snapshot.p99Ms,
             snapshot.maxMs
         )
+        val adpfStatus = when {
+            !snapshot.adpfAvailable -> "ADPF | unavailable - scheduler fallback"
+            snapshot.adpfRenderActive -> String.format(
+                Locale.US,
+                "ADPF | ACTIVE | %dT | target %.1fms | work %.1fms | reports %d",
+                snapshot.adpfRenderThreads,
+                snapshot.adpfTargetMs,
+                snapshot.adpfActualMs,
+                snapshot.adpfReports
+            )
+            else -> "ADPF | available - waiting for render session"
+        }
+        val baseText = "$metrics\n$adpfStatus"
 
         val tunerEnabled = BooleanSetting.ENABLE_PIPELINE_WORKER_AUTOTUNER.getBoolean()
         val tuningStatus = if (tunerEnabled) {
@@ -122,10 +135,10 @@ class PerformanceLabOverlayView @JvmOverloads constructor(
         isLongClickable = isClickable
 
         text = if (tuningStatus == null) {
-            metrics
+            baseText
         } else {
             val tuningText = formatTuningStatus(tuningStatus)
-            "$metrics\n$tuningText"
+            "$baseText\n$tuningText"
         }
     }
 
