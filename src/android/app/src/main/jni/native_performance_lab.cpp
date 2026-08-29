@@ -4,6 +4,7 @@
 #include <chrono>
 #include <jni.h>
 
+#include "common/adaptive_frame_pacing.h"
 #include "common/adpf.h"
 #include "native.h"
 
@@ -11,7 +12,7 @@ extern "C" {
 
 jdoubleArray Java_org_yuzu_yuzu_1emu_utils_PerformanceLabNative_getRecentFrameTimeStats(
     JNIEnv* env, jobject /*instance*/) {
-    constexpr jsize StatCount = 15;
+    constexpr jsize StatCount = 21;
     jdoubleArray j_stats = env->NewDoubleArray(StatCount);
     if (j_stats == nullptr || !EmulationSession::GetInstance().IsRunning()) {
         return j_stats;
@@ -20,6 +21,7 @@ jdoubleArray Java_org_yuzu_yuzu_1emu_utils_PerformanceLabNative_getRecentFrameTi
     const auto stats =
         EmulationSession::GetInstance().System().GetPerfStats().GetRecentFrameTimeStats();
     const auto adpf = Common::ADPF::GetTelemetry();
+    const auto pacing = Common::AdaptiveFramePacing::GetTelemetry();
     const double target_ms =
         std::chrono::duration<double, std::milli>(adpf.target_work_duration).count();
     const double actual_ms =
@@ -41,6 +43,12 @@ jdoubleArray Java_org_yuzu_yuzu_1emu_utils_PerformanceLabNative_getRecentFrameTi
         static_cast<double>(adpf.successful_reports),
         target_ms,
         actual_ms,
+        pacing.active ? 1.0 : 0.0,
+        pacing.target_fps,
+        pacing.producer_fps,
+        static_cast<double>(pacing.paced_frames),
+        static_cast<double>(pacing.resyncs),
+        pacing.last_delay_ms,
     };
     env->SetDoubleArrayRegion(j_stats, 0, StatCount, values);
     return j_stats;
