@@ -87,7 +87,15 @@
     <string name="moonwitch_performance_lab_enable">Enable Moonwitch Performance Lab</string>
     <string name="moonwitch_performance_lab_description">Show Mean, P95, P99, and Max frametime using real frame samples. This overlay works independently from Show Frametime.</string>
     <string name="moonwitch_pipeline_autotuner">Pipeline Worker AutoTuner</string>
-    <string name="moonwitch_pipeline_autotuner_description">POCO F5 + TOTK only. Tests W4, W2, W3, and W5 across restarts, then keeps the result with the lowest P99.</string>
+    <string name="moonwitch_pipeline_autotuner_description">POCO F5 + TOTK only. Enter a repeatable gameplay area and tap MW LAB to start or pause each test. Long-press MW LAB to reset. Tests W4, W2, W3, and W5 across restarts, then keeps the result with the lowest P99.</string>
+    <string name="moonwitch_tuner_status_ready">TUNE | W%1$d ready • tap to start</string>
+    <string name="moonwitch_tuner_status_running">TUNE | W%1$d %2$d/%3$d • %4$d/%5$d frames</string>
+    <string name="moonwitch_tuner_status_paused">TUNE | W%1$d paused %2$d/%3$d • tap to resume</string>
+    <string name="moonwitch_tuner_status_next">TUNE | W%1$d done • next W%2$d • restart</string>
+    <string name="moonwitch_tuner_status_reset">TUNE | reset • next W%1$d • restart</string>
+    <string name="moonwitch_tuner_status_winner_restart">TUNE | winner W%1$d • restart</string>
+    <string name="moonwitch_tuner_status_winner_active">TUNE | winner W%1$d • active</string>
+    <string name="moonwitch_tuner_status_error">TUNE | could not save • long-press to reset</string>
     <string name="show_fps">Show FPS</string>
     <string name="show_fps_description">Display current frames per second</string>
     <string name="show_frametime">Show Frametime</string>

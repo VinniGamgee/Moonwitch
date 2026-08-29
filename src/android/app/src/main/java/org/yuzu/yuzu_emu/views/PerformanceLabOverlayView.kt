@@ -7,9 +7,11 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.util.AttributeSet
+import android.view.HapticFeedbackConstants
 import android.view.View
 import com.google.android.material.textview.MaterialTextView
 import org.yuzu.yuzu_emu.NativeLibrary
+import org.yuzu.yuzu_emu.R
 import org.yuzu.yuzu_emu.features.settings.model.BooleanSetting
 import org.yuzu.yuzu_emu.utils.PerformanceLabNative
 import org.yuzu.yuzu_emu.utils.PipelineWorkerAutoTuner
@@ -29,6 +31,7 @@ class PerformanceLabOverlayView @JvmOverloads constructor(
 ) : MaterialTextView(context, attrs, defStyleAttr) {
 
     private val updateHandler = Handler(Looper.getMainLooper())
+    private var latestSnapshot: PerformanceLabNative.FrameTimeSnapshot? = null
 
     private val updateRunnable = object : Runnable {
         override fun run() {
@@ -39,6 +42,29 @@ class PerformanceLabOverlayView @JvmOverloads constructor(
         }
     }
 
+    init {
+        setOnClickListener {
+            val snapshot = latestSnapshot ?: return@setOnClickListener
+            if (!BooleanSetting.ENABLE_PIPELINE_WORKER_AUTOTUNER.getBoolean()) {
+                return@setOnClickListener
+            }
+            PipelineWorkerAutoTuner.toggleCapture(context, snapshot)
+            updateSnapshot()
+        }
+        setOnLongClickListener {
+            val snapshot = latestSnapshot ?: return@setOnLongClickListener false
+            if (!BooleanSetting.ENABLE_PIPELINE_WORKER_AUTOTUNER.getBoolean()) {
+                return@setOnLongClickListener false
+            }
+            performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+            PipelineWorkerAutoTuner.reset(context, snapshot)
+            updateSnapshot()
+            true
+        }
+        isClickable = false
+        isLongClickable = false
+    }
+
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         updateHandler.removeCallbacks(updateRunnable)
@@ -47,6 +73,8 @@ class PerformanceLabOverlayView @JvmOverloads constructor(
 
     override fun onDetachedFromWindow() {
         updateHandler.removeCallbacks(updateRunnable)
+        PipelineWorkerAutoTuner.pause()
+        latestSnapshot = null
         super.onDetachedFromWindow()
     }
 
@@ -54,21 +82,25 @@ class PerformanceLabOverlayView @JvmOverloads constructor(
         val showPerformanceLab = BooleanSetting.SHOW_MOONWITCH_PERFORMANCE_LAB.getBoolean()
 
         if (!showPerformanceLab || !NativeLibrary.isRunning()) {
+            disableTunerInteraction()
             visibility = View.GONE
             return
         }
 
         val snapshot = runCatching { PerformanceLabNative.snapshot() }.getOrNull()
         if (snapshot == null || snapshot.samples <= 0) {
+            disableTunerInteraction()
             visibility = View.GONE
             return
         }
 
         visibility = View.VISIBLE
         if (!snapshot.ready) {
+            disableTunerInteraction()
             text = "MW LAB | warm-up ${snapshot.samples}/$READY_SAMPLES"
             return
         }
+        latestSnapshot = snapshot
 
         val metrics = String.format(
             Locale.US,
@@ -79,28 +111,82 @@ class PerformanceLabOverlayView @JvmOverloads constructor(
             snapshot.maxMs
         )
 
-        val tuningStatus = if (BooleanSetting.ENABLE_PIPELINE_WORKER_AUTOTUNER.getBoolean()) {
+        val tunerEnabled = BooleanSetting.ENABLE_PIPELINE_WORKER_AUTOTUNER.getBoolean()
+        val tuningStatus = if (tunerEnabled) {
             runCatching { PipelineWorkerAutoTuner.observe(context, snapshot) }.getOrNull()
         } else {
+            PipelineWorkerAutoTuner.pause()
             null
         }
+        isClickable = tunerEnabled && tuningStatus != null
+        isLongClickable = isClickable
 
         text = if (tuningStatus == null) {
             metrics
         } else {
-            val tuningText = when {
-                tuningStatus.winner != null ->
-                    "TUNE | W${tuningStatus.activeWorker} done | winner W${tuningStatus.winner} • restart"
-
-                tuningStatus.nextWorker != null ->
-                    "TUNE | W${tuningStatus.activeWorker} done | next W${tuningStatus.nextWorker} • restart"
-
-                else ->
-                    "TUNE | W${tuningStatus.activeWorker} ${tuningStatus.windowsCollected}/${tuningStatus.windowsRequired}"
-            }
+            val tuningText = formatTuningStatus(tuningStatus)
             "$metrics\n$tuningText"
         }
     }
+
+    private fun disableTunerInteraction() {
+        PipelineWorkerAutoTuner.pause()
+        latestSnapshot = null
+        isClickable = false
+        isLongClickable = false
+    }
+
+    private fun formatTuningStatus(status: PipelineWorkerAutoTuner.Status): String =
+        when (status.phase) {
+            PipelineWorkerAutoTuner.Phase.READY -> context.getString(
+                R.string.moonwitch_tuner_status_ready,
+                status.activeWorker
+            )
+
+            PipelineWorkerAutoTuner.Phase.RUNNING -> context.getString(
+                R.string.moonwitch_tuner_status_running,
+                status.activeWorker,
+                status.windowsCollected,
+                status.windowsRequired,
+                status.framesCollected,
+                status.framesRequired
+            )
+
+            PipelineWorkerAutoTuner.Phase.PAUSED -> context.getString(
+                R.string.moonwitch_tuner_status_paused,
+                status.activeWorker,
+                status.windowsCollected,
+                status.windowsRequired
+            )
+
+            PipelineWorkerAutoTuner.Phase.RESTART_REQUIRED -> if (status.wasReset) {
+                context.getString(
+                    R.string.moonwitch_tuner_status_reset,
+                    status.nextWorker ?: status.activeWorker
+                )
+            } else {
+                context.getString(
+                    R.string.moonwitch_tuner_status_next,
+                    status.activeWorker,
+                    status.nextWorker ?: status.activeWorker
+                )
+            }
+
+            PipelineWorkerAutoTuner.Phase.COMPLETE -> if (status.restartRequired) {
+                context.getString(
+                    R.string.moonwitch_tuner_status_winner_restart,
+                    status.winner ?: status.activeWorker
+                )
+            } else {
+                context.getString(
+                    R.string.moonwitch_tuner_status_winner_active,
+                    status.winner ?: status.activeWorker
+                )
+            }
+
+            PipelineWorkerAutoTuner.Phase.ERROR ->
+                context.getString(R.string.moonwitch_tuner_status_error)
+        }
 
     private companion object {
         const val UPDATE_INTERVAL_MS = 800L

@@ -969,5 +969,13 @@
     <string name="moonwitch_performance_lab_enable">Ativar Laboratório de desempenho Moonwitch</string>
     <string name="moonwitch_performance_lab_description">Mostra o frametime médio, P95, P99 e máximo usando amostras reais de frames. Este overlay funciona independentemente da opção Mostrar frametime.</string>
     <string name="moonwitch_pipeline_autotuner">Ajuste automático de Pipeline Workers</string>
-    <string name="moonwitch_pipeline_autotuner_description">Somente POCO F5 + TOTK. Testa W4, W2, W3 e W5 entre reinicializações e mantém o resultado com o menor P99.</string>
+    <string name="moonwitch_pipeline_autotuner_description">Somente POCO F5 + TOTK. Entre em uma área repetível do jogo e toque no MW LAB para iniciar ou pausar cada teste. Mantenha o MW LAB pressionado para reiniciar. Testa W4, W2, W3 e W5 entre reinicializações e mantém o resultado com o menor P99.</string>
+    <string name="moonwitch_tuner_status_ready">TUNE | W%1$d pronto • toque para iniciar</string>
+    <string name="moonwitch_tuner_status_running">TUNE | W%1$d %2$d/%3$d • %4$d/%5$d frames</string>
+    <string name="moonwitch_tuner_status_paused">TUNE | W%1$d pausado %2$d/%3$d • toque para retomar</string>
+    <string name="moonwitch_tuner_status_next">TUNE | W%1$d concluído • próximo W%2$d • reinicie</string>
+    <string name="moonwitch_tuner_status_reset">TUNE | reiniciado • próximo W%1$d • reinicie</string>
+    <string name="moonwitch_tuner_status_winner_restart">TUNE | vencedor W%1$d • reinicie</string>
+    <string name="moonwitch_tuner_status_winner_active">TUNE | vencedor W%1$d • ativo</string>
+    <string name="moonwitch_tuner_status_error">TUNE | falha ao salvar • mantenha pressionado para reiniciar</string>
 </resources>
