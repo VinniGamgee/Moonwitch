@@ -23,6 +23,17 @@ struct PerfStatsResults {
     double emulation_speed;
 };
 
+/// Rolling frame-time statistics used by Moonwitch's Performance Lab.
+/// Values are measured from individual system frames and reported in milliseconds.
+struct RecentFrameTimeStats {
+    double mean_ms{};
+    double median_ms{};
+    double p95_ms{};
+    double p99_ms{};
+    double max_ms{};
+    u32 sample_count{};
+};
+
 /**
  * Class to manage and query performance/timing statistics. All public functions of this class are
  * thread-safe unless stated otherwise.
@@ -46,12 +57,20 @@ public:
     double GetMeanFrametime() const;
 
     /**
+     * Returns rolling statistics from the most recent individual system-frame measurements.
+     * This does not reset the normal frontend performance counters.
+     */
+    RecentFrameTimeStats GetRecentFrameTimeStats() const;
+
+    /**
      * Gets the ratio between walltime and the emulated time of the previous system frame. This is
      * useful for scaling inputs or outputs moving between the two time domains.
      */
     double GetLastFrameTimeScale() const;
 
 private:
+    static constexpr std::size_t RecentFrameWindow = 600;
+
     mutable std::mutex object_mutex;
 
     /// Title ID for the game that is running. 0 if there is no game running yet
@@ -61,6 +80,12 @@ private:
     /// Stores an hour of historical frametime data useful for processing and tracking performance
     /// regressions with code changes.
     std::array<double, 216000> perf_history{};
+
+    /// Rolling individual-frame history used for short, responsive Performance Lab statistics.
+    std::array<double, RecentFrameWindow> recent_frame_history{};
+    std::size_t recent_frame_index{0};
+    std::size_t recent_frame_count{0};
+    u64 lifetime_system_frames{0};
 
     /// Point when the cumulative counters were reset
     Clock::time_point reset_point = Clock::now();

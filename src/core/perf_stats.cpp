@@ -72,10 +72,20 @@ void PerfStats::EndSystemFrame() {
 
     auto frame_end = Clock::now();
     const auto frame_time = frame_end - frame_begin;
+    const double frame_time_ms =
+        std::chrono::duration<double, std::milli>(frame_time).count();
+
     if (current_index < perf_history.size()) {
-        perf_history[current_index++] =
-            std::chrono::duration<double, std::milli>(frame_time).count();
+        perf_history[current_index++] = frame_time_ms;
     }
+
+    ++lifetime_system_frames;
+    if (lifetime_system_frames > IgnoreFrames) {
+        recent_frame_history[recent_frame_index] = frame_time_ms;
+        recent_frame_index = (recent_frame_index + 1) % recent_frame_history.size();
+        recent_frame_count = std::min(recent_frame_count + 1, recent_frame_history.size());
+    }
+
     accumulated_frametime += frame_time;
     system_frames += 1;
 
@@ -97,6 +107,38 @@ double PerfStats::GetMeanFrametime() const {
     const double sum = std::accumulate(perf_history.begin() + IgnoreFrames,
                                        perf_history.begin() + current_index, 0.0);
     return sum / static_cast<double>(current_index - IgnoreFrames);
+}
+
+RecentFrameTimeStats PerfStats::GetRecentFrameTimeStats() const {
+    std::scoped_lock lock{object_mutex};
+
+    if (recent_frame_count == 0) {
+        return {};
+    }
+
+    // Percentiles do not depend on sample order, so a compact copy of the valid ring-buffer
+    // entries is enough even after the write index has wrapped.
+    std::array<double, RecentFrameWindow> sorted_samples{};
+    std::copy_n(recent_frame_history.begin(), recent_frame_count, sorted_samples.begin());
+    std::sort(sorted_samples.begin(), sorted_samples.begin() + recent_frame_count);
+
+    const double sum = std::accumulate(sorted_samples.begin(),
+                                       sorted_samples.begin() + recent_frame_count, 0.0);
+
+    const auto nearest_rank = [&](std::size_t percentile) {
+        const std::size_t rank =
+            std::max<std::size_t>(1, (recent_frame_count * percentile + 99) / 100);
+        return sorted_samples[std::min(rank - 1, recent_frame_count - 1)];
+    };
+
+    return RecentFrameTimeStats{
+        .mean_ms = sum / static_cast<double>(recent_frame_count),
+        .median_ms = nearest_rank(50),
+        .p95_ms = nearest_rank(95),
+        .p99_ms = nearest_rank(99),
+        .max_ms = sorted_samples[recent_frame_count - 1],
+        .sample_count = static_cast<u32>(recent_frame_count),
+    };
 }
 
 PerfStatsResults PerfStats::GetAndResetStats(microseconds current_system_time_us) {
