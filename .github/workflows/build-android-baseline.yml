@@ -1,4 +1,4 @@
-name: Moonwitch V1 Android
+name: Moonwitch V1.1 Android
 
 on:
   workflow_dispatch:
@@ -42,7 +42,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-V1-ANDROID
+          name: MOONWITCH-V1-1-ANDROID
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7

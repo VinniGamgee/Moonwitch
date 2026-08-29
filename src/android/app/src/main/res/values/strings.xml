@@ -5,9 +5,29 @@
     <string name="app_name" translatable="false">Moonwitch</string>
     <string name="moonwitch_library_label">GAME LIBRARY</string>
     <string name="moonwitch_select_game">SELECT A GAME</string>
-    <string name="moonwitch_build_badge" translatable="false">V1 • EDEN MASTER</string>
+    <string name="moonwitch_build_badge" translatable="false">V1.1 • DEVICE PROFILES</string>
     <string name="moonwitch_system_menu">System menu</string>
     <string name="moonwitch_manage_library">Library</string>
+    <string name="device_profile_title">Recommended device profile</string>
+    <string name="device_profile_description">Detect this device and create an auditable configuration only for this game.</string>
+    <string name="device_profile_dialog_title">Recommended configuration</string>
+    <string name="device_profile_apply">Apply per-game profile</string>
+    <string name="device_profile_card_unavailable">%1$s • No validated profile</string>
+    <string name="device_profile_card_detected">%1$s • %2$s</string>
+    <string name="device_profile_unavailable_message">Device: %1$s\nSoC: %2$s\n\nMoonwitch has no validated profile for this hardware. Nothing will be changed.</string>
+    <string name="device_profile_dialog_message">Device: %1$s\nSoC: %2$s\nProfile: %3$s\nDriver: %4$s\n\nChanges:\n%5$s\n\nMaximum GPU clocks can increase heat and battery use. Every change is saved only for this game.</string>
+    <string name="device_profile_poco_f5_balanced">POCO F5 balanced</string>
+    <string name="device_profile_poco_f5_totk">POCO F5 • TOTK stable</string>
+    <string name="device_profile_changes_poco_f5_balanced">• Vulkan renderer, NCE and Fastmem\n• Handheld mode at 1× resolution\n• Low GPU accuracy and GPU ASTC/NVDEC\n• Asynchronous GPU/presentation and disk shader cache\n• Maximum GPU clocks; asynchronous shaders disabled</string>
+    <string name="device_profile_changes_poco_f5_totk">• Vulkan renderer, NCE and Fastmem\n• Handheld mode at 0.75× with FSR 25%\n• Low GPU accuracy with default DMA/fences\n• GPU ASTC/NVDEC and conservative VRAM\n• Asynchronous GPU/presentation; asynchronous shaders disabled\n• Maximum GPU clocks; frame generation disabled</string>
+    <string name="device_profile_driver_t30" translatable="false">MrPurple Turnip T30</string>
+    <string name="device_profile_driver_installed">%1$s — installed and will be selected</string>
+    <string name="device_profile_driver_missing">%1$s — not installed; the profile will not change the driver</string>
+    <string name="device_profile_applied_driver_selected">Profile applied. %1$s selected and this game shader cache was cleared for a clean rebuild.</string>
+    <string name="device_profile_applied_driver_ready">Profile applied. %1$s was already selected.</string>
+    <string name="device_profile_applied_driver_missing">Profile applied without changing the driver. Install %1$s in Driver Manager to complete the tested setup.</string>
+    <string name="device_profile_apply_busy">Another per-game configuration is open. Close it and try again.</string>
+    <string name="device_profile_apply_failed">The profile could not be applied. No configuration was saved.</string>
     <string name="app_disclaimer">This software will run games for the Nintendo Switch game console. No game titles or keys are included.&lt;br /&gt;&lt;br /&gt;Before you begin, please locate your <![CDATA[<b> prod.keys </b>]]> file on your device storage.&lt;br /&gt;&lt;br /&gt;<![CDATA[<a href=\"https://yuzu-mirror.github.io/help/quickstart\">Learn more</a>]]></string>
     <string name="notice_notification_channel_name">Notices and errors</string>
     <string name="notice_notification_channel_id" translatable="false">noticesAndErrors</string>

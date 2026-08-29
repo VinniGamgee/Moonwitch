@@ -45,6 +45,7 @@ import org.yuzu.yuzu_emu.model.InstallableProperty
 import org.yuzu.yuzu_emu.model.SubMenuPropertySecondaryAction
 import org.yuzu.yuzu_emu.model.SubmenuProperty
 import org.yuzu.yuzu_emu.model.TaskState
+import org.yuzu.yuzu_emu.utils.DeviceProfileManager
 import org.yuzu.yuzu_emu.utils.DirectoryInitialization
 import org.yuzu.yuzu_emu.utils.FileUtil
 import org.yuzu.yuzu_emu.utils.GameHelper
@@ -154,6 +155,82 @@ class GamePropertiesFragment : Fragment() {
         super.onDestroy()
         if (!isChangingConfigurations) {
             gamesViewModel.reloadGames(true)
+        }
+    }
+
+    private fun showDeviceProfileDialog() {
+        val preview = DeviceProfileManager.preview(args.game)
+        val recommendation = preview.recommendation
+
+        if (recommendation == null) {
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.device_profile_title)
+                .setMessage(
+                    getString(
+                        R.string.device_profile_unavailable_message,
+                        preview.deviceName,
+                        preview.socName
+                    )
+                )
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
+            return
+        }
+
+        val driverName = DeviceProfileManager.driverName(requireContext(), recommendation)
+        val driverStatus = if (DeviceProfileManager.isRecommendedDriverInstalled()) {
+            getString(R.string.device_profile_driver_installed, driverName)
+        } else {
+            getString(R.string.device_profile_driver_missing, driverName)
+        }
+
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.device_profile_dialog_title)
+            .setMessage(
+                getString(
+                    R.string.device_profile_dialog_message,
+                    preview.deviceName,
+                    preview.socName,
+                    getString(recommendation.profileNameId),
+                    driverStatus,
+                    getString(recommendation.changesId)
+                )
+            )
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.device_profile_apply) { _, _ ->
+                applyDeviceProfile(recommendation)
+            }
+            .show()
+    }
+
+    private fun applyDeviceProfile(recommendation: DeviceProfileManager.Recommendation) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                DeviceProfileManager.apply(requireContext(), args.game, recommendation)
+            }
+
+            val driverName = DeviceProfileManager.driverName(requireContext(), recommendation)
+            val message = when (result.driverOutcome) {
+                DeviceProfileManager.DriverOutcome.SELECTED ->
+                    getString(R.string.device_profile_applied_driver_selected, driverName)
+
+                DeviceProfileManager.DriverOutcome.ALREADY_SELECTED ->
+                    getString(R.string.device_profile_applied_driver_ready, driverName)
+
+                DeviceProfileManager.DriverOutcome.NOT_INSTALLED ->
+                    getString(R.string.device_profile_applied_driver_missing, driverName)
+
+                DeviceProfileManager.DriverOutcome.BUSY ->
+                    getString(R.string.device_profile_apply_busy)
+
+                DeviceProfileManager.DriverOutcome.FAILED ->
+                    getString(R.string.device_profile_apply_failed)
+            }
+
+            Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
+            if (result.applied) {
+                homeViewModel.reloadPropertiesList(true)
+            }
         }
     }
 
@@ -330,6 +407,18 @@ class GamePropertiesFragment : Fragment() {
                             }
                         ))
                     }
+                )
+            )
+
+            add(
+                SubmenuProperty(
+                    R.string.device_profile_title,
+                    R.string.device_profile_description,
+                    R.drawable.ic_graphics,
+                    details = {
+                        DeviceProfileManager.cardDetails(requireContext(), args.game)
+                    },
+                    action = { showDeviceProfileDialog() }
                 )
             )
 

@@ -67,7 +67,7 @@ android {
         applicationId = "dev.moonwitch.emulator"
         minSdk = 24
         targetSdk = 36
-        versionName = "0.1.0"
+        versionName = "0.2.0"
         versionCode = autoVersion
 
         externalNativeBuild {
