@@ -16,18 +16,22 @@ object PerformanceLabNative {
         val p95Ms: Double,
         val p99Ms: Double,
         val maxMs: Double,
-        val samples: Int
+        val samples: Int,
+        val totalFrames: Long
     ) {
         val ready: Boolean
             get() = samples >= 120
+
+        val fullWindow: Boolean
+            get() = samples >= 600
     }
 
     external fun getRecentFrameTimeStats(): DoubleArray
 
     fun snapshot(): FrameTimeSnapshot {
         val values = getRecentFrameTimeStats()
-        if (values.size < 6) {
-            return FrameTimeSnapshot(0.0, 0.0, 0.0, 0.0, 0.0, 0)
+        if (values.size < 7) {
+            return FrameTimeSnapshot(0.0, 0.0, 0.0, 0.0, 0.0, 0, 0L)
         }
 
         return FrameTimeSnapshot(
@@ -36,7 +40,8 @@ object PerformanceLabNative {
             p95Ms = values[2],
             p99Ms = values[3],
             maxMs = values[4],
-            samples = values[5].toInt()
+            samples = values[5].toInt(),
+            totalFrames = values[6].toLong()
         )
     }
 }
