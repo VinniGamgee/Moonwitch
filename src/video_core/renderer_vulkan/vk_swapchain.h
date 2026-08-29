@@ -8,6 +8,7 @@
 
 #include <vector>
 
+#include "common/adaptive_frame_pacing.h"
 #include "common/common_types.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 
@@ -144,6 +145,8 @@ private:
     bool has_imm{false};
     bool has_mailbox{false};
     bool has_fifo_relaxed{false};
+
+    Common::AdaptiveFramePacing::Controller adaptive_frame_pacer;
 
     bool is_outdated{};
     bool is_suboptimal{};
