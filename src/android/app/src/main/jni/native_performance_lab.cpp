@@ -9,7 +9,7 @@ extern "C" {
 
 jdoubleArray Java_org_yuzu_yuzu_1emu_utils_PerformanceLabNative_getRecentFrameTimeStats(
     JNIEnv* env, jobject /*instance*/) {
-    constexpr jsize StatCount = 6;
+    constexpr jsize StatCount = 7;
     jdoubleArray j_stats = env->NewDoubleArray(StatCount);
     if (j_stats == nullptr || !EmulationSession::GetInstance().IsRunning()) {
         return j_stats;
@@ -24,6 +24,7 @@ jdoubleArray Java_org_yuzu_yuzu_1emu_utils_PerformanceLabNative_getRecentFrameTi
         stats.p99_ms,
         stats.max_ms,
         static_cast<double>(stats.sample_count),
+        static_cast<double>(stats.total_system_frames),
     };
     env->SetDoubleArrayRegion(j_stats, 0, StatCount, values);
     return j_stats;
