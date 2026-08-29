@@ -366,6 +366,10 @@ class SettingsFragmentPresenter(
 
     private fun addPerformanceOverlaySettings(sl: ArrayList<SettingsItem>) {
         sl.apply {
+            add(HeaderSetting(R.string.moonwitch_performance_lab))
+            add(BooleanSetting.SHOW_MOONWITCH_PERFORMANCE_LAB.key)
+            add(BooleanSetting.ENABLE_PIPELINE_WORKER_AUTOTUNER.key)
+
             add(HeaderSetting(R.string.stats_overlay_customization))
             add(BooleanSetting.SHOW_PERFORMANCE_OVERLAY.key)
             add(BooleanSetting.PERF_OVERLAY_BACKGROUND.key)

@@ -963,4 +963,11 @@
     <!-- Licenses screen strings -->
     <string name="licenses">Licenças</string>
     <string name="license_fidelityfx_fsr_description">Upscaling de alta qualidade da AMD</string>
-    </resources>
+
+    <!-- Moonwitch Performance Lab -->
+    <string name="moonwitch_performance_lab">Laboratório de desempenho Moonwitch</string>
+    <string name="moonwitch_performance_lab_enable">Ativar Laboratório de desempenho Moonwitch</string>
+    <string name="moonwitch_performance_lab_description">Mostra o frametime médio, P95, P99 e máximo usando amostras reais de frames. Este overlay funciona independentemente da opção Mostrar frametime.</string>
+    <string name="moonwitch_pipeline_autotuner">Ajuste automático de Pipeline Workers</string>
+    <string name="moonwitch_pipeline_autotuner_description">Somente POCO F5 + TOTK. Testa W4, W2, W3 e W5 entre reinicializações e mantém o resultado com o menor P99.</string>
+</resources>

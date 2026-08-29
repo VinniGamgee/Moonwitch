@@ -86,6 +86,12 @@ namespace AndroidSettings {
                                                          Settings::Category::Overlay,
                                                          Settings::Specialization::Paired, true,
                                                          true};
+        Settings::Setting<bool> show_moonwitch_performance_lab{
+            linkage, false, "show_moonwitch_performance_lab", Settings::Category::Overlay,
+            Settings::Specialization::Default, true, true};
+        Settings::Setting<bool> enable_pipeline_worker_autotuner{
+            linkage, false, "enable_pipeline_worker_autotuner", Settings::Category::Overlay,
+            Settings::Specialization::Default, true, true, &show_moonwitch_performance_lab};
         Settings::Setting<bool> enable_input_overlay_auto_hide{linkage, false,
                                                               "enable_input_overlay_auto_hide",
                                                               Settings::Category::Overlay,

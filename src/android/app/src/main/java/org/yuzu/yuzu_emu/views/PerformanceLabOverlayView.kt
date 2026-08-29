@@ -11,7 +11,6 @@ import android.view.View
 import com.google.android.material.textview.MaterialTextView
 import org.yuzu.yuzu_emu.NativeLibrary
 import org.yuzu.yuzu_emu.features.settings.model.BooleanSetting
-import org.yuzu.yuzu_emu.utils.NativeConfig
 import org.yuzu.yuzu_emu.utils.PerformanceLabNative
 import org.yuzu.yuzu_emu.utils.PipelineWorkerAutoTuner
 import java.util.Locale
@@ -52,11 +51,9 @@ class PerformanceLabOverlayView @JvmOverloads constructor(
     }
 
     private fun updateSnapshot() {
-        val showPerformanceOverlay = BooleanSetting.SHOW_PERFORMANCE_OVERLAY.getBoolean()
-        val perGameConfigLoaded = NativeConfig.isPerGameConfigLoaded()
-        val showFrametime = BooleanSetting.SHOW_FRAMETIME.getBoolean(perGameConfigLoaded)
+        val showPerformanceLab = BooleanSetting.SHOW_MOONWITCH_PERFORMANCE_LAB.getBoolean()
 
-        if (!showPerformanceOverlay || !showFrametime || !NativeLibrary.isRunning()) {
+        if (!showPerformanceLab || !NativeLibrary.isRunning()) {
             visibility = View.GONE
             return
         }
@@ -82,9 +79,11 @@ class PerformanceLabOverlayView @JvmOverloads constructor(
             snapshot.maxMs
         )
 
-        val tuningStatus = runCatching {
-            PipelineWorkerAutoTuner.observe(context, snapshot)
-        }.getOrNull()
+        val tuningStatus = if (BooleanSetting.ENABLE_PIPELINE_WORKER_AUTOTUNER.getBoolean()) {
+            runCatching { PipelineWorkerAutoTuner.observe(context, snapshot) }.getOrNull()
+        } else {
+            null
+        }
 
         text = if (tuningStatus == null) {
             metrics

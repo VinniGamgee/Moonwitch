@@ -464,6 +464,20 @@ abstract class SettingsItem(
             )
             put(
                 SwitchSetting(
+                    BooleanSetting.SHOW_MOONWITCH_PERFORMANCE_LAB,
+                    R.string.moonwitch_performance_lab_enable,
+                    descriptionId = R.string.moonwitch_performance_lab_description
+                )
+            )
+            put(
+                SwitchSetting(
+                    BooleanSetting.ENABLE_PIPELINE_WORKER_AUTOTUNER,
+                    R.string.moonwitch_pipeline_autotuner,
+                    descriptionId = R.string.moonwitch_pipeline_autotuner_description
+                )
+            )
+            put(
+                SwitchSetting(
                     BooleanSetting.PERF_OVERLAY_BACKGROUND,
                     R.string.perf_overlay_background,
                     descriptionId = R.string.perf_overlay_background_description

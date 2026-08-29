@@ -74,6 +74,8 @@ enum class BooleanSetting(override val key: String) : AbstractBooleanSetting {
 
     PERF_OVERLAY_BACKGROUND("perf_overlay_background"),
     SHOW_PERFORMANCE_OVERLAY("show_performance_overlay"),
+    SHOW_MOONWITCH_PERFORMANCE_LAB("show_moonwitch_performance_lab"),
+    ENABLE_PIPELINE_WORKER_AUTOTUNER("enable_pipeline_worker_autotuner"),
 
     SHOW_FPS("show_fps"),
     SHOW_FRAMETIME("show_frame_time"),

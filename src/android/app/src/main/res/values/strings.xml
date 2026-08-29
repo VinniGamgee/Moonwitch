@@ -83,6 +83,11 @@
     <string name="stats_overlay_options">Performance Overlay</string>
     <string name="enable_stats_overlay_">Enable Performance Stats Overlay</string>
     <string name="stats_overlay_options_description">Configure what information is shown in the performance stats overlay</string>
+    <string name="moonwitch_performance_lab">Moonwitch Performance Lab</string>
+    <string name="moonwitch_performance_lab_enable">Enable Moonwitch Performance Lab</string>
+    <string name="moonwitch_performance_lab_description">Show Mean, P95, P99, and Max frametime using real frame samples. This overlay works independently from Show Frametime.</string>
+    <string name="moonwitch_pipeline_autotuner">Pipeline Worker AutoTuner</string>
+    <string name="moonwitch_pipeline_autotuner_description">POCO F5 + TOTK only. Tests W4, W2, W3, and W5 across restarts, then keeps the result with the lowest P99.</string>
     <string name="show_fps">Show FPS</string>
     <string name="show_fps_description">Display current frames per second</string>
     <string name="show_frametime">Show Frametime</string>
