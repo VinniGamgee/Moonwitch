@@ -22,8 +22,8 @@ import java.util.Locale
  *
  * The normal Eden overlay samples aggregate performance counters every 800 ms. This view reads the
  * rolling native frame history instead, so P95/P99 are calculated from individual system frames.
- * It also exposes native ADPF and frame-pacing telemetry so both optimizations can be validated
- * directly on-device.
+ * It also exposes native ADPF, frame-pacing and adaptive frame-skip telemetry so every Moonwitch
+ * optimization can be validated directly on-device.
  */
 class PerformanceLabOverlayView @JvmOverloads constructor(
     context: Context,
@@ -140,7 +140,36 @@ class PerformanceLabOverlayView @JvmOverloads constructor(
             )
             else -> "PACING | idle"
         }
-        val baseText = "$metrics\n$adpfStatus\n$pacingStatus"
+        val frameSkipTotal = snapshot.frameSkipRenderedFrames + snapshot.frameSkipSkippedFrames
+        val frameSkipRatio = if (frameSkipTotal > 0L) {
+            snapshot.frameSkipSkippedFrames * 100.0 / frameSkipTotal
+        } else {
+            0.0
+        }
+        val frameSkipStatus = when {
+            !snapshot.frameSkipEnabled -> "SKIP | OFF"
+            !snapshot.frameSkipEligible -> "SKIP | BYPASS | incompatible mode or hidden surface"
+            snapshot.frameSkipTargetFps <= 0.0 -> String.format(
+                Locale.US,
+                "SKIP | warm-up | cost %.2fms",
+                snapshot.frameSkipEstimatedCompositeMs
+            )
+            else -> String.format(
+                Locale.US,
+                "SKIP | %s | drop %d/%d (%.1f%%) | cost %.2fms | P%d | Q %d + %d/%d | cd %d",
+                if (snapshot.frameSkipPressureActive) "ACTIVE" else "MONITOR",
+                snapshot.frameSkipSkippedFrames,
+                frameSkipTotal,
+                frameSkipRatio,
+                snapshot.frameSkipEstimatedCompositeMs,
+                snapshot.frameSkipPressureScore,
+                snapshot.frameSkipGpuBacklog,
+                snapshot.frameSkipPresentationBacklog,
+                snapshot.frameSkipPresentationCapacity,
+                snapshot.frameSkipCooldownFrames
+            )
+        }
+        val baseText = "$metrics\n$adpfStatus\n$pacingStatus\n$frameSkipStatus"
 
         val tunerEnabled = BooleanSetting.ENABLE_PIPELINE_WORKER_AUTOTUNER.getBoolean()
         val tuningStatus = if (tunerEnabled) {

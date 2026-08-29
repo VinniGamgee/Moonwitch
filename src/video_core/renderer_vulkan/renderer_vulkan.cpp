@@ -6,16 +6,18 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cstring>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <string>
 #include <vector>
 
 #include <fmt/ranges.h>
 
+#include "common/adaptive_frame_pacing.h"
 #include "common/logging.h"
-#include <ranges>
 #include "common/scope_exit.h"
 #include "common/settings.h"
 #include "core/core_timing.h"
@@ -39,6 +41,7 @@
 #include "video_core/vulkan_common/vulkan_surface.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 #ifdef __ANDROID__
+#include <android/api-level.h>
 #include <jni.h>
 #endif
 namespace Vulkan {
@@ -73,6 +76,17 @@ constexpr VkExtent3D CaptureImageExtent{
 };
 
 constexpr VkFormat CaptureFormat = VK_FORMAT_A8B8G8R8_UNORM_PACK32;
+
+#ifdef __ANDROID__
+
+bool SmartAdaptiveFrameSkipModeEligible() {
+    return android_get_device_api_level() >= 30 &&
+           Settings::values.use_speed_limit.GetValue() && Settings::SpeedLimit() == 100 &&
+           Settings::values.current_speed_mode.GetValue() == Settings::SpeedMode::Standard &&
+           !Settings::values.frame_gen.GetValue();
+}
+
+#endif
 
 std::string GetReadableVersion(u32 version) {
     return fmt::format("{}.{}.{}", VK_VERSION_MAJOR(version), VK_VERSION_MINOR(version),
@@ -199,6 +213,42 @@ void RendererVulkan::Composite(std::span<const Tegra::FramebufferConfig> framebu
         render_window.OnFrameDisplayed();
     };
 
+#ifdef __ANDROID__
+    using FrameSkipController = Common::SmartAdaptiveFrameSkip::Controller;
+    const auto composite_start = FrameSkipController::Clock::now();
+    const auto pacing_before = Common::AdaptiveFramePacing::GetTelemetry();
+    const auto presentation = present_manager.GetPresentationBacklog();
+    const u64 current_gpu_tick = scheduler.CurrentTick();
+    const u64 known_gpu_tick = scheduler.GetMasterSemaphore().KnownGpuTick();
+    const u64 gpu_backlog =
+        current_gpu_tick > known_gpu_tick ? current_gpu_tick - known_gpu_tick : 0;
+    const bool force_render =
+        renderer_settings.screenshot_requested.load(std::memory_order_relaxed) ||
+        framebuffers.empty();
+
+    const Common::SmartAdaptiveFrameSkip::Signals frame_skip_signals{
+        .enabled = Settings::values.smart_adaptive_frame_skip.GetValue(),
+        .eligible = SmartAdaptiveFrameSkipModeEligible() && render_window.IsShown(),
+        .force_render = force_render,
+        .pacing_active = pacing_before.active,
+        .target_fps = pacing_before.target_fps,
+        .pacing_resyncs = pacing_before.resyncs,
+        .gpu_backlog = gpu_backlog,
+        .presentation_backlog = presentation.pending,
+        .presentation_capacity = presentation.capacity,
+    };
+
+    if (smart_adaptive_frame_skip.ShouldSkip(frame_skip_signals, composite_start)) {
+        // Submit all guest GPU work recorded for this frame. Only the host-side applet/swapchain
+        // composition is omitted, so game state, GPU state and emulation timing remain exact.
+        scheduler.Flush();
+        gpu.RendererFrameEndNotify();
+        rasterizer.TickFrame();
+        smart_adaptive_frame_skip.OnSkipped();
+        return;
+    }
+#endif
+
     RenderAppletCaptureLayer(framebuffers);
 
     if (!render_window.IsShown()) {
@@ -237,6 +287,17 @@ void RendererVulkan::Composite(std::span<const Tegra::FramebufferConfig> framebu
 
     gpu.RendererFrameEndNotify();
     rasterizer.TickFrame();
+
+#ifdef __ANDROID__
+    const auto composite_elapsed = FrameSkipController::Clock::now() - composite_start;
+    const auto pacing_after = Common::AdaptiveFramePacing::GetTelemetry();
+    const bool paced_this_frame = pacing_after.paced_frames > pacing_before.paced_frames;
+    const double pacing_delay_ms =
+        !Settings::values.async_presentation.GetValue() && paced_this_frame
+            ? pacing_after.last_delay_ms
+            : 0.0;
+    smart_adaptive_frame_skip.OnRendered(composite_elapsed, pacing_delay_ms, !force_render);
+#endif
 }
 
 void RendererVulkan::Report() const {

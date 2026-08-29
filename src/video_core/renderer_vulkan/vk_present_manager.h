@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <condition_variable>
 #include <mutex>
 #include <boost/container/deque.hpp>
@@ -38,6 +39,11 @@ struct Frame {
     vk::Fence present_done;
 };
 
+struct PresentationBacklog {
+    std::size_t pending{};
+    std::size_t capacity{};
+};
+
 class PresentManager {
 public:
     PresentManager(const vk::Instance& instance,
@@ -64,6 +70,9 @@ public:
 
     /// How many additional frames can be queued without stalling the render thread
     [[nodiscard]] size_t MaxExtraFrames() const;
+
+    /// Returns the number of presentation frames currently in flight.
+    [[nodiscard]] PresentationBacklog GetPresentationBacklog();
 
 private:
     void PresentThread(std::stop_token token);

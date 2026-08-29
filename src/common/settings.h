@@ -600,6 +600,14 @@ struct Values {
                                                  Specialization::Default,
                                                  true,
                                                  true};
+
+    SwitchableSetting<bool> smart_adaptive_frame_skip{linkage,
+                                                       false,
+                                                       "smart_adaptive_frame_skip",
+                                                       Category::RendererAdvanced,
+                                                       Specialization::Default,
+                                                       true,
+                                                       true};
 #endif
 
     // Renderer Hacks //

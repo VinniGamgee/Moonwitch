@@ -7,8 +7,8 @@ package org.yuzu.yuzu_emu.utils
  * Lightweight JNI bridge for Moonwitch Performance Lab metrics.
  *
  * Frame-time values come from individual system-frame measurements in the native core. ADPF and
- * frame-pacing telemetry are read from the native systems that actually drive the emulator, so the
- * overlay reports real behavior rather than frontend switch state.
+ * frame-pacing/frame-skip telemetry are read from the native systems that actually drive the
+ * emulator, so the overlay reports real behavior rather than frontend switch state.
  */
 object PerformanceLabNative {
     data class FrameTimeSnapshot(
@@ -32,7 +32,19 @@ object PerformanceLabNative {
         val pacingProducerFps: Double,
         val pacingFrames: Long,
         val pacingResyncs: Long,
-        val pacingDelayMs: Double
+        val pacingDelayMs: Double,
+        val frameSkipEnabled: Boolean,
+        val frameSkipEligible: Boolean,
+        val frameSkipPressureActive: Boolean,
+        val frameSkipRenderedFrames: Long,
+        val frameSkipSkippedFrames: Long,
+        val frameSkipPressureScore: Int,
+        val frameSkipCooldownFrames: Int,
+        val frameSkipTargetFps: Double,
+        val frameSkipEstimatedCompositeMs: Double,
+        val frameSkipGpuBacklog: Long,
+        val frameSkipPresentationBacklog: Long,
+        val frameSkipPresentationCapacity: Long
     ) {
         val ready: Boolean
             get() = samples >= 120
@@ -45,11 +57,12 @@ object PerformanceLabNative {
 
     fun snapshot(): FrameTimeSnapshot {
         val values = getRecentFrameTimeStats()
-        if (values.size < 21) {
+        if (values.size < 33) {
             return FrameTimeSnapshot(
                 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0L,
                 false, false, false, 0, 0, 0L, 0.0, 0.0,
-                false, 0.0, 0.0, 0L, 0L, 0.0
+                false, 0.0, 0.0, 0L, 0L, 0.0,
+                false, false, false, 0L, 0L, 0, 0, 0.0, 0.0, 0L, 0L, 0L
             )
         }
 
@@ -74,7 +87,19 @@ object PerformanceLabNative {
             pacingProducerFps = values[17],
             pacingFrames = values[18].toLong(),
             pacingResyncs = values[19].toLong(),
-            pacingDelayMs = values[20]
+            pacingDelayMs = values[20],
+            frameSkipEnabled = values[21] != 0.0,
+            frameSkipEligible = values[22] != 0.0,
+            frameSkipPressureActive = values[23] != 0.0,
+            frameSkipRenderedFrames = values[24].toLong(),
+            frameSkipSkippedFrames = values[25].toLong(),
+            frameSkipPressureScore = values[26].toInt(),
+            frameSkipCooldownFrames = values[27].toInt(),
+            frameSkipTargetFps = values[28],
+            frameSkipEstimatedCompositeMs = values[29],
+            frameSkipGpuBacklog = values[30].toLong(),
+            frameSkipPresentationBacklog = values[31].toLong(),
+            frameSkipPresentationCapacity = values[32].toLong()
         )
     }
 }

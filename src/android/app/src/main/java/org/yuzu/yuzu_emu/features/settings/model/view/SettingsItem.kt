@@ -779,6 +779,13 @@ abstract class SettingsItem(
                 )
             )
             put(
+                SwitchSetting(
+                    BooleanSetting.SMART_ADAPTIVE_FRAME_SKIP,
+                    titleId = R.string.smart_adaptive_frame_skip,
+                    descriptionId = R.string.smart_adaptive_frame_skip_description
+                )
+            )
+            put(
                 SingleChoiceSetting(
                     IntSetting.DMA_ACCURACY,
                     titleId = R.string.dma_accuracy,

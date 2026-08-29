@@ -205,6 +205,16 @@ size_t PresentManager::MaxExtraFrames() const {
     return image_count - 1;
 }
 
+PresentationBacklog PresentManager::GetPresentationBacklog() {
+    std::scoped_lock lock{free_mutex};
+    const std::size_t capacity = frames.size();
+    const std::size_t free = free_queue.size() <= capacity ? free_queue.size() : capacity;
+    return PresentationBacklog{
+        .pending = capacity - free,
+        .capacity = capacity,
+    };
+}
+
 void PresentManager::RecreateFrame(Frame* frame, u32 width, u32 height, VkFormat image_view_format,
                                    VkRenderPass rd) {
     auto& dld = device.GetLogical();

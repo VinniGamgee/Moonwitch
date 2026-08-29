@@ -11,6 +11,9 @@
 #include <variant>
 
 #include "common/dynamic_library.h"
+#ifdef __ANDROID__
+#include "common/smart_adaptive_frame_skip.h"
+#endif
 #include "video_core/host1x/gpu_device_memory_manager.h"
 #include "video_core/renderer_base.h"
 #ifdef HAS_LSFG
@@ -100,6 +103,9 @@ private:
     RasterizerVulkan rasterizer;
 #ifdef HAS_LSFG
     FrameGen frame_gen;
+#endif
+#ifdef __ANDROID__
+    Common::SmartAdaptiveFrameSkip::Controller smart_adaptive_frame_skip;
 #endif
     std::optional<TurboMode> turbo_mode;
 

@@ -600,6 +600,8 @@
     <string name="renderer_asynchronous_gpu_emulation_description">This hack can increase performance by running GPU emulation asynchronously at the cost of graphical issues and increased crash rates by timing-related operations.</string>
     <string name="renderer_async_presentation">Asynchronous presentation</string>
     <string name="renderer_async_presentation_description">This hack can increase performance by moving presentation to a separate CPU thread at the cost of graphical issues.</string>
+    <string name="smart_adaptive_frame_skip">Smart Adaptive Frame Skip</string>
+    <string name="smart_adaptive_frame_skip_description">Conservatively skips only the final Vulkan composition when measured pacing and queue pressure show that a frame has already missed its display deadline. Game logic, audio, input, timers, and guest GPU commands are never skipped. Limited to one skip after at least five fully rendered frames.</string>
     <string name="renderer_reactive_flushing">Use reactive flushing</string>
     <string name="renderer_reactive_flushing_description">Improves rendering accuracy in some games at the cost of performance.</string>
     <string name="enable_buffer_history">Enable buffer history</string>
