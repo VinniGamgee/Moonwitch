@@ -151,8 +151,10 @@ object PipelineWorkerAutoTuner {
         }
 
         return runCatching {
-            // A non-zero program ID determines the custom config filename; fileName can be empty.
-            NativeConfig.initializePerGameConfig(titleId, "")
+            // Game.programId is decimal. A non-zero program ID determines the custom config
+            // filename, so fileName can be empty here.
+            val decimalProgramId = titleId.toLong(16).toString()
+            NativeConfig.initializePerGameConfig(decimalProgramId, "")
             IntSetting.ANDROID_PIPELINE_WORKERS.setInt(nextWorker)
             NativeConfig.savePerGameConfig()
 
