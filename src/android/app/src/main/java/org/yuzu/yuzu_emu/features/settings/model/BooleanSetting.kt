@@ -23,6 +23,7 @@ enum class BooleanSetting(override val key: String) : AbstractBooleanSetting {
     USE_DOCKED_MODE("use_docked_mode"),
     USE_AUTO_STUB("use_auto_stub"),
     RENDERER_USE_DISK_SHADER_CACHE("use_disk_shader_cache"),
+    RENDERER_USE_VULKAN_DRIVER_PIPELINE_CACHE("use_vulkan_driver_pipeline_cache"),
     RENDERER_FORCE_MAX_CLOCK("force_max_clock"),
     RENDERER_ASYNCHRONOUS_GPU_EMULATION("use_asynchronous_gpu_emulation"),
     RENDERER_ASYNC_PRESENTATION("async_presentation"),
