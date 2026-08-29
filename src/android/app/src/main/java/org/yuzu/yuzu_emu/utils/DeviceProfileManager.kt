@@ -23,6 +23,7 @@ import org.yuzu.yuzu_emu.model.Game
  */
 object DeviceProfileManager {
     private const val TOTK_TITLE_ID = "0100F2C0115B6000"
+    private const val POCO_F5_TOTK_PIPELINE_WORKERS = 4
     private val pocoF5Models = setOf("23049PCD8G", "23049PCD8I")
 
     data class Preview(
@@ -161,7 +162,8 @@ object DeviceProfileManager {
                     IntSetting.GPU_FENCE_BEHAVIOR to 0, // Default
                     IntSetting.RENDERER_VRAM_USAGE_MODE to 0, // Conservative
                     IntSetting.RENDERER_ASTC_DECODE_METHOD to 1, // GPU
-                    IntSetting.RENDERER_NVDEC_EMULATION to 2 // GPU
+                    IntSetting.RENDERER_NVDEC_EMULATION to 2, // GPU
+                    IntSetting.ANDROID_PIPELINE_WORKERS to POCO_F5_TOTK_PIPELINE_WORKERS
                 ),
                 booleanSettings = baseBooleanSettings() +
                     (BooleanSetting.RENDERER_FRAME_GEN to false)
@@ -194,6 +196,7 @@ object DeviceProfileManager {
         BooleanSetting.FASTMEM_EXCLUSIVES to true,
         BooleanSetting.USE_DOCKED_MODE to false,
         BooleanSetting.RENDERER_USE_DISK_SHADER_CACHE to true,
+        BooleanSetting.RENDERER_USE_VULKAN_DRIVER_PIPELINE_CACHE to true,
         BooleanSetting.RENDERER_FORCE_MAX_CLOCK to true,
         BooleanSetting.RENDERER_ASYNCHRONOUS_GPU_EMULATION to true,
         BooleanSetting.RENDERER_ASYNC_PRESENTATION to true,
