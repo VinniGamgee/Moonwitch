@@ -5,24 +5,28 @@
     android:id="@+id/coordinator_about"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface"
-    >
+    android:background="@drawable/moonwitch_background">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appbar_about"
-        style="@style/Widget.Eden.TransparentTopAppBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
         android:fitsSystemWindows="true"
-        android:touchscreenBlocksFocus="false">
+        app:elevation="0dp">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar_about"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:touchscreenBlocksFocus="false"
+            android:layout_height="64dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="6dp"
+            android:background="@drawable/moonwitch_toolbar_surface"
+            app:navigationIcon="@drawable/ic_back"
             app:title="@string/about"
-            app:navigationIcon="@drawable/ic_back" />
+            app:titleTextColor="@color/moonwitch_text" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -30,83 +34,130 @@
         android:id="@+id/scroll_about"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:scrollbars="vertical"
-        android:fadeScrollbars="false"
-        android:defaultFocusHighlightEnabled="false"
+        android:clipToPadding="false"
+        android:fillViewport="true"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
             android:id="@+id/content_about"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="16dp"
             android:paddingBottom="24dp">
 
-            <LinearLayout
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center_horizontal">
+                app:cardBackgroundColor="@color/moonwitch_panel"
+                app:cardCornerRadius="28dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/moonwitch_border"
+                app:strokeWidth="1dp">
 
-                <ImageView
-                    android:id="@+id/image_logo"
-                    android:layout_width="160dp"
-                    android:layout_height="160dp"
-                    android:layout_marginBottom="8dp"
-                    android:src="@drawable/ic_yuzu" />
-
-                <com.google.android.material.textview.MaterialTextView
-                    style="@style/TextAppearance.Material3.TitleMedium"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/app_name"
-                    android:textAlignment="center" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="20dp">
 
-                <com.google.android.material.textview.MaterialTextView
-                    style="@style/SynthwaveText.Body"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:textAlignment="center"
-                    android:text="@string/about_app_description" />
+                    <ImageView
+                        android:id="@+id/image_logo"
+                        android:layout_width="88dp"
+                        android:layout_height="88dp"
+                        android:contentDescription="@string/app_name"
+                        android:src="@drawable/ic_moonwitch_mark" />
 
-            </LinearLayout>
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="18dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:letterSpacing="0.12"
+                            android:text="@string/moonwitch_about_title"
+                            android:textColor="@color/moonwitch_text"
+                            android:textSize="24sp" />
+
+                        <View
+                            android:layout_width="64dp"
+                            android:layout_height="2dp"
+                            android:layout_marginTop="9dp"
+                            android:layout_marginBottom="10dp"
+                            android:background="@drawable/moonwitch_accent_line" />
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/moonwitch_about_tagline"
+                            android:textColor="@color/moonwitch_cyan"
+                            android:textSize="14sp" />
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="5dp"
+                            android:text="@string/moonwitch_about_identity"
+                            android:textColor="@color/moonwitch_text_muted"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.textview.MaterialTextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:layout_marginTop="18dp"
+                android:layout_marginBottom="8dp"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.14"
+                android:text="@string/moonwitch_command_center"
+                android:textColor="@color/moonwitch_text_muted"
+                android:textSize="10sp" />
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/button_contributors"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="16dp"
-                android:layout_marginTop="12dp"
                 android:clickable="true"
                 android:focusable="true"
-                app:cardBackgroundColor="@android:color/transparent"
-                app:cardCornerRadius="16dp"
+                app:cardBackgroundColor="@color/moonwitch_panel_soft"
+                app:cardCornerRadius="20dp"
                 app:cardElevation="0dp"
-                app:strokeColor="?attr/colorOutline"
+                app:rippleColor="#3035D8FF"
+                app:strokeColor="@color/moonwitch_border_soft"
                 app:strokeWidth="1dp">
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:paddingVertical="20dp"
-                    android:paddingHorizontal="20dp"
-                    android:orientation="vertical">
+                    android:orientation="vertical"
+                    android:padding="18dp">
 
                     <com.google.android.material.textview.MaterialTextView
-                        style="@style/TextAppearance.Material3.TitleMedium"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:textAlignment="viewStart"
-                        android:text="@string/contributors" />
+                        android:fontFamily="sans-serif-medium"
+                        android:text="@string/moonwitch_contributors_title"
+                        android:textColor="@color/moonwitch_cyan"
+                        android:textSize="16sp" />
 
                     <com.google.android.material.textview.MaterialTextView
-                        style="@style/SynthwaveText.Body"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:textAlignment="viewStart"
-                        android:text="@string/contributors_description" />
-
+                        android:layout_marginTop="4dp"
+                        android:text="@string/moonwitch_contributors_description"
+                        android:textColor="@color/moonwitch_text_muted"
+                        android:textSize="13sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -114,37 +165,37 @@
                 android:id="@+id/button_licenses"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="16dp"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="10dp"
                 android:clickable="true"
                 android:focusable="true"
-                app:cardBackgroundColor="@android:color/transparent"
-                app:cardCornerRadius="16dp"
+                app:cardBackgroundColor="@color/moonwitch_panel_soft"
+                app:cardCornerRadius="20dp"
                 app:cardElevation="0dp"
-                app:strokeColor="?attr/colorOutline"
+                app:rippleColor="#30FF3B55"
+                app:strokeColor="@color/moonwitch_border_soft"
                 app:strokeWidth="1dp">
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:paddingVertical="20dp"
-                    android:paddingHorizontal="20dp"
-                    android:orientation="vertical">
+                    android:orientation="vertical"
+                    android:padding="18dp">
 
                     <com.google.android.material.textview.MaterialTextView
-                        style="@style/TextAppearance.Material3.TitleMedium"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:textAlignment="viewStart"
-                        android:text="@string/licenses" />
+                        android:fontFamily="sans-serif-medium"
+                        android:text="@string/moonwitch_licenses_title"
+                        android:textColor="@color/moonwitch_red"
+                        android:textSize="16sp" />
 
                     <com.google.android.material.textview.MaterialTextView
-                        style="@style/TextAppearance.Material3.BodyMedium"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:textAlignment="viewStart"
-                        android:text="@string/licenses_description" />
-
+                        android:layout_marginTop="4dp"
+                        android:text="@string/moonwitch_licenses_description"
+                        android:textColor="@color/moonwitch_text_muted"
+                        android:textSize="13sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -152,124 +203,66 @@
                 android:id="@+id/button_version_name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="16dp"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="10dp"
                 android:clickable="true"
                 android:focusable="true"
-                app:cardCornerRadius="16dp"
-                app:cardBackgroundColor="@android:color/transparent"
-                app:strokeColor="?attr/colorOutline"
-                app:strokeWidth="1dp"
-                app:cardElevation="0dp">
+                app:cardBackgroundColor="@color/moonwitch_panel_high"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:rippleColor="#3035D8FF"
+                app:strokeColor="@color/moonwitch_border"
+                app:strokeWidth="1dp">
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:paddingVertical="20dp"
-                    android:paddingHorizontal="20dp"
-                    android:orientation="vertical">
+                    android:orientation="vertical"
+                    android:padding="18dp">
 
                     <com.google.android.material.textview.MaterialTextView
-                        style="@style/TextAppearance.Material3.TitleMedium"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:textAlignment="viewStart"
-                        android:text="@string/build" />
+                        android:fontFamily="sans-serif-medium"
+                        android:text="@string/moonwitch_build_title"
+                        android:textColor="@color/moonwitch_text"
+                        android:textSize="15sp" />
 
                     <com.google.android.material.textview.MaterialTextView
                         android:id="@+id/text_version_name"
-                        style="@style/TextAppearance.Material3.BodyMedium"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:textAlignment="viewStart"
-                        tools:text="abc123" />
-
+                        android:layout_marginTop="5dp"
+                        android:textColor="@color/moonwitch_text_muted"
+                        android:textSize="13sp"
+                        tools:text="Moonwitch (abc123)" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <LinearLayout
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/button_github"
+                android:layout_width="match_parent"
+                android:layout_height="58dp"
+                android:layout_marginTop="14dp"
+                android:text="@string/moonwitch_source_title"
+                android:textAllCaps="false"
+                android:textColor="#041018"
+                app:backgroundTint="@color/moonwitch_cyan"
+                app:cornerRadius="20dp"
+                app:icon="@drawable/ic_github"
+                app:iconGravity="textStart"
+                app:iconPadding="10dp"
+                app:iconTint="#041018" />
+
+            <com.google.android.material.textview.MaterialTextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_horizontal"
-                android:layout_marginTop="12dp"
-                android:layout_marginBottom="16dp"
-                android:layout_marginHorizontal="40dp">
-
-                <com.google.android.material.button.MaterialButton
-                    style="@style/EdenButton.Secondary"
-                    android:id="@+id/button_discord"
-                    android:layout_width="0dp"
-                    android:layout_height="56dp"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="8dp"
-                    app:icon="@drawable/ic_discord"
-                    app:iconSize="24dp"
-                    app:iconGravity="textStart"
-                    app:iconPadding="0dp"
-                    app:strokeColor="?attr/colorOutline"
-                    app:strokeWidth="1dp" />
-
-                <com.google.android.material.button.MaterialButton
-                    style="@style/EdenButton.Secondary"
-                    android:id="@+id/button_stoat"
-                    android:layout_width="0dp"
-                    android:layout_height="56dp"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="8dp"
-                    app:icon="@drawable/ic_stoat"
-                    app:iconSize="24dp"
-                    app:iconGravity="textStart"
-                    app:iconPadding="0dp"
-                    app:strokeColor="?attr/colorOutline"
-                    app:strokeWidth="1dp" />
-
-                <com.google.android.material.button.MaterialButton
-                    style="@style/EdenButton.Secondary"
-                    android:id="@+id/button_x"
-                    android:layout_width="0dp"
-                    android:layout_height="56dp"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="8dp"
-                    app:icon="@drawable/ic_x"
-                    app:iconSize="24dp"
-                    app:iconGravity="textStart"
-                    app:iconPadding="0dp"
-                    app:strokeColor="?attr/colorOutline"
-                    app:strokeWidth="1dp" />
-
-                <com.google.android.material.button.MaterialButton
-                    style="@style/EdenButton.Secondary"
-                    android:id="@+id/button_website"
-                    android:layout_width="0dp"
-                    android:layout_height="56dp"
-                    android:layout_weight="1"
-                    android:layout_marginHorizontal="4dp"
-                    app:icon="@drawable/ic_website"
-                    app:iconSize="24dp"
-                    app:iconGravity="textStart"
-                    app:iconPadding="0dp"
-                    app:strokeColor="?attr/colorOutline"
-                    app:strokeWidth="1dp" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/button_github"
-                    style="@style/EdenButton.Secondary"
-                    android:layout_width="0dp"
-                    android:layout_height="56dp"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    app:icon="@drawable/ic_github"
-                    app:iconSize="24dp"
-                    app:iconGravity="textStart"
-                    app:iconPadding="0dp"
-                    app:strokeColor="?attr/colorOutline"
-                    app:strokeWidth="1dp" />
-
-            </LinearLayout>
+                android:layout_marginTop="7dp"
+                android:gravity="center"
+                android:text="@string/moonwitch_source_description"
+                android:textColor="@color/moonwitch_text_muted"
+                android:textSize="11sp" />
 
         </LinearLayout>
-
     </androidx.core.widget.NestedScrollView>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -4,23 +4,29 @@
     android:id="@+id/coordinator_main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface">
+    android:background="@drawable/moonwitch_background">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appbar_settings"
-        style="@style/Widget.Eden.TransparentTopAppBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
         android:fitsSystemWindows="true"
-        android:touchscreenBlocksFocus="false">
+        app:elevation="0dp">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar_settings"
-            style="@style/Widget.Eden.TransparentTopToolbar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:touchscreenBlocksFocus="false"
-            app:navigationIcon="@drawable/ic_back" />
+            android:layout_height="64dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="6dp"
+            android:background="@drawable/moonwitch_toolbar_surface"
+            android:paddingStart="4dp"
+            android:paddingEnd="8dp"
+            app:navigationIcon="@drawable/ic_back"
+            app:titleTextColor="@color/moonwitch_text" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -29,6 +35,10 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:clipToPadding="false"
+        android:paddingStart="8dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="24dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

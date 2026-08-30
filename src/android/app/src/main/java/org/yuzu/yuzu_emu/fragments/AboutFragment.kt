@@ -22,12 +22,12 @@ import androidx.fragment.app.activityViewModels
 import androidx.navigation.findNavController
 import com.google.android.material.transition.MaterialSharedAxis
 import org.yuzu.yuzu_emu.HomeNavigationDirections
+import org.yuzu.yuzu_emu.NativeLibrary
 import org.yuzu.yuzu_emu.R
 import org.yuzu.yuzu_emu.databinding.FragmentAboutBinding
 import org.yuzu.yuzu_emu.features.settings.ui.SettingsSubscreen
 import org.yuzu.yuzu_emu.model.HomeViewModel
 import org.yuzu.yuzu_emu.utils.ViewUtils.updateMargins
-import org.yuzu.yuzu_emu.NativeLibrary
 
 class AboutFragment : Fragment() {
     private var _binding: FragmentAboutBinding? = null
@@ -54,24 +54,15 @@ class AboutFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         homeViewModel.setStatusBarShadeVisibility(visible = false)
+
         binding.toolbarAbout.setNavigationOnClickListener {
             requireActivity().onBackPressedDispatcher.onBackPressed()
         }
 
-        binding.imageLogo.setOnLongClickListener {
-            Toast.makeText(
-                requireContext(),
-                R.string.gaia_is_not_real,
-                Toast.LENGTH_SHORT
-            ).show()
-            true
+        binding.buttonContributors.setOnClickListener {
+            openLink("https://github.com/VinniGamgee/Moonwitch/graphs/contributors")
         }
 
-        binding.buttonContributors.setOnClickListener {
-            openLink(
-                getString(R.string.contributors_link)
-            )
-        }
         binding.buttonLicenses.setOnClickListener {
             val action = HomeNavigationDirections.actionGlobalSettingsSubscreenActivity(
                 SettingsSubscreen.LICENSES,
@@ -83,14 +74,14 @@ class AboutFragment : Fragment() {
         val buildName = getString(R.string.app_name_suffixed)
         val buildVersion = NativeLibrary.getBuildVersion()
         val fullVersionText = "$buildName ($buildVersion)"
-
         binding.textVersionName.text = fullVersionText
-        binding.buttonVersionName.setOnClickListener {
-            val clipBoard =
-                requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = ClipData.newPlainText(getString(R.string.build), fullVersionText)
-            clipBoard.setPrimaryClip(clip)
 
+        binding.buttonVersionName.setOnClickListener {
+            val clipboard =
+                requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            clipboard.setPrimaryClip(
+                ClipData.newPlainText(getString(R.string.build), fullVersionText)
+            )
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
                 Toast.makeText(
                     requireContext(),
@@ -100,34 +91,32 @@ class AboutFragment : Fragment() {
             }
         }
 
-        binding.buttonDiscord.setOnClickListener { openLink(getString(R.string.discord_link)) }
-        binding.buttonStoat.setOnClickListener { openLink(getString(R.string.stoat_link)) }
-        binding.buttonX.setOnClickListener { openLink(getString(R.string.x_link)) }
-        binding.buttonWebsite.setOnClickListener { openLink(getString(R.string.website_link)) }
-        binding.buttonGithub.setOnClickListener { openLink(getString(R.string.github_link)) }
+        binding.buttonGithub.setOnClickListener {
+            openLink("https://github.com/VinniGamgee/Moonwitch")
+        }
 
         setInsets()
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
     private fun openLink(link: String) {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link))
-        startActivity(intent)
+        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link)))
     }
 
     private fun setInsets() =
-        ViewCompat.setOnApplyWindowInsetsListener(
-            binding.root
-        ) { _: View, windowInsets: WindowInsetsCompat ->
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _: View, windowInsets ->
             val barInsets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
             val cutoutInsets = windowInsets.getInsets(WindowInsetsCompat.Type.displayCutout())
-
             val leftInsets = barInsets.left + cutoutInsets.left
             val rightInsets = barInsets.right + cutoutInsets.right
 
             binding.toolbarAbout.updateMargins(left = leftInsets, right = rightInsets)
             binding.scrollAbout.updateMargins(left = leftInsets, right = rightInsets)
-
-            binding.contentAbout.updatePadding(bottom = barInsets.bottom)
+            binding.contentAbout.updatePadding(bottom = barInsets.bottom + 24)
 
             windowInsets
         }

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="moonwitch_command_center">COMMAND CENTER</string>
+    <string name="moonwitch_library_tools">LIBRARY TOOLS</string>
+    <string name="moonwitch_settings_surface">MOONWITCH // SETTINGS</string>
+    <string name="moonwitch_about_title">MOONWITCH</string>
+    <string name="moonwitch_about_tagline">Performance-first Switch emulation for Android.</string>
+    <string name="moonwitch_about_identity">Built around fast access, per-game control and clear performance feedback.</string>
+    <string name="moonwitch_contributors_title">Project contributors</string>
+    <string name="moonwitch_contributors_description">People building, testing and improving Moonwitch.</string>
+    <string name="moonwitch_licenses_title">Open-source notices</string>
+    <string name="moonwitch_licenses_description">Licenses, attribution and upstream notices used by Moonwitch.</string>
+    <string name="moonwitch_build_title">Current build</string>
+    <string name="moonwitch_source_title">Moonwitch on GitHub</string>
+    <string name="moonwitch_source_description">Source code, development history and project updates.</string>
+</resources>
