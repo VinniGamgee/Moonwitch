@@ -4,13 +4,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface">
+    android:background="@drawable/moonwitch_background">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appbar_home_settings"
         style="@style/Widget.Eden.TransparentTopAppBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
         android:fitsSystemWindows="true"
         android:touchscreenBlocksFocus="false"
         app:layout_constraintEnd_toEndOf="parent"
@@ -24,7 +25,9 @@
             android:layout_height="?attr/actionBarSize"
             android:touchscreenBlocksFocus="false"
             app:navigationIcon="@drawable/ic_back"
-            app:title="@string/preferences_settings" />
+            app:navigationIconTint="@color/moonwitch_cyan"
+            app:title="@string/preferences_settings"
+            app:titleTextColor="@color/moonwitch_text" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -47,8 +50,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingHorizontal="16dp"
-            android:paddingTop="16dp">
+            android:paddingHorizontal="14dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="18dp">
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/home_settings_list"
