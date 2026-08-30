@@ -20,12 +20,12 @@
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/header"
         android:layout_width="0dp"
-        android:layout_height="76dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="12dp"
-        android:layout_marginEnd="16dp"
+        android:layout_height="72dp"
+        android:layout_marginStart="14dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginEnd="14dp"
         app:cardBackgroundColor="@color/moonwitch_panel"
-        app:cardCornerRadius="26dp"
+        app:cardCornerRadius="22dp"
         app:cardElevation="0dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -39,8 +39,8 @@
 
             <ImageView
                 android:id="@+id/brand_mark"
-                android:layout_width="46dp"
-                android:layout_height="46dp"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
                 android:layout_marginStart="14dp"
                 android:contentDescription="@string/app_name"
                 android:src="@drawable/ic_moonwitch_mark"
@@ -52,7 +52,7 @@
                 android:id="@+id/brand_text"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="11dp"
+                android:layout_marginStart="10dp"
                 android:orientation="vertical"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@id/settings_button"
@@ -64,19 +64,19 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="sans-serif-medium"
-                    android:letterSpacing="0.1"
+                    android:letterSpacing="0.08"
                     android:maxLines="1"
                     android:text="@string/app_name"
                     android:textAllCaps="true"
                     android:textColor="@color/moonwitch_text"
-                    android:textSize="19sp" />
+                    android:textSize="18sp" />
 
                 <com.google.android.material.textview.MaterialTextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
+                    android:layout_marginTop="1dp"
                     android:fontFamily="sans-serif-medium"
-                    android:letterSpacing="0.14"
+                    android:letterSpacing="0.16"
                     android:text="@string/moonwitch_command_center"
                     android:textColor="@color/moonwitch_cyan"
                     android:textSize="9sp" />
@@ -84,13 +84,13 @@
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/settings_button"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:layout_marginEnd="14dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginEnd="12dp"
                 android:clickable="true"
                 android:focusable="true"
                 app:cardBackgroundColor="@color/moonwitch_panel_high"
-                app:cardCornerRadius="15dp"
+                app:cardCornerRadius="13dp"
                 app:cardElevation="0dp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -100,8 +100,8 @@
                 app:strokeWidth="1dp">
 
                 <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
+                    android:layout_width="19dp"
+                    android:layout_height="19dp"
                     android:layout_gravity="center"
                     android:src="@drawable/ic_settings"
                     app:tint="@color/moonwitch_red" />
@@ -112,12 +112,12 @@
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/library_tools"
         android:layout_width="0dp"
-        android:layout_height="58dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginEnd="16dp"
+        android:layout_height="52dp"
+        android:layout_marginStart="14dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="14dp"
         app:cardBackgroundColor="@color/moonwitch_panel_soft"
-        app:cardCornerRadius="20dp"
+        app:cardCornerRadius="17dp"
         app:cardElevation="0dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -131,13 +131,13 @@
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/view_button"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
                 android:layout_marginStart="8dp"
                 android:clickable="true"
                 android:focusable="true"
                 app:cardBackgroundColor="@color/moonwitch_panel_high"
-                app:cardCornerRadius="14dp"
+                app:cardCornerRadius="12dp"
                 app:cardElevation="0dp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -147,8 +147,8 @@
                 app:strokeWidth="1dp">
 
                 <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
+                    android:layout_width="17dp"
+                    android:layout_height="17dp"
                     android:layout_gravity="center"
                     android:src="@drawable/ic_eye"
                     app:tint="@color/moonwitch_cyan" />
@@ -156,13 +156,13 @@
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/filter_button"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_marginStart="7dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="6dp"
                 android:clickable="true"
                 android:focusable="true"
                 app:cardBackgroundColor="@color/moonwitch_panel_high"
-                app:cardCornerRadius="14dp"
+                app:cardCornerRadius="12dp"
                 app:cardElevation="0dp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toEndOf="@id/view_button"
@@ -172,8 +172,8 @@
                 app:strokeWidth="1dp">
 
                 <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
+                    android:layout_width="17dp"
+                    android:layout_height="17dp"
                     android:layout_gravity="center"
                     android:src="@drawable/ic_filter"
                     app:tint="@color/moonwitch_text_muted" />
@@ -182,8 +182,8 @@
             <FrameLayout
                 android:id="@+id/frame_search"
                 android:layout_width="0dp"
-                android:layout_height="40dp"
-                android:layout_marginStart="8dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="7dp"
                 android:layout_marginEnd="8dp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -197,7 +197,7 @@
                     android:clickable="true"
                     android:focusable="true"
                     app:cardBackgroundColor="@color/moonwitch_panel_high"
-                    app:cardCornerRadius="14dp"
+                    app:cardCornerRadius="12dp"
                     app:cardElevation="0dp"
                     app:rippleColor="#2035D8FF"
                     app:strokeColor="@color/moonwitch_border"
@@ -207,15 +207,15 @@
                         android:id="@+id/search_container"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginStart="12dp"
-                        android:layout_marginEnd="38dp"
+                        android:layout_marginStart="11dp"
+                        android:layout_marginEnd="36dp"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
                         <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:layout_marginEnd="9dp"
+                            android:layout_width="17dp"
+                            android:layout_height="17dp"
+                            android:layout_marginEnd="8dp"
                             android:src="@drawable/ic_search"
                             app:tint="@color/moonwitch_cyan" />
 
@@ -231,15 +231,15 @@
                             android:maxLines="1"
                             android:textColor="@color/moonwitch_text"
                             android:textColorHint="@color/moonwitch_text_muted"
-                            android:textSize="13sp" />
+                            android:textSize="12sp" />
                     </LinearLayout>
 
                     <ImageView
                         android:id="@+id/clear_button"
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
+                        android:layout_width="17dp"
+                        android:layout_height="17dp"
                         android:layout_gravity="center_vertical|end"
-                        android:layout_marginEnd="12dp"
+                        android:layout_marginEnd="11dp"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:src="@drawable/ic_clear"
                         android:visibility="invisible"
@@ -253,8 +253,8 @@
         android:id="@+id/library_section_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="22dp"
-        android:layout_marginTop="14dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="12dp"
         android:fontFamily="sans-serif-medium"
         android:letterSpacing="0.16"
         android:text="@string/moonwitch_select_game"
@@ -264,9 +264,9 @@
         app:layout_constraintTop_toBottomOf="@id/library_tools" />
 
     <View
-        android:layout_width="52dp"
+        android:layout_width="48dp"
         android:layout_height="2dp"
-        android:layout_marginEnd="22dp"
+        android:layout_marginEnd="20dp"
         android:background="@drawable/moonwitch_accent_line"
         app:layout_constraintBottom_toBottomOf="@id/library_section_label"
         app:layout_constraintEnd_toEndOf="parent"
@@ -276,8 +276,8 @@
         android:id="@+id/swipe_refresh"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="6dp"
-        android:layout_marginBottom="8dp"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="6dp"
         app:layout_constraintBottom_toTopOf="@id/bottom_dock"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -305,8 +305,8 @@
                 android:layout_height="match_parent"
                 android:clipToPadding="false"
                 android:fadeScrollbars="true"
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="6dp"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="4dp"
                 android:scrollbarStyle="outsideOverlay"
                 android:scrollbars="vertical" />
         </RelativeLayout>
@@ -315,17 +315,17 @@
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/bottom_dock"
         android:layout_width="0dp"
-        android:layout_height="70dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="12dp"
-        app:cardBackgroundColor="@color/moonwitch_panel"
-        app:cardCornerRadius="24dp"
+        android:layout_height="54dp"
+        android:layout_marginStart="14dp"
+        android:layout_marginEnd="14dp"
+        android:layout_marginBottom="10dp"
+        app:cardBackgroundColor="@color/moonwitch_panel_soft"
+        app:cardCornerRadius="18dp"
         app:cardElevation="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:strokeColor="@color/moonwitch_border"
+        app:strokeColor="@color/moonwitch_border_soft"
         app:strokeWidth="1dp">
 
         <LinearLayout
@@ -333,33 +333,37 @@
             android:layout_height="match_parent"
             android:gravity="center"
             android:orientation="horizontal"
-            android:padding="7dp">
+            android:padding="5dp">
 
             <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
                 android:id="@+id/launch_qlaunch"
                 android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_marginEnd="4dp"
+                android:layout_height="44dp"
+                android:layout_weight="0.78"
+                android:layout_marginEnd="3dp"
                 android:contentDescription="@string/moonwitch_system_menu"
                 android:text="@string/moonwitch_system_menu"
                 android:textColor="@android:color/white"
+                android:textSize="11sp"
                 app:backgroundTint="@color/moonwitch_red"
                 app:icon="@drawable/ic_home"
+                app:iconSize="17dp"
                 app:iconTint="@android:color/white"
                 app:rippleColor="#55FFFFFF" />
 
             <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
                 android:id="@+id/add_directory"
                 android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_marginStart="4dp"
+                android:layout_height="44dp"
+                android:layout_weight="1.22"
+                android:layout_marginStart="3dp"
                 android:contentDescription="@string/moonwitch_manage_library"
                 android:text="@string/moonwitch_manage_library"
                 android:textColor="#041018"
+                android:textSize="11sp"
                 app:backgroundTint="@color/moonwitch_cyan"
                 app:icon="@drawable/ic_cartridge_outline"
+                app:iconSize="17dp"
                 app:iconTint="#041018"
                 app:rippleColor="#55FFFFFF" />
         </LinearLayout>
