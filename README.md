@@ -9,82 +9,43 @@
 
 <h1 align="center">
   <br>
-  <a href="https://git.eden-emu.dev/eden-emu/eden"><img src="./dist/qt_themes/default/icons/256x256/eden.png" alt="Eden" width="200"></a>
-  <br>
-  <b>Eden</b>
+  <b>Moonwitch</b>
   <br>
 </h1>
 
-<h4 align="center"><b>Eden</b> is a free and opensource (FOSS) Switch 1 emulator started by developer Camille LaVey.
-<br>
-Written in C++, with builds for Windows, Linux, macOS, Android, FreeBSD and more.
+<h4 align="center">
+A performance-focused Nintendo Switch emulator with its own Android-first interface, features and project identity.
 </h4>
 
 <p align="center">
-    </a>
-    <a href="https://discord.gg/HstXbPch7X">
-        <img src="https://img.shields.io/discord/1367654015269339267?color=5865F2&label=Eden&logo=discord&logoColor=white"
-            alt="Discord">
-    </a>
-    <a href="https://stt.gg/qKgFEAbH">
-        <img src="https://img.shields.io/revolt/invite/qKgFEAbH?color=d61f3a&label=Stoat"
-            alt="Stoat">
-    </a>
-</p>
-
-<p align="center">
-  <a href="#compatibility">Compatibility</a> |
+  <a href="#moonwitch">Moonwitch</a> |
   <a href="#development">Development</a> |
   <a href="#building">Building</a> |
-  <a href="#download">Download</a> |
-  <a href="#support">Support</a> |
-  <a href="#license">License</a>
+  <a href="#project-history-and-licenses">Licenses</a>
 </p>
 
-## Compatibility
+## Moonwitch
 
-The emulator is capable of running most commercial games at full speed, provided you meet the necessary hardware requirements.
+Moonwitch is an independent emulator project focused on a fast, stable and practical mobile experience. Its Android interface, performance features, presets and product direction are developed under the Moonwitch identity.
 
-A list of supported games will be available in future. Please be patient.
+The project is under active development, so behaviour and compatibility can change between preview builds.
 
-Check out our [website](https://eden-emu.dev) for the latest news on exciting features, monthly progress reports, and more!
+## Development
 
-[![Packaging status](https://repology.org/badge/vertical-allrepos/eden-emulator.svg)](https://repology.org/project/eden-emulator/versions)
+Testing, bug reports and code contributions are welcome. Development builds are produced directly from this repository.
 
-## Contribute
-
-To contribute to Eden; be it financially, code, bug reports, or otherwise, see our [Contributing guidelines](./CONTRIBUTING.md).
-
-## Documentation
-
-We have a user manual! See our [User Handbook](./docs/user/README.md).
+User documentation is available in the [User Handbook](./docs/user/README.md).
 
 ## Building
 
-See the [General Build Guide](docs/Build.md)
+See the [General Build Guide](./docs/Build.md).
 
-For information on provided development tooling, see the [Tools directory](./tools)
+For development tooling included in the source tree, see the [Tools directory](./tools).
 
-## Download
+## Project history and licenses
 
-You can download the latest releases from [our release page](https://git.eden-emu.dev/eden-emu/eden/releases).
+Moonwitch contains open-source code inherited through earlier Nintendo Switch emulator projects. Copyright notices, SPDX headers, license files and attribution required by those projects are retained in the source tree as required by their licenses.
 
-Save us some bandwidth! We have [mirrors available](./docs/user/ThirdParty.md#mirrors) as well.
+Those notices describe code provenance and licensing; they do not represent Moonwitch's product branding or project identity.
 
-## License
-
-Eden is licensed under the GPLv3 (or any later version). Refer to the [LICENSE.txt](https://git.eden-emu.dev/eden-emu/eden/src/branch/master/LICENSE.txt) file.
-
-## Special thanks
-
-Super special thanks to Cloudflare for preventing the git server from blowing up.
-
-- Yuzu
-- Ryujinx
-- Sudachi
-- Citron
-- Torzu
-- Suyu
-- Ryubing
-
-And everyone who continues or had contributed to the project! <3
+See [LICENSE.txt](./LICENSE.txt) and the copyright/SPDX notices in the source tree for the applicable terms.
