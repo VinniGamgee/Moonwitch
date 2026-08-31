@@ -596,6 +596,44 @@ void RasterizerVulkan::DispatchCompute() {
         return;
     }
 
+    // Moonwitch: Tears of the Kingdom can lose compute-produced foliage data on Android
+    // while the guest-side objects remain alive. Keep this workaround title-specific so
+    // other games retain the normal, cheaper synchronization path.
+#ifdef __ANDROID__
+    static constexpr u64 TOTK_PROGRAM_ID = 0x0100F2C0115B6000ULL;
+    const bool apply_totk_compute_visibility_workaround = program_id == TOTK_PROGRAM_ID;
+#else
+    const bool apply_totk_compute_visibility_workaround = false;
+#endif
+    const auto record_totk_compute_visibility_barrier =
+        [this, apply_totk_compute_visibility_workaround] {
+            if (!apply_totk_compute_visibility_workaround) {
+                return;
+            }
+            scheduler.Record([](vk::CommandBuffer cmdbuf) {
+                static constexpr VkMemoryBarrier visibility_barrier{
+                    .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+                    .pNext = nullptr,
+                    .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_MEMORY_WRITE_BIT,
+                    .dstAccessMask = VK_ACCESS_INDIRECT_COMMAND_READ_BIT |
+                                     VK_ACCESS_INDEX_READ_BIT |
+                                     VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT |
+                                     VK_ACCESS_UNIFORM_READ_BIT | VK_ACCESS_SHADER_READ_BIT |
+                                     VK_ACCESS_MEMORY_READ_BIT,
+                };
+                static constexpr VkPipelineStageFlags destination_stages =
+                    VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT | VK_PIPELINE_STAGE_VERTEX_INPUT_BIT |
+                    VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
+                    VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
+                    VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT |
+                    VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT |
+                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+                cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, destination_stages,
+                                       0, visibility_barrier);
+            });
+        };
+
     const auto& qmd{kepler_compute->launch_description};
     auto indirect_address = kepler_compute->GetIndirectComputeAddress();
     if (indirect_address) {
@@ -612,6 +650,7 @@ void RasterizerVulkan::DispatchCompute() {
             }
             cmdbuf.DispatchIndirect(indirect_buffer, indirect_offset);
         });
+        record_totk_compute_visibility_barrier();
         return;
     }
     const std::array<u32, 3> dim{qmd.grid_dim_x, qmd.grid_dim_y, qmd.grid_dim_z};
@@ -634,6 +673,7 @@ void RasterizerVulkan::DispatchCompute() {
         }
         cmdbuf.Dispatch(dim[0], dim[1], dim[2]);
     });
+    record_totk_compute_visibility_barrier();
 
     // Log compute dispatch
     if (GPU::Logging::IsActive() &&
