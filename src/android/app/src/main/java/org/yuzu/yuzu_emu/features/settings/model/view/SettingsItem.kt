@@ -654,6 +654,15 @@ abstract class SettingsItem(
             )
             put(
                 SingleChoiceSetting(
+                    IntSetting.FRAME_PACING_MODE,
+                    titleId = R.string.mw_frame_pacing_mode,
+                    descriptionId = R.string.mw_frame_pacing_mode_desc,
+                    choicesId = R.array.framePacingModeNames,
+                    valuesId = R.array.framePacingModeValues
+                )
+            )
+            put(
+                SingleChoiceSetting(
                     IntSetting.RENDERER_ANTI_ALIASING,
                     titleId = R.string.renderer_anti_aliasing,
                     choicesId = R.array.rendererAntiAliasingNames,

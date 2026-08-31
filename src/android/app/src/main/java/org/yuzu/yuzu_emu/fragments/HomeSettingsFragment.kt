@@ -31,6 +31,7 @@ class HomeSettingsFragment : Fragment() {
     private val binding get() = _binding!!
     private val homeViewModel: HomeViewModel by activityViewModels()
     private lateinit var options: List<HomeSetting>
+    private lateinit var performanceOptions: List<HomeSetting>
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentHomeSettingsBinding.inflate(inflater)
@@ -42,13 +43,21 @@ class HomeSettingsFragment : Fragment() {
         homeViewModel.setStatusBarShadeVisibility(false)
 
         options = buildCategories()
+        performanceOptions = buildPerformanceOptions()
         binding.homeSettingsList.apply {
             layoutManager = GridLayoutManager(requireContext(), 2)
             isNestedScrollingEnabled = false
             val spacing = resources.getDimensionPixelSize(R.dimen.spacing_small)
             addItemDecoration(SpacingItemDecoration(spacing))
         }
+        binding.performanceSettingsList.apply {
+            layoutManager = GridLayoutManager(requireContext(), 1)
+            isNestedScrollingEnabled = false
+            val spacing = resources.getDimensionPixelSize(R.dimen.spacing_small)
+            addItemDecoration(SpacingItemDecoration(spacing))
+        }
         renderOptions(options)
+        renderPerformanceOptions(performanceOptions)
 
         binding.settingsSearchText.doOnTextChanged { text, _, _, _ ->
             val query = text?.toString()?.trim().orEmpty()
@@ -56,14 +65,17 @@ class HomeSettingsFragment : Fragment() {
                 getString(it.titleId).contains(query, ignoreCase = true) ||
                     getString(it.descriptionId).contains(query, ignoreCase = true)
             }
+            val filteredPerformance = if (query.isEmpty()) performanceOptions else performanceOptions.filter {
+                getString(it.titleId).contains(query, ignoreCase = true) ||
+                    getString(it.descriptionId).contains(query, ignoreCase = true)
+            }
             renderOptions(filtered)
+            renderPerformanceOptions(filteredPerformance)
         }
 
         binding.settingsShortcutCard.setOnClickListener { openSettings(Settings.MenuTag.SECTION_ROOT) }
-        binding.performanceCard.setOnClickListener { openSettings(Settings.MenuTag.SECTION_PERFORMANCE_STATS) }
         binding.helpCard.setOnClickListener {
-            val action = HomeNavigationDirections.actionGlobalSettingsSubscreenActivity(SettingsSubscreen.ABOUT, null)
-            binding.root.findNavController().navigate(action)
+            openSubscreen(SettingsSubscreen.ABOUT)
         }
 
         setInsets()
@@ -74,7 +86,7 @@ class HomeSettingsFragment : Fragment() {
             R.string.mw_cat_general,
             R.string.mw_cat_general_desc,
             R.drawable.ic_settings,
-            onClick = { openSettings(Settings.MenuTag.SECTION_ROOT) }
+            onClick = { openSettings(Settings.MenuTag.SECTION_GENERAL) }
         ),
         HomeSetting(
             R.string.mw_cat_graphics,
@@ -119,7 +131,58 @@ class HomeSettingsFragment : Fragment() {
             R.string.mw_cat_lab,
             R.string.mw_cat_lab_desc,
             R.drawable.ic_mw_gauge,
+            onClick = { openSettings(Settings.MenuTag.SECTION_MOONWITCH_PERFORMANCE) }
+        )
+    )
+
+    private fun buildPerformanceOptions(): List<HomeSetting> = listOf(
+        HomeSetting(
+            R.string.mw_safs,
+            R.string.mw_safs_desc,
+            R.drawable.ic_mw_gauge,
+            onClick = { openSettings(Settings.MenuTag.SECTION_SAFS) }
+        ),
+        HomeSetting(
+            R.string.mw_frame_pacing,
+            R.string.mw_frame_pacing_desc,
+            R.drawable.ic_frames,
+            onClick = { openSettings(Settings.MenuTag.SECTION_FRAME_PACING) }
+        ),
+        HomeSetting(
+            R.string.mw_frame_generation,
+            R.string.mw_frame_generation_desc,
+            R.drawable.ic_graphics,
+            onClick = { openSettings(Settings.MenuTag.SECTION_FRAME_GEN) }
+        ),
+        HomeSetting(
+            R.string.mw_adpf_diagnostics,
+            R.string.mw_adpf_diagnostics_desc,
+            R.drawable.ic_info_outline,
+            onClick = { openSettings(Settings.MenuTag.SECTION_ADPF) }
+        ),
+        HomeSetting(
+            R.string.mw_gpu_drivers,
+            R.string.mw_gpu_drivers_desc,
+            R.drawable.ic_mw_system,
+            onClick = { openSubscreen(SettingsSubscreen.DRIVER_MANAGER) }
+        ),
+        HomeSetting(
+            R.string.mw_freedreno,
+            R.string.mw_freedreno_desc,
+            R.drawable.ic_code,
+            onClick = { openSubscreen(SettingsSubscreen.FREEDRENO_SETTINGS) }
+        ),
+        HomeSetting(
+            R.string.mw_performance_monitor,
+            R.string.mw_performance_monitor_desc,
+            R.drawable.ic_mw_gauge,
             onClick = { openSettings(Settings.MenuTag.SECTION_PERFORMANCE_STATS) }
+        ),
+        HomeSetting(
+            R.string.mw_lossless_scaling,
+            R.string.mw_lossless_scaling_desc,
+            R.drawable.ic_install,
+            onClick = { openSubscreen(SettingsSubscreen.LOSSLESS_MANAGER) }
         )
     )
 
@@ -131,8 +194,21 @@ class HomeSettingsFragment : Fragment() {
         )
     }
 
+    private fun renderPerformanceOptions(items: List<HomeSetting>) {
+        binding.performanceSettingsList.adapter = HomeSettingAdapter(
+            requireActivity() as AppCompatActivity,
+            viewLifecycleOwner,
+            items
+        )
+    }
+
     private fun openSettings(menuTag: Settings.MenuTag) {
         val action = HomeNavigationDirections.actionGlobalSettingsActivity(null, menuTag)
+        binding.root.findNavController().navigate(action)
+    }
+
+    private fun openSubscreen(destination: SettingsSubscreen) {
+        val action = HomeNavigationDirections.actionGlobalSettingsSubscreenActivity(destination, null)
         binding.root.findNavController().navigate(action)
     }
 

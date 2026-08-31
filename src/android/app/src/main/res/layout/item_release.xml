@@ -5,8 +5,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/item_release_box"
-    android:padding="8dp"
+    android:layout_marginTop="4dp"
+    android:layout_marginBottom="4dp"
+    android:background="@drawable/moonwitch_setting_item_selector"
+    android:padding="10dp"
     android:paddingStart="12dp"
     tools:ignore="RtlSymmetry">
 
@@ -16,6 +18,7 @@
         android:layout_height="wrap_content"
         android:textSize="16sp"
         android:textStyle="bold"
+        android:textColor="@color/moonwitch_text"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -24,7 +27,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/latest"
-        android:textColor="?attr/colorPrimary"
+        android:textColor="@color/moonwitch_cyan"
         android:textSize="14sp"
         android:background="@drawable/item_release_latest_badge_background"
         app:layout_constraintStart_toEndOf="@id/text_release_name"
@@ -41,6 +44,7 @@
         android:ellipsize="end"
         android:maxLines="3"
         android:textSize="14sp"
+        android:textColor="@color/moonwitch_text_muted"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/text_release_name" />
@@ -52,6 +56,7 @@
         android:text="@string/show_downloads"
         android:textStyle="bold"
         android:textSize="16sp"
+        android:textColor="@color/moonwitch_cyan"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/text_body"
         android:layout_marginTop="8dp"
@@ -67,7 +72,7 @@
         app:layout_constraintBottom_toBottomOf="@id/button_toggle_downloads"
         app:layout_constraintStart_toEndOf="@id/button_toggle_downloads"
         app:layout_constraintTop_toTopOf="@id/button_toggle_downloads"
-        app:tint="?attr/colorControlNormal" />
+        app:tint="@color/moonwitch_cyan" />
 
     <LinearLayout
         android:id="@+id/container_downloads"

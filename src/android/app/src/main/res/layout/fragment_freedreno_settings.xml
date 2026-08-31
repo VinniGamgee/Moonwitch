@@ -4,23 +4,31 @@
     android:id="@+id/coordinator_main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface">
+    android:background="@drawable/moonwitch_background">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appbar_freedreno"
-        style="@style/Widget.Eden.TransparentTopAppBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
         android:fitsSystemWindows="true"
         android:touchscreenBlocksFocus="false">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar_freedreno"
-            style="@style/Widget.Eden.TransparentTopToolbar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
+            android:layout_height="64dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="6dp"
+            android:background="@drawable/moonwitch_toolbar_surface"
+            android:paddingStart="4dp"
+            android:paddingEnd="8dp"
             android:touchscreenBlocksFocus="false"
-            app:navigationIcon="@drawable/ic_back" />
+            app:navigationIcon="@drawable/ic_back"
+            app:titleTextColor="@color/moonwitch_text"
+            app:subtitleTextColor="@color/moonwitch_text_muted" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -46,7 +54,10 @@
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="8dp"
                 android:text="@string/freedreno_presets"
-                android:textAppearance="?attr/textAppearanceTitleMedium" />
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.12"
+                android:textColor="@color/moonwitch_cyan"
+                android:textSize="10sp" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/list_freedreno_presets"
@@ -67,7 +78,10 @@
                 android:layout_marginTop="24dp"
                 android:layout_marginBottom="8dp"
                 android:text="@string/freedreno_current_settings"
-                android:textAppearance="?attr/textAppearanceTitleMedium" />
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.12"
+                android:textColor="@color/moonwitch_cyan"
+                android:textSize="10sp" />
 
             <!-- Settings List -->
             <androidx.recyclerview.widget.RecyclerView
@@ -84,7 +98,10 @@
                 android:layout_marginTop="24dp"
                 android:layout_marginBottom="8dp"
                 android:text="@string/freedreno_debug"
-                android:textAppearance="?attr/textAppearanceTitleMedium" />
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.12"
+                android:textColor="@color/moonwitch_cyan"
+                android:textSize="10sp" />
 
             <!-- Manual Variable Input -->
             <com.google.android.material.textfield.TextInputLayout
@@ -92,13 +109,17 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
-                android:hint="@string/freedreno_var_name">
+                android:hint="@string/freedreno_var_name"
+                app:boxBackgroundColor="@color/moonwitch_panel_soft"
+                app:boxStrokeColor="@color/moonwitch_cyan"
+                app:hintTextColor="@color/moonwitch_text_muted">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/variable_name_input"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="text" />
+                    android:inputType="text"
+                    android:textColor="@color/moonwitch_text" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -107,22 +128,29 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
-                android:hint="@string/freedreno_var_value">
+                android:hint="@string/freedreno_var_value"
+                app:boxBackgroundColor="@color/moonwitch_panel_soft"
+                app:boxStrokeColor="@color/moonwitch_cyan"
+                app:hintTextColor="@color/moonwitch_text_muted">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/variable_value_input"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="text" />
+                    android:inputType="text"
+                    android:textColor="@color/moonwitch_text" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/button_add_variable"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
-                android:text="@string/freedreno_add_variable" />
+                android:text="@string/freedreno_add_variable"
+                android:textColor="#041018"
+                app:backgroundTint="@color/moonwitch_cyan"
+                app:cornerRadius="14dp" />
 
             <!-- Action Buttons -->
             <LinearLayout
@@ -131,22 +159,29 @@
                 android:layout_marginTop="16dp"
                 android:orientation="horizontal">
 
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/button_clear_all"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"
                     android:layout_weight="1"
-                    style="?attr/materialButtonOutlinedStyle"
-                    android:text="@string/freedreno_clear_all" />
+                    android:text="@string/freedreno_clear_all"
+                    android:textColor="@color/moonwitch_red"
+                    app:backgroundTint="@color/moonwitch_panel_high"
+                    app:cornerRadius="14dp"
+                    app:strokeColor="@color/moonwitch_red"
+                    app:strokeWidth="1dp" />
 
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/button_save"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
                     android:layout_weight="1"
-                    android:text="@string/save" />
+                    android:text="@string/save"
+                    android:textColor="#041018"
+                    app:backgroundTint="@color/moonwitch_cyan"
+                    app:cornerRadius="14dp" />
 
             </LinearLayout>
 
@@ -155,10 +190,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                app:cardBackgroundColor="@android:color/transparent"
+                app:cardBackgroundColor="@color/moonwitch_panel_soft"
+                app:cardCornerRadius="16dp"
                 app:cardElevation="0dp"
                 app:strokeWidth="1dp"
-                app:strokeColor="?attr/colorOutline">
+                app:strokeColor="@color/moonwitch_border_soft">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -170,15 +206,17 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/freedreno_info_title"
-                        android:textAppearance="?attr/textAppearanceTitleSmall" />
+                        android:fontFamily="sans-serif-medium"
+                        android:textColor="@color/moonwitch_text"
+                        android:textSize="13sp" />
 
                     <com.google.android.material.textview.MaterialTextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:text="@string/freedreno_info_description"
-                        android:textAppearance="?attr/textAppearanceBodySmall"
-                        android:textColor="?attr/colorOnSurfaceVariant" />
+                        android:textColor="@color/moonwitch_text_muted"
+                        android:textSize="11sp" />
 
                 </LinearLayout>
 

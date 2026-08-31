@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="mw_home">INÍCIO</string>
+    <string name="mw_game_frontend">GAME FRONTEND</string>
+    <string name="mw_all_games">TODOS OS JOGOS</string>
+    <string name="mw_choose_game">ESCOLHA UM JOGO</string>
     <string name="mw_settings">CONFIGURAÇÕES</string>
     <string name="mw_search_games">Procurar jogos</string>
-    <string name="mw_search_settings">Buscar configurações</string>
+    <string name="mw_search_settings">Buscar categorias e recursos</string>
     <string name="mw_recent">Recentes</string>
     <string name="mw_favorites">Favoritos</string>
     <string name="mw_performance">Desempenho</string>
@@ -16,6 +19,7 @@
     <string name="mw_add_games">Adicionar jogos</string>
     <string name="mw_explore_folder">Explorar pasta</string>
     <string name="mw_categories">CATEGORIAS</string>
+    <string name="mw_main_settings">CONFIGURAÇÕES PRINCIPAIS</string>
     <string name="mw_performance_highlight">DESTAQUE: DESEMPENHO</string>
     <string name="mw_performance_features">Recursos de desempenho</string>
     <string name="mw_performance_features_desc">Ajustes e diagnósticos em um só lugar.</string>
@@ -24,7 +28,7 @@
     <string name="mw_help_center">Central de ajuda</string>
     <string name="mw_help_center_desc">Informações, créditos e diagnóstico</string>
     <string name="mw_cat_general">Geral</string>
-    <string name="mw_cat_general_desc">Idioma, região, atualizações e comportamento geral</string>
+    <string name="mw_cat_general_desc">Idioma, região, relógio e nome do dispositivo</string>
     <string name="mw_cat_graphics">Gráficos</string>
     <string name="mw_cat_graphics_desc">Resolução, renderização, shaders e efeitos</string>
     <string name="mw_cat_audio">Áudio</string>
@@ -32,11 +36,51 @@
     <string name="mw_cat_controls">Controles</string>
     <string name="mw_cat_controls_desc">Mapeamentos, perfis e vibração</string>
     <string name="mw_cat_system">Sistema</string>
-    <string name="mw_cat_system_desc">CPU, GPU, drivers e compatibilidade</string>
+    <string name="mw_cat_system_desc">CPU, relógios, memória e compatibilidade</string>
     <string name="mw_cat_interface">Interface</string>
     <string name="mw_cat_interface_desc">Temas, layout, navegação e aparência</string>
     <string name="mw_cat_library">Biblioteca</string>
-    <string name="mw_cat_library_desc">Pastas, gerenciamento e conteúdo instalado</string>
+    <string name="mw_cat_library_desc">Pastas monitoradas e organização da biblioteca</string>
     <string name="mw_cat_lab">Desempenho Lab</string>
-    <string name="mw_cat_lab_desc">Métricas, otimizações e recursos avançados</string>
+    <string name="mw_cat_lab_desc">Pacing, SAFS, Frame Generation e telemetria real</string>
+
+    <string name="mw_performance_center">Centro de desempenho</string>
+    <string name="mw_performance_center_desc">Cada item abre diretamente o recurso correspondente.</string>
+    <string name="mw_information">INFORMAÇÕES</string>
+    <string name="mw_about">Sobre o Moonwitch</string>
+    <string name="mw_about_desc">Versão, colaboradores e licenças de código aberto</string>
+
+    <string name="mw_safs">Smart Adaptive Frame Skip</string>
+    <string name="mw_safs_desc">Ativar ou desativar o descarte conservador de composição atrasada</string>
+    <string name="mw_frame_pacing">Frame Pacing</string>
+    <string name="mw_frame_pacing_desc">Selecionar alvo automático, 30, 60, 90 ou 120 FPS</string>
+    <string name="mw_frame_generation">Frame Generation</string>
+    <string name="mw_frame_generation_desc">Interpolação, alvo, multiplicador, fila e precisão FP16</string>
+    <string name="mw_adpf_diagnostics">ADPF e diagnóstico</string>
+    <string name="mw_adpf_diagnostics_desc">Consultar o estado nativo e ativar as ferramentas de telemetria</string>
+    <string name="mw_gpu_drivers">Drivers de GPU</string>
+    <string name="mw_gpu_drivers_desc">Instalar, buscar, selecionar ou remover drivers personalizados</string>
+    <string name="mw_freedreno">Freedreno / Turnip</string>
+    <string name="mw_freedreno_desc">Aplicar presets e editar variáveis reais do driver</string>
+    <string name="mw_performance_monitor">Monitor de desempenho</string>
+    <string name="mw_performance_monitor_desc">FPS, frametime, memória, temperatura e métricas do Moonwitch Lab</string>
+    <string name="mw_lossless_scaling">Lossless Scaling</string>
+    <string name="mw_lossless_scaling_desc">Instalar ou substituir a biblioteca exigida pelo Frame Generation</string>
+
+    <string name="mw_pacing_and_latency">PACING E LATÊNCIA</string>
+    <string name="mw_telemetry_and_tuning">TELEMETRIA E AJUSTE</string>
+    <string name="mw_performance_management">DRIVERS E COMPONENTES</string>
+    <string name="mw_safs_behavior">COMPORTAMENTO DO SAFS</string>
+    <string name="mw_frame_pacing_target">ALVO DE APRESENTAÇÃO</string>
+    <string name="mw_frame_pacing_mode">Modo de Frame Pacing</string>
+    <string name="mw_frame_pacing_mode_desc">Define o alvo usado pelo controlador adaptativo Vulkan. Automático acompanha a cadência detectada.</string>
+    <string name="mw_frame_pacing_auto">Automático</string>
+    <string name="mw_live_diagnostics">DIAGNÓSTICO AO VIVO</string>
+    <string name="mw_refresh_adpf">Atualizar telemetria ADPF</string>
+    <string name="mw_adpf_no_session">Nenhum jogo está em execução. Abra esta tela durante uma sessão para ler a telemetria nativa.</string>
+    <string name="mw_adpf_unavailable">O ADPF não está disponível nesta sessão ou neste dispositivo.</string>
+    <string name="mw_adpf_live_status">Render: %1$s • %2$d threads • %3$d relatórios • alvo %4$.2f ms • atual %5$.2f ms</string>
+    <string name="mw_active">ativo</string>
+    <string name="mw_inactive">inativo</string>
+    <string name="mw_diagnostic_tools">FERRAMENTAS DE DIAGNÓSTICO</string>
 </resources>

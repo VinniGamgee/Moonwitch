@@ -32,7 +32,6 @@ import org.yuzu.yuzu_emu.databinding.CardGameCarouselBinding
 import org.yuzu.yuzu_emu.databinding.CardGameGridBinding
 import org.yuzu.yuzu_emu.databinding.CardGameGridCompactBinding
 import org.yuzu.yuzu_emu.databinding.CardGameListBinding
-import org.yuzu.yuzu_emu.databinding.CardGameRecentBinding
 import org.yuzu.yuzu_emu.model.Game
 import org.yuzu.yuzu_emu.model.GamesViewModel
 import org.yuzu.yuzu_emu.utils.GameIconUtils
@@ -47,7 +46,6 @@ class GameAdapter(private val activity: AppCompatActivity) :
         const val VIEW_TYPE_GRID_COMPACT = 1
         const val VIEW_TYPE_LIST = 2
         const val VIEW_TYPE_CAROUSEL = 3
-        const val VIEW_TYPE_RECENT = 4
     }
 
     private var viewType = VIEW_TYPE_GRID
@@ -101,12 +99,6 @@ class GameAdapter(private val activity: AppCompatActivity) :
                 b.cardGameCarousel.scaleY = 0f
                 b.cardGameCarousel.alpha = 0f
             }
-            VIEW_TYPE_RECENT -> {
-                val b = holder.binding as CardGameRecentBinding
-                b.cardGameRecent.scaleX = 1f
-                b.cardGameRecent.scaleY = 1f
-                b.cardGameRecent.alpha = 1f
-            }
         }
     }
 
@@ -116,7 +108,6 @@ class GameAdapter(private val activity: AppCompatActivity) :
             VIEW_TYPE_GRID -> CardGameGridBinding.inflate(LayoutInflater.from(parent.context), parent, false)
             VIEW_TYPE_GRID_COMPACT -> CardGameGridCompactBinding.inflate(LayoutInflater.from(parent.context), parent, false)
             VIEW_TYPE_CAROUSEL -> CardGameCarouselBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-            VIEW_TYPE_RECENT -> CardGameRecentBinding.inflate(LayoutInflater.from(parent.context), parent, false)
             else -> throw IllegalArgumentException("Invalid view type")
         }
         return GameViewHolder(binding, viewType)
@@ -133,7 +124,6 @@ class GameAdapter(private val activity: AppCompatActivity) :
                 VIEW_TYPE_GRID -> bindGridView(model)
                 VIEW_TYPE_CAROUSEL -> bindCarouselView(model)
                 VIEW_TYPE_GRID_COMPACT -> bindGridCompactView(model)
-                VIEW_TYPE_RECENT -> bindRecentView(model)
             }
         }
 
@@ -158,19 +148,6 @@ class GameAdapter(private val activity: AppCompatActivity) :
             b.cardGameGrid.setOnClickListener { onClick(model) }
             b.cardGameGrid.setOnLongClickListener { onLongClick(model) }
             b.moreButton.setOnClickListener { onLongClick(model) }
-
-            val prefs = PreferenceManager.getDefaultSharedPreferences(YuzuApplication.appContext)
-            fun updateFavorite() {
-                b.favoriteIcon.setImageResource(
-                    if (prefs.getBoolean(model.keyFavorite, false)) R.drawable.ic_mw_star_filled
-                    else R.drawable.ic_mw_star
-                )
-            }
-            updateFavorite()
-            b.favoriteButton.setOnClickListener {
-                prefs.edit { putBoolean(model.keyFavorite, !prefs.getBoolean(model.keyFavorite, false)) }
-                updateFavorite()
-            }
 
             b.root.layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT
             b.root.layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
@@ -198,30 +175,6 @@ class GameAdapter(private val activity: AppCompatActivity) :
             b.cardGameCarousel.setOnLongClickListener { onLongClick(model) }
             b.imageGameScreen.contentDescription = binding.root.context.getString(R.string.game_image_desc, model.title)
             b.root.layoutParams.width = cardSize
-        }
-
-        private fun bindRecentView(model: Game) {
-            val b = binding as CardGameRecentBinding
-            b.imageGameScreen.scaleType = ImageView.ScaleType.CENTER_CROP
-            GameIconUtils.loadGameIcon(model, b.imageGameScreen)
-            b.textGameTitle.text = model.title.replace("[\\t\\n\\r]+".toRegex(), " ")
-            b.recentTime.text = recentText(model)
-            b.cardGameRecent.setOnClickListener { onClick(model) }
-            b.cardGameRecent.setOnLongClickListener { onLongClick(model) }
-            b.moreButton.setOnClickListener { onLongClick(model) }
-        }
-
-        private fun recentText(model: Game): String {
-            val prefs = PreferenceManager.getDefaultSharedPreferences(YuzuApplication.appContext)
-            val last = prefs.getLong(model.keyLastPlayedTime, 0L)
-            if (last <= 0L) return "Recente"
-            val minutes = ((System.currentTimeMillis() - last).coerceAtLeast(0L) / 60000L)
-            return when {
-                minutes < 5 -> "Agora há pouco"
-                minutes < 60 -> "Há ${minutes} min"
-                minutes < 1440 -> "Há ${minutes / 60} h"
-                else -> "Há ${minutes / 1440} dias"
-            }
         }
 
         fun onClick(game: Game) {

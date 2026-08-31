@@ -5,9 +5,6 @@
             android:title="@string/alphabetical"
             android:checked="true"/>
         <item
-            android:id="@+id/filter_recently_played"
-            android:title="@string/search_recently_played" />
-        <item
             android:id="@+id/filter_recently_added"
             android:title="@string/search_recently_added" />
     </group>

@@ -4,6 +4,7 @@
 package org.yuzu.yuzu_emu.features.settings.ui
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.os.Build
 import android.widget.Toast
 import org.yuzu.yuzu_emu.NativeLibrary
@@ -31,6 +32,7 @@ import org.yuzu.yuzu_emu.utils.LosslessScalingHelper
 import org.yuzu.yuzu_emu.utils.NativeConfig
 import org.yuzu.yuzu_emu.utils.DirectoryInitialization
 import org.yuzu.yuzu_emu.utils.FullscreenHelper
+import org.yuzu.yuzu_emu.utils.PerformanceLabNative
 import androidx.core.content.edit
 import androidx.fragment.app.FragmentActivity
 import org.yuzu.yuzu_emu.fragments.MessageDialogFragment
@@ -159,8 +161,13 @@ class SettingsFragmentPresenter(
         val sl = ArrayList<SettingsItem>()
         when (menuTag) {
             MenuTag.SECTION_ROOT -> addConfigSettings(sl)
+            MenuTag.SECTION_GENERAL -> addGeneralSettings(sl)
             MenuTag.SECTION_SYSTEM -> addSystemSettings(sl)
             MenuTag.SECTION_RENDERER -> addGraphicsSettings(sl)
+            MenuTag.SECTION_MOONWITCH_PERFORMANCE -> addMoonwitchPerformanceSettings(sl)
+            MenuTag.SECTION_SAFS -> addSafsSettings(sl)
+            MenuTag.SECTION_FRAME_PACING -> addFramePacingSettings(sl)
+            MenuTag.SECTION_ADPF -> addAdpfDiagnosticsSettings(sl)
             MenuTag.SECTION_FRAME_GEN -> addFrameGenSettings(sl)
             MenuTag.SECTION_PERFORMANCE_STATS -> addPerformanceOverlaySettings(sl)
             MenuTag.SECTION_SOC_OVERLAY -> addSocOverlaySettings(sl)
@@ -189,8 +196,158 @@ class SettingsFragmentPresenter(
         }
     }
 
+    private fun addGeneralSettings(sl: ArrayList<SettingsItem>) {
+        sl.apply {
+            add(IntSetting.APP_LANGUAGE.key)
+            add(StringSetting.DEVICE_NAME.key)
+            add(IntSetting.REGION_INDEX.key)
+            add(IntSetting.LANGUAGE_INDEX.key)
+            add(BooleanSetting.USE_CUSTOM_RTC.key)
+            add(LongSetting.CUSTOM_RTC.key)
+        }
+    }
+
+    private fun addMoonwitchPerformanceSettings(sl: ArrayList<SettingsItem>) {
+        sl.apply {
+            add(HeaderSetting(R.string.mw_pacing_and_latency))
+            add(
+                SubmenuSetting(
+                    titleId = R.string.mw_safs,
+                    descriptionId = R.string.mw_safs_desc,
+                    iconId = R.drawable.ic_mw_gauge,
+                    menuKey = MenuTag.SECTION_SAFS
+                )
+            )
+            add(
+                SubmenuSetting(
+                    titleId = R.string.mw_frame_pacing,
+                    descriptionId = R.string.mw_frame_pacing_desc,
+                    iconId = R.drawable.ic_frames,
+                    menuKey = MenuTag.SECTION_FRAME_PACING
+                )
+            )
+            add(
+                SubmenuSetting(
+                    titleId = R.string.mw_frame_generation,
+                    descriptionId = R.string.mw_frame_generation_desc,
+                    iconId = R.drawable.ic_graphics,
+                    menuKey = MenuTag.SECTION_FRAME_GEN
+                )
+            )
+
+            add(HeaderSetting(R.string.mw_telemetry_and_tuning))
+            add(IntSetting.ANDROID_PIPELINE_WORKERS.key)
+            add(
+                SubmenuSetting(
+                    titleId = R.string.mw_adpf_diagnostics,
+                    descriptionId = R.string.mw_adpf_diagnostics_desc,
+                    iconId = R.drawable.ic_info_outline,
+                    menuKey = MenuTag.SECTION_ADPF
+                )
+            )
+            add(
+                SubmenuSetting(
+                    titleId = R.string.mw_performance_monitor,
+                    descriptionId = R.string.mw_performance_monitor_desc,
+                    iconId = R.drawable.ic_mw_gauge,
+                    menuKey = MenuTag.SECTION_PERFORMANCE_STATS
+                )
+            )
+
+            add(HeaderSetting(R.string.mw_performance_management))
+            add(
+                LaunchableSetting(
+                    titleId = R.string.mw_gpu_drivers,
+                    descriptionId = R.string.mw_gpu_drivers_desc
+                ) { launchContext ->
+                    createSubscreenIntent(launchContext, SettingsSubscreen.DRIVER_MANAGER)
+                }
+            )
+            add(
+                LaunchableSetting(
+                    titleId = R.string.mw_freedreno,
+                    descriptionId = R.string.mw_freedreno_desc
+                ) { launchContext ->
+                    createSubscreenIntent(launchContext, SettingsSubscreen.FREEDRENO_SETTINGS)
+                }
+            )
+            add(
+                LaunchableSetting(
+                    titleId = R.string.mw_lossless_scaling,
+                    descriptionId = R.string.mw_lossless_scaling_desc
+                ) { launchContext ->
+                    createSubscreenIntent(launchContext, SettingsSubscreen.LOSSLESS_MANAGER)
+                }
+            )
+        }
+    }
+
+    private fun createSubscreenIntent(
+        launchContext: android.content.Context,
+        destination: SettingsSubscreen
+    ): Intent = Intent(launchContext, SettingsSubscreenActivity::class.java).apply {
+        putExtra("destination", destination)
+        settingsViewModel.game?.let { putExtra("game", it) }
+    }
+
+    private fun addSafsSettings(sl: ArrayList<SettingsItem>) {
+        sl.apply {
+            add(HeaderSetting(R.string.mw_safs_behavior))
+            add(BooleanSetting.SMART_ADAPTIVE_FRAME_SKIP.key)
+        }
+    }
+
+    private fun addFramePacingSettings(sl: ArrayList<SettingsItem>) {
+        sl.apply {
+            add(HeaderSetting(R.string.mw_frame_pacing_target))
+            add(IntSetting.FRAME_PACING_MODE.key)
+            add(BooleanSetting.RENDERER_ASYNC_PRESENTATION.key)
+        }
+    }
+
+    private fun addAdpfDiagnosticsSettings(sl: ArrayList<SettingsItem>) {
+        val snapshot = runCatching { PerformanceLabNative.snapshot() }.getOrNull()
+        val status = when {
+            !NativeLibrary.isRunning() -> context.getString(R.string.mw_adpf_no_session)
+            snapshot == null -> context.getString(R.string.mw_adpf_unavailable)
+            !snapshot.adpfAvailable -> context.getString(R.string.mw_adpf_unavailable)
+            else -> context.getString(
+                R.string.mw_adpf_live_status,
+                if (snapshot.adpfRenderActive) context.getString(R.string.mw_active) else context.getString(R.string.mw_inactive),
+                snapshot.adpfRenderThreads,
+                snapshot.adpfReports,
+                snapshot.adpfTargetMs,
+                snapshot.adpfActualMs
+            )
+        }
+
+        sl.apply {
+            add(HeaderSetting(R.string.mw_live_diagnostics))
+            add(
+                RunnableSetting(
+                    titleId = R.string.mw_refresh_adpf,
+                    descriptionString = status,
+                    isRunnable = true,
+                    iconId = R.drawable.ic_refresh
+                ) { loadSettingsList(true) }
+            )
+            add(HeaderSetting(R.string.mw_diagnostic_tools))
+            add(BooleanSetting.SHOW_MOONWITCH_PERFORMANCE_LAB.key)
+            add(BooleanSetting.ENABLE_PIPELINE_WORKER_AUTOTUNER.key)
+            add(BooleanSetting.SHOW_PERFORMANCE_OVERLAY.key)
+        }
+    }
+
     private fun addConfigSettings(sl: ArrayList<SettingsItem>) {
         sl.apply {
+            add(
+                SubmenuSetting(
+                    titleId = R.string.mw_cat_general,
+                    descriptionId = R.string.mw_cat_general_desc,
+                    iconId = R.drawable.ic_settings,
+                    menuKey = MenuTag.SECTION_GENERAL
+                )
+            )
             add(
                 SubmenuSetting(
                     titleId = R.string.preferences_system,
@@ -205,6 +362,14 @@ class SettingsFragmentPresenter(
                     descriptionId = R.string.preferences_graphics_description,
                     iconId = R.drawable.ic_graphics,
                     menuKey = MenuTag.SECTION_RENDERER
+                )
+            )
+            add(
+                SubmenuSetting(
+                    titleId = R.string.mw_performance_center,
+                    descriptionId = R.string.mw_performance_center_desc,
+                    iconId = R.drawable.ic_mw_gauge,
+                    menuKey = MenuTag.SECTION_MOONWITCH_PERFORMANCE
                 )
             )
             if (!NativeConfig.isPerGameConfigLoaded()) {

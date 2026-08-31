@@ -199,6 +199,22 @@
         <item>2</item>
     </integer-array>
 
+    <string-array name="framePacingModeNames">
+        <item>@string/mw_frame_pacing_auto</item>
+        <item>30 FPS</item>
+        <item>60 FPS</item>
+        <item>90 FPS</item>
+        <item>120 FPS</item>
+    </string-array>
+
+    <integer-array name="framePacingModeValues">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+    </integer-array>
+
     <string-array name="rendererVSyncNames">
         <item>@string/renderer_vsync_immediate</item>
         <item>@string/renderer_vsync_mailbox</item>

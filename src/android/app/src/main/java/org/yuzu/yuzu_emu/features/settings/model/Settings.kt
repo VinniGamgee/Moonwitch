@@ -9,8 +9,13 @@ import org.yuzu.yuzu_emu.YuzuApplication
 object Settings {
     enum class MenuTag(val titleId: Int = 0) {
         SECTION_ROOT(R.string.advanced_settings),
+        SECTION_GENERAL(R.string.mw_cat_general),
         SECTION_SYSTEM(R.string.preferences_system),
         SECTION_RENDERER(R.string.preferences_graphics),
+        SECTION_MOONWITCH_PERFORMANCE(R.string.mw_performance_center),
+        SECTION_SAFS(R.string.mw_safs),
+        SECTION_FRAME_PACING(R.string.mw_frame_pacing),
+        SECTION_ADPF(R.string.mw_adpf_diagnostics),
         SECTION_FRAME_GEN(R.string.frame_gen),
         SECTION_PERFORMANCE_STATS(R.string.stats_overlay_options),
         SECTION_INPUT_OVERLAY(R.string.input_overlay_options),
