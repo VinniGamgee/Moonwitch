@@ -1,85 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/option_card"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_marginHorizontal="4dp"
-    android:layout_marginBottom="6dp"
-    android:background="@android:color/transparent"
-    android:clickable="true"
-    android:focusable="true"
-    app:cardBackgroundColor="@color/moonwitch_panel_soft"
-    app:cardCornerRadius="18dp"
-    app:cardElevation="0dp"
-    app:rippleColor="#2035D8FF"
-    app:strokeColor="@color/moonwitch_border_soft"
-    app:strokeWidth="1dp">
-
-    <LinearLayout
-        android:id="@+id/option_layout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:minHeight="72dp">
-
-        <ImageView
-            android:id="@+id/option_icon"
-            android:layout_width="23dp"
-            android:layout_height="23dp"
-            android:layout_gravity="center_vertical"
-            android:layout_marginStart="16dp"
-            app:tint="@color/moonwitch_cyan" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="14dp"
-            android:layout_marginTop="10dp"
-            android:layout_marginEnd="14dp"
-            android:layout_marginBottom="10dp"
-            android:orientation="vertical">
-
-            <com.google.android.material.textview.MaterialTextView
-                android:id="@+id/option_title"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-medium"
-                android:textAlignment="viewStart"
-                android:textColor="@color/moonwitch_text"
-                android:textSize="14sp"
-                tools:text="@string/install_prod_keys" />
-
-            <com.google.android.material.textview.MaterialTextView
-                android:id="@+id/option_description"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
-                android:ellipsize="end"
-                android:maxLines="2"
-                android:textAlignment="viewStart"
-                android:textColor="@color/moonwitch_text_muted"
-                android:textSize="12sp"
-                tools:text="@string/install_prod_keys_description" />
-
-            <com.google.android.material.textview.MaterialTextView
-                android:id="@+id/option_detail"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:textAlignment="viewStart"
-                android:textColor="@color/moonwitch_cyan"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:visibility="gone"
-                tools:text="/tree/primary:Games"
-                tools:visibility="visible" />
-
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" xmlns:tools="http://schemas.android.com/tools" android:id="@+id/option_card" android:layout_width="match_parent" android:layout_height="90dp" android:layout_margin="4dp" android:clickable="true" android:focusable="true" app:cardBackgroundColor="@color/moonwitch_panel_soft" app:cardCornerRadius="16dp" app:cardElevation="0dp" app:rippleColor="#3035D8FF" app:strokeColor="@color/moonwitch_border_soft" app:strokeWidth="1dp">
+    <androidx.constraintlayout.widget.ConstraintLayout android:id="@+id/option_layout" android:layout_width="match_parent" android:layout_height="match_parent" android:padding="12dp">
+        <ImageView android:id="@+id/option_icon" android:layout_width="28dp" android:layout_height="28dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" app:tint="@color/moonwitch_cyan" tools:src="@drawable/ic_settings" />
+        <LinearLayout android:id="@+id/option_text" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:layout_marginEnd="5dp" android:orientation="vertical" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@id/option_chevron" app:layout_constraintStart_toEndOf="@id/option_icon" app:layout_constraintTop_toTopOf="parent">
+            <TextView android:id="@+id/option_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:fontFamily="sans-serif-medium" android:maxLines="1" android:textColor="@color/moonwitch_text" android:textSize="12sp" tools:text="Gráficos" />
+            <TextView android:id="@+id/option_description" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:ellipsize="end" android:maxLines="2" android:textColor="@color/moonwitch_text_muted" android:textSize="9.5sp" tools:text="Resolução, renderização, shaders e efeitos" />
+            <TextView android:id="@+id/option_detail" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:ellipsize="end" android:maxLines="1" android:textColor="@color/moonwitch_cyan" android:textSize="9sp" android:visibility="gone" />
         </LinearLayout>
-
-    </LinearLayout>
-
+        <TextView android:id="@+id/option_chevron" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›" android:textColor="@color/moonwitch_text_muted" android:textSize="22sp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toTopOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>

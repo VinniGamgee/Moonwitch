@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mw_home">INÍCIO</string>
+    <string name="mw_settings">CONFIGURAÇÕES</string>
+    <string name="mw_search_games">Procurar jogos</string>
+    <string name="mw_search_settings">Buscar configurações</string>
+    <string name="mw_recent">Recentes</string>
+    <string name="mw_favorites">Favoritos</string>
+    <string name="mw_performance">Desempenho</string>
+    <string name="mw_filters">Filtros</string>
+    <string name="mw_recently_played">JOGADOS RECENTEMENTE</string>
+    <string name="mw_library">Biblioteca</string>
+    <string name="mw_library_upper">BIBLIOTECA</string>
+    <string name="mw_collections">Coleções</string>
+    <string name="mw_system">Sistema</string>
+    <string name="mw_add_games">Adicionar jogos</string>
+    <string name="mw_explore_folder">Explorar pasta</string>
+    <string name="mw_categories">CATEGORIAS</string>
+    <string name="mw_performance_highlight">DESTAQUE: DESEMPENHO</string>
+    <string name="mw_performance_features">Recursos de desempenho</string>
+    <string name="mw_performance_features_desc">Ajustes e diagnósticos em um só lugar.</string>
+    <string name="mw_tap_configure">Toque para configurar cada recurso ›</string>
+    <string name="mw_other">OUTROS</string>
+    <string name="mw_help_center">Central de ajuda</string>
+    <string name="mw_help_center_desc">Informações, créditos e diagnóstico</string>
+    <string name="mw_cat_general">Geral</string>
+    <string name="mw_cat_general_desc">Idioma, região, atualizações e comportamento geral</string>
+    <string name="mw_cat_graphics">Gráficos</string>
+    <string name="mw_cat_graphics_desc">Resolução, renderização, shaders e efeitos</string>
+    <string name="mw_cat_audio">Áudio</string>
+    <string name="mw_cat_audio_desc">Motor de áudio, volume e dispositivos</string>
+    <string name="mw_cat_controls">Controles</string>
+    <string name="mw_cat_controls_desc">Mapeamentos, perfis e vibração</string>
+    <string name="mw_cat_system">Sistema</string>
+    <string name="mw_cat_system_desc">CPU, GPU, drivers e compatibilidade</string>
+    <string name="mw_cat_interface">Interface</string>
+    <string name="mw_cat_interface_desc">Temas, layout, navegação e aparência</string>
+    <string name="mw_cat_library">Biblioteca</string>
+    <string name="mw_cat_library_desc">Pastas, gerenciamento e conteúdo instalado</string>
+    <string name="mw_cat_lab">Desempenho Lab</string>
+    <string name="mw_cat_lab_desc">Métricas, otimizações e recursos avançados</string>
+</resources>

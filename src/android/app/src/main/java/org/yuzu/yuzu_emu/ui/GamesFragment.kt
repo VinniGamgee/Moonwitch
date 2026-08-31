@@ -16,8 +16,10 @@ import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.edit
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.doOnNextLayout
 import androidx.core.view.doOnPreDraw
 import androidx.core.view.updatePadding
 import androidx.core.widget.doOnTextChanged
@@ -25,17 +27,21 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.preference.PreferenceManager
-import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import info.debatty.java.stringsimilarity.Jaccard
+import info.debatty.java.stringsimilarity.JaroWinkler
+import java.util.Locale
 import org.yuzu.yuzu_emu.HomeNavigationDirections
 import org.yuzu.yuzu_emu.NativeLibrary
 import org.yuzu.yuzu_emu.R
 import org.yuzu.yuzu_emu.YuzuApplication
 import org.yuzu.yuzu_emu.adapters.GameAdapter
 import org.yuzu.yuzu_emu.databinding.FragmentGamesBinding
-import org.yuzu.yuzu_emu.features.settings.model.BooleanSetting
+import org.yuzu.yuzu_emu.features.settings.model.Settings
+import org.yuzu.yuzu_emu.features.settings.ui.SettingsSubscreen
 import org.yuzu.yuzu_emu.model.AppletInfo
 import org.yuzu.yuzu_emu.model.Game
 import org.yuzu.yuzu_emu.model.GamesViewModel
@@ -43,20 +49,10 @@ import org.yuzu.yuzu_emu.model.HomeViewModel
 import org.yuzu.yuzu_emu.ui.main.MainActivity
 import org.yuzu.yuzu_emu.utils.ViewUtils.setVisible
 import org.yuzu.yuzu_emu.utils.collect
-import info.debatty.java.stringsimilarity.Jaccard
-import info.debatty.java.stringsimilarity.JaroWinkler
-import java.util.Locale
-import androidx.core.content.edit
-import androidx.core.view.doOnNextLayout
 
 class GamesFragment : Fragment() {
     private var _binding: FragmentGamesBinding? = null
     private val binding get() = _binding!!
-
-    private var originalHeaderTopMargin: Int? = null
-    private var originalHeaderBottomMargin: Int? = null
-    private var originalHeaderRightMargin: Int? = null
-    private var originalHeaderLeftMargin: Int? = null
 
     private var lastViewType: Int = GameAdapter.VIEW_TYPE_GRID
     private var fallbackBottomInset: Int = 0
@@ -68,22 +64,20 @@ class GamesFragment : Fragment() {
     companion object {
         private const val SEARCH_TEXT = "SearchText"
         private const val PREF_SORT_TYPE = "GamesSortType"
+        private const val FILTER_FAVORITES = -1001
     }
 
     private val gamesViewModel: GamesViewModel by activityViewModels()
     private val homeViewModel: HomeViewModel by activityViewModels()
     private lateinit var gameAdapter: GameAdapter
+    private lateinit var recentAdapter: GameAdapter
 
-    private val preferences =
-        PreferenceManager.getDefaultSharedPreferences(YuzuApplication.appContext)
+    private val preferences = PreferenceManager.getDefaultSharedPreferences(YuzuApplication.appContext)
 
     private lateinit var mainActivity: MainActivity
-    private val getGamesDirectory =
-        registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { result ->
-            if (result != null) {
-                mainActivity.processGamesDir(result, true)
-            }
-        }
+    private val getGamesDirectory = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { result ->
+        if (result != null) mainActivity.processGamesDir(result, true)
+    }
 
     private fun getCurrentViewType(): Int {
         val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -97,11 +91,8 @@ class GamesFragment : Fragment() {
         val key = if (isLandscape) CarouselRecyclerView.CAROUSEL_VIEW_TYPE_LANDSCAPE else CarouselRecyclerView.CAROUSEL_VIEW_TYPE_PORTRAIT
         preferences.edit { putInt(key, type) }
     }
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentGamesBinding.inflate(inflater)
         return binding.root
     }
@@ -112,65 +103,48 @@ class GamesFragment : Fragment() {
         homeViewModel.setStatusBarShadeVisibility(true)
         mainActivity = requireActivity() as MainActivity
 
-        if (savedInstanceState != null) {
-            binding.searchText.setText(savedInstanceState.getString(SEARCH_TEXT))
-        }
+        if (savedInstanceState != null) binding.searchText.setText(savedInstanceState.getString(SEARCH_TEXT))
 
-        gameAdapter = GameAdapter(
-            requireActivity() as AppCompatActivity
-        )
+        gameAdapter = GameAdapter(requireActivity() as AppCompatActivity)
+        recentAdapter = GameAdapter(requireActivity() as AppCompatActivity).apply { setViewType(GameAdapter.VIEW_TYPE_RECENT) }
+        binding.recentGames.apply {
+            layoutManager = LinearLayoutManager(requireContext(), RecyclerView.HORIZONTAL, false)
+            adapter = recentAdapter
+        }
 
         applyGridGamesBinding()
 
         binding.swipeRefresh.apply {
-            (binding.swipeRefresh as? SwipeRefreshLayout)?.setOnRefreshListener {
-                gamesViewModel.reloadGames(false)
-            }
-            (binding.swipeRefresh as? SwipeRefreshLayout)?.setProgressBackgroundColorSchemeColor(
-                com.google.android.material.color.MaterialColors.getColor(
-                    binding.swipeRefresh,
-                    com.google.android.material.R.attr.colorPrimary
-                )
+            (this as? SwipeRefreshLayout)?.setOnRefreshListener { gamesViewModel.reloadGames(false) }
+            (this as? SwipeRefreshLayout)?.setProgressBackgroundColorSchemeColor(
+                com.google.android.material.color.MaterialColors.getColor(this, com.google.android.material.R.attr.colorPrimary)
             )
-            (binding.swipeRefresh as? SwipeRefreshLayout)?.setColorSchemeColors(
-                com.google.android.material.color.MaterialColors.getColor(
-                    binding.swipeRefresh,
-                    com.google.android.material.R.attr.colorOnPrimary
-                )
+            (this as? SwipeRefreshLayout)?.setColorSchemeColors(
+                com.google.android.material.color.MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnPrimary)
             )
             post {
-                if (_binding == null) {
-                    return@post
-                }
-                (binding.swipeRefresh as? SwipeRefreshLayout)?.isRefreshing = gamesViewModel.isReloading.value
+                if (_binding != null) (binding.swipeRefresh as? SwipeRefreshLayout)?.isRefreshing = gamesViewModel.isReloading.value
             }
         }
 
         gamesViewModel.isReloading.collect(viewLifecycleOwner) {
             (binding.swipeRefresh as? SwipeRefreshLayout)?.isRefreshing = it
-            binding.noticeText.setVisible(
-                visible = gamesViewModel.games.value.isEmpty() && !it,
-                gone = false
-            )
+            binding.noticeText.setVisible(gamesViewModel.games.value.isEmpty() && !it, gone = false)
         }
         gamesViewModel.games.collect(viewLifecycleOwner) {
-            if (it.isNotEmpty()) {
-                setAdapter(it)
-            }
+            updateRecentGames(it)
+            updateLibraryCount(it.size)
+            setAdapter(it)
         }
-        gamesViewModel.shouldSwapData.collect(
-            viewLifecycleOwner,
-            resetState = { gamesViewModel.setShouldSwapData(false) }
-        ) {
+        gamesViewModel.shouldSwapData.collect(viewLifecycleOwner, resetState = { gamesViewModel.setShouldSwapData(false) }) {
             if (it) {
+                updateRecentGames(gamesViewModel.games.value)
                 setAdapter(gamesViewModel.games.value)
             }
         }
-        gamesViewModel.shouldScrollToTop.collect(
-            viewLifecycleOwner,
-            resetState = { gamesViewModel.setShouldScrollToTop(false) }
-        ) { if (it) scrollToTop() }
-
+        gamesViewModel.shouldScrollToTop.collect(viewLifecycleOwner, resetState = { gamesViewModel.setShouldScrollToTop(false) }) {
+            if (it) scrollToTop()
+        }
         gamesViewModel.shouldScrollAfterReload.collect(viewLifecycleOwner) { shouldScroll ->
             if (shouldScroll) {
                 pendingPostReloadListSettle = true
@@ -181,56 +155,39 @@ class GamesFragment : Fragment() {
         }
 
         setupTopView()
-
-        updateButtonsVisibility()
+        setupReferenceActions()
 
         binding.addDirectory.setOnClickListener {
             getGamesDirectory.launch(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).data)
         }
-
-        binding.launchQlaunch?.setOnClickListener {
-            launchQLaunch()
+        binding.exploreDirectory.setOnClickListener {
+            val action = HomeNavigationDirections.actionGlobalSettingsSubscreenActivity(SettingsSubscreen.GAME_FOLDERS, null)
+            findNavController().navigate(action)
         }
 
+        binding.launchQlaunch.visibility = View.GONE
         setInsets()
     }
 
     val applyGridGamesBinding = {
-        (binding.gridGames as? RecyclerView)?.apply {
+        binding.gridGames.apply {
             val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
             val currentViewType = getCurrentViewType()
             val savedViewType = if (isLandscape || currentViewType != GameAdapter.VIEW_TYPE_CAROUSEL) currentViewType else GameAdapter.VIEW_TYPE_GRID
-
-            //This prevents Grid/List views from reusing scaled or otherwise modified ViewHolders left over from the carousel.
             adapter = null
             recycledViewPool.clear()
-
             gameAdapter.setViewType(savedViewType)
             currentFilter = preferences.getInt(PREF_SORT_TYPE, View.NO_ID)
-
-            // Set the correct layout manager
             layoutManager = when (savedViewType) {
-                GameAdapter.VIEW_TYPE_GRID -> {
-                    val columns = resources.getInteger(R.integer.game_columns_grid)
-                    GridLayoutManager(context, columns)
-                }
-                GameAdapter.VIEW_TYPE_GRID_COMPACT -> {
-                    val columns = resources.getInteger(R.integer.game_columns_grid)
-                    GridLayoutManager(context, columns)
-                }
-                GameAdapter.VIEW_TYPE_LIST -> {
-                    val columns = resources.getInteger(R.integer.game_columns_list)
-                    GridLayoutManager(context, columns)
-                }
-                GameAdapter.VIEW_TYPE_CAROUSEL -> {
-                    LinearLayoutManager(context, RecyclerView.HORIZONTAL, false)
-                }
-                else -> throw IllegalArgumentException("Invalid view type: $savedViewType")
+                GameAdapter.VIEW_TYPE_GRID, GameAdapter.VIEW_TYPE_GRID_COMPACT -> GridLayoutManager(context, resources.getInteger(R.integer.game_columns_grid))
+                GameAdapter.VIEW_TYPE_LIST -> GridLayoutManager(context, resources.getInteger(R.integer.game_columns_list))
+                GameAdapter.VIEW_TYPE_CAROUSEL -> LinearLayoutManager(context, RecyclerView.HORIZONTAL, false)
+                else -> GridLayoutManager(context, resources.getInteger(R.integer.game_columns_grid))
             }
             if (savedViewType == GameAdapter.VIEW_TYPE_CAROUSEL) {
-                (binding.gridGames as? View)?.let { it -> ViewCompat.requestApplyInsets(it)}
-                doOnNextLayout { //Carousel: important to avoid overlap issues
-                    (this as? CarouselRecyclerView)?.notifyLaidOut(fallbackBottomInset)
+                (this as? CarouselRecyclerView)?.let { carousel ->
+                    ViewCompat.requestApplyInsets(carousel)
+                    doOnNextLayout { carousel.notifyLaidOut(fallbackBottomInset) }
                 }
             } else {
                 (this as? CarouselRecyclerView)?.setupCarousel(false)
@@ -242,9 +199,7 @@ class GamesFragment : Fragment() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        if (_binding != null) {
-            outState.putString(SEARCH_TEXT, binding.searchText.text.toString())
-        }
+        if (_binding != null) outState.putString(SEARCH_TEXT, binding.searchText.text.toString())
     }
 
     override fun onPause() {
@@ -256,52 +211,44 @@ class GamesFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        if (getCurrentViewType() == GameAdapter.VIEW_TYPE_CAROUSEL) {
-            (binding.gridGames as? CarouselRecyclerView)?.setupCarousel(true)
-            (binding.gridGames as? CarouselRecyclerView)?.restoreScrollState(gamesViewModel.lastScrollPosition)
+        if (_binding != null) {
+            updateRecentGames(gamesViewModel.games.value)
+            if (getCurrentViewType() == GameAdapter.VIEW_TYPE_CAROUSEL) {
+                (binding.gridGames as? CarouselRecyclerView)?.setupCarousel(true)
+                (binding.gridGames as? CarouselRecyclerView)?.restoreScrollState(gamesViewModel.lastScrollPosition)
+            }
         }
     }
 
-    private var lastSearchText: String = ""
-    private var lastFilter: Int = preferences.getInt(PREF_SORT_TYPE, View.NO_ID)
-
-    private fun setAdapter(games: List<Game>) {
-        val currentSearchText = binding.searchText.text.toString()
-        val currentFilter = binding.filterButton.id
-
-        val searchChanged = currentSearchText != lastSearchText
-        val filterChanged = currentFilter != lastFilter
-
-        if (searchChanged || filterChanged) {
-            filterAndSearch(games)
-            lastSearchText = currentSearchText
-            lastFilter = currentFilter
-        } else {
-            submitGameList(games)
-            gamesViewModel.setFilteredGames(games)
-        }
-    }
+    private fun setAdapter(games: List<Game>) = filterAndSearch(games)
 
     private fun submitGameList(games: List<Game>) {
-        val adapter = (binding.gridGames as? RecyclerView)?.adapter as? GameAdapter
-        if (adapter == null) {
-            schedulePostReloadListSettle()
-            return
-        }
-
+        val adapter = binding.gridGames.adapter as? GameAdapter ?: return
         val submitGeneration = ++gameListSubmitGeneration
         adapter.submitList(games) {
-            if (committedGameListSubmitGeneration < submitGeneration) {
-                committedGameListSubmitGeneration = submitGeneration
-            }
+            if (committedGameListSubmitGeneration < submitGeneration) committedGameListSubmitGeneration = submitGeneration
             schedulePostReloadListSettle()
         }
     }
 
+    private fun updateRecentGames(games: List<Game>) {
+        if (_binding == null) return
+        val recent = games
+            .filter { preferences.getLong(it.keyLastPlayedTime, 0L) > 0L }
+            .sortedByDescending { preferences.getLong(it.keyLastPlayedTime, 0L) }
+            .take(8)
+        recentAdapter.submitList(recent)
+        val visible = recent.isNotEmpty()
+        binding.recentSectionLabel.visibility = if (visible) View.VISIBLE else View.GONE
+        binding.recentGames.visibility = if (visible) View.VISIBLE else View.GONE
+    }
+
+    private fun updateLibraryCount(count: Int) {
+        binding.libraryCount.text = if (count == 1) "1 jogo" else "$count jogos"
+    }
 
     private fun schedulePostReloadListSettle() {
         if (!pendingPostReloadListSettle || _binding == null) return
-
         binding.gridGames.doOnPreDraw {
             if (!pendingPostReloadListSettle || _binding == null) return@doOnPreDraw
             if (committedGameListSubmitGeneration < pendingPostReloadListSettleGeneration) {
@@ -309,162 +256,138 @@ class GamesFragment : Fragment() {
                 return@doOnPreDraw
             }
             pendingPostReloadListSettle = false
-
             (binding.gridGames as? CarouselRecyclerView)?.refreshView()
         }
     }
+
     private fun setupTopView() {
-        binding.searchText.doOnTextChanged() { text: CharSequence?, _: Int, _: Int, _: Int ->
-            if (text.toString().isNotEmpty()) {
-                binding.clearButton.visibility = View.VISIBLE
-            } else {
-                binding.clearButton.visibility = View.INVISIBLE
-            }
+        binding.searchText.doOnTextChanged { text: CharSequence?, _: Int, _: Int, _: Int ->
+            binding.clearButton.visibility = if (text.isNullOrEmpty()) View.INVISIBLE else View.VISIBLE
             filterAndSearch()
         }
-
         binding.clearButton.setOnClickListener { binding.searchText.setText("") }
         binding.searchBackground.setOnClickListener { focusSearch() }
-
-        // Setup view button
         binding.viewButton.setOnClickListener { showViewMenu(it) }
-
-        // Setup filter button
-        binding.filterButton.setOnClickListener { view ->
-            showFilterMenu(view)
+        binding.filterButton.setOnClickListener { showFilterMenu(it) }
+        binding.filterButton.setOnLongClickListener {
+            showViewMenu(it)
+            true
         }
-
-        // Setup settings button
         binding.settingsButton.setOnClickListener { navigateToSettings() }
     }
 
+    private fun setupReferenceActions() {
+        binding.quickRecent.setOnClickListener {
+            currentFilter = R.id.filter_recently_played
+            preferences.edit { putInt(PREF_SORT_TYPE, currentFilter) }
+            filterAndSearch()
+        }
+        binding.quickFavorites.setOnClickListener {
+            currentFilter = FILTER_FAVORITES
+            preferences.edit { putInt(PREF_SORT_TYPE, currentFilter) }
+            filterAndSearch()
+        }
+        binding.quickPerformance.setOnClickListener {
+            val action = HomeNavigationDirections.actionGlobalSettingsActivity(null, Settings.MenuTag.SECTION_PERFORMANCE_STATS)
+            findNavController().navigate(action)
+        }
+        binding.quickFilters.setOnClickListener { showFilterMenu(it) }
+
+        binding.navLibrary.setOnClickListener {
+            currentFilter = View.NO_ID
+            preferences.edit { putInt(PREF_SORT_TYPE, currentFilter) }
+            filterAndSearch()
+            scrollToTop()
+        }
+        binding.navRecent.setOnClickListener {
+            currentFilter = R.id.filter_recently_played
+            preferences.edit { putInt(PREF_SORT_TYPE, currentFilter) }
+            filterAndSearch()
+        }
+        binding.navCollections.setOnClickListener {
+            currentFilter = FILTER_FAVORITES
+            preferences.edit { putInt(PREF_SORT_TYPE, currentFilter) }
+            filterAndSearch()
+        }
+        binding.navSystem.setOnClickListener { navigateToSettings() }
+    }
+
     private fun navigateToSettings() {
-        val navController = findNavController()
-        navController.navigate(R.id.action_gamesFragment_to_homeSettingsFragment)
+        findNavController().navigate(R.id.action_gamesFragment_to_homeSettingsFragment)
     }
 
     private fun showViewMenu(anchor: View) {
         val popup = PopupMenu(requireContext(), anchor)
         popup.menuInflater.inflate(R.menu.menu_game_views, popup.menu)
         val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-        if (!isLandscape) {
-            popup.menu.findItem(R.id.view_carousel)?.isVisible = false
-        }
-
-        val currentViewType = getCurrentViewType()
-        when (currentViewType) {
+        if (!isLandscape) popup.menu.findItem(R.id.view_carousel)?.isVisible = false
+        when (getCurrentViewType()) {
             GameAdapter.VIEW_TYPE_LIST -> popup.menu.findItem(R.id.view_list).isChecked = true
             GameAdapter.VIEW_TYPE_GRID_COMPACT -> popup.menu.findItem(R.id.view_grid_compact).isChecked = true
             GameAdapter.VIEW_TYPE_GRID -> popup.menu.findItem(R.id.view_grid).isChecked = true
             GameAdapter.VIEW_TYPE_CAROUSEL -> popup.menu.findItem(R.id.view_carousel).isChecked = true
         }
-
         popup.setOnMenuItemClickListener { item ->
-            when (item.itemId) {
-                R.id.view_grid -> {
-                    if (getCurrentViewType() == GameAdapter.VIEW_TYPE_CAROUSEL) onPause()
-                    setCurrentViewType(GameAdapter.VIEW_TYPE_GRID)
-                    applyGridGamesBinding()
-                    item.isChecked = true
-                    true
-                }
-
-                R.id.view_grid_compact -> {
-                    if (getCurrentViewType() == GameAdapter.VIEW_TYPE_CAROUSEL) onPause()
-                    setCurrentViewType(GameAdapter.VIEW_TYPE_GRID_COMPACT)
-                    applyGridGamesBinding()
-                    item.isChecked = true
-                    true
-                }
-
-                R.id.view_list -> {
-                    if (getCurrentViewType() == GameAdapter.VIEW_TYPE_CAROUSEL) onPause()
-                    setCurrentViewType(GameAdapter.VIEW_TYPE_LIST)
-                    applyGridGamesBinding()
-                    item.isChecked = true
-                    true
-                }
-
-                R.id.view_carousel -> {
-                    if (!item.isChecked || getCurrentViewType() != GameAdapter.VIEW_TYPE_CAROUSEL) {
-                        setCurrentViewType(GameAdapter.VIEW_TYPE_CAROUSEL)
-                        applyGridGamesBinding()
-                        item.isChecked = true
-                        onResume()
-                    }
-                    true
-                }
-
-                else -> false
+            val next = when (item.itemId) {
+                R.id.view_grid -> GameAdapter.VIEW_TYPE_GRID
+                R.id.view_grid_compact -> GameAdapter.VIEW_TYPE_GRID_COMPACT
+                R.id.view_list -> GameAdapter.VIEW_TYPE_LIST
+                R.id.view_carousel -> GameAdapter.VIEW_TYPE_CAROUSEL
+                else -> return@setOnMenuItemClickListener false
             }
+            if (getCurrentViewType() == GameAdapter.VIEW_TYPE_CAROUSEL) onPause()
+            setCurrentViewType(next)
+            applyGridGamesBinding()
+            item.isChecked = true
+            if (next == GameAdapter.VIEW_TYPE_CAROUSEL) onResume()
+            true
         }
-
         popup.show()
     }
 
     private fun showFilterMenu(anchor: View) {
         val popup = PopupMenu(requireContext(), anchor)
         popup.menuInflater.inflate(R.menu.menu_game_filters, popup.menu)
-
-        // Set checked state based on current filter
         when (currentFilter) {
             R.id.alphabetical -> popup.menu.findItem(R.id.alphabetical).isChecked = true
-            R.id.filter_recently_played -> popup.menu.findItem(R.id.filter_recently_played).isChecked =
-                true
-
-            R.id.filter_recently_added -> popup.menu.findItem(R.id.filter_recently_added).isChecked =
-                true
+            R.id.filter_recently_played -> popup.menu.findItem(R.id.filter_recently_played).isChecked = true
+            R.id.filter_recently_added -> popup.menu.findItem(R.id.filter_recently_added).isChecked = true
         }
-
         popup.setOnMenuItemClickListener { item ->
             currentFilter = item.itemId
             preferences.edit { putInt(PREF_SORT_TYPE, currentFilter) }
             filterAndSearch()
             true
         }
-
         popup.show()
     }
 
-    // Track current filter
-    private var currentFilter = View.NO_ID
+    private var currentFilter = preferences.getInt(PREF_SORT_TYPE, View.NO_ID)
 
     private fun filterAndSearch(baseList: List<Game> = gamesViewModel.games.value) {
         val filteredList: List<Game> = when (currentFilter) {
             R.id.alphabetical -> baseList.sortedBy { it.title }
-            R.id.filter_recently_played -> {
-                baseList.filter {
-                    val lastPlayedTime = preferences.getLong(it.keyLastPlayedTime, 0L)
-                    lastPlayedTime > (System.currentTimeMillis() - 24 * 60 * 60 * 1000)
-                }.sortedByDescending { preferences.getLong(it.keyLastPlayedTime, 0L) }
-            }
-            R.id.filter_recently_added -> {
-                baseList.filter {
-                    val addedTime = preferences.getLong(it.keyAddedToLibraryTime, 0L)
-                    addedTime > (System.currentTimeMillis() - 24 * 60 * 60 * 1000)
-                }.sortedByDescending { preferences.getLong(it.keyAddedToLibraryTime, 0L) }
-            }
+            R.id.filter_recently_played -> baseList
+                .filter { preferences.getLong(it.keyLastPlayedTime, 0L) > 0L }
+                .sortedByDescending { preferences.getLong(it.keyLastPlayedTime, 0L) }
+            R.id.filter_recently_added -> baseList
+                .filter { preferences.getLong(it.keyAddedToLibraryTime, 0L) > 0L }
+                .sortedByDescending { preferences.getLong(it.keyAddedToLibraryTime, 0L) }
+            FILTER_FAVORITES -> baseList.filter { preferences.getBoolean(it.keyFavorite, false) }
             else -> baseList
         }
 
-        val searchTerm = binding.searchText.text.toString().lowercase(Locale.getDefault())
+        val searchTerm = binding.searchText.text.toString().trim().lowercase(Locale.getDefault())
         if (searchTerm.isEmpty()) {
             submitGameList(filteredList)
             gamesViewModel.setFilteredGames(filteredList)
             return
         }
-
         val searchAlgorithm = if (searchTerm.length > 1) Jaccard(2) else JaroWinkler()
         val sortedList = filteredList.mapNotNull { game ->
-            val title = game.title.lowercase(Locale.getDefault())
-            val score = searchAlgorithm.similarity(searchTerm, title)
-            if (score > 0.03) {
-                ScoredGame(score, game)
-            } else {
-                null
-            }
+            val score = searchAlgorithm.similarity(searchTerm, game.title.lowercase(Locale.getDefault()))
+            if (score > 0.03) ScoredGame(score, game) else null
         }.sortedByDescending { it.score }.map { it.item }
-
         submitGameList(sortedList)
         gamesViewModel.setFilteredGames(sortedList)
     }
@@ -473,8 +396,7 @@ class GamesFragment : Fragment() {
 
     private fun focusSearch() {
         binding.searchText.requestFocus()
-        val imm = requireActivity()
-            .getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
+        val imm = requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
         imm?.showSoftInput(binding.searchText, InputMethodManager.SHOW_IMPLICIT)
     }
 
@@ -484,117 +406,37 @@ class GamesFragment : Fragment() {
     }
 
     private fun scrollToTop() {
-        if (_binding != null) {
-            (binding.gridGames as? CarouselRecyclerView)?.smoothScrollToPosition(0)
-        }
+        if (_binding != null && binding.gridGames.adapter?.itemCount != 0) binding.gridGames.smoothScrollToPosition(0)
     }
 
     private fun launchQLaunch() {
         try {
             val appletPath = NativeLibrary.getAppletLaunchPath(AppletInfo.QLaunch.entryId)
             if (appletPath.isEmpty()) {
-                Toast.makeText(
-                    requireContext(),
-                    R.string.applets_error_applet,
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(requireContext(), R.string.applets_error_applet, Toast.LENGTH_SHORT).show()
                 return
             }
-
             NativeLibrary.setCurrentAppletId(AppletInfo.QLaunch.appletId)
-
-            val qlaunchGame = Game(
-                title = getString(R.string.qlaunch_applet),
-                path = appletPath
-            )
-
-            val action = HomeNavigationDirections.actionGlobalEmulationActivity(qlaunchGame)
-            findNavController().navigate(action)
+            val qlaunchGame = Game(title = getString(R.string.qlaunch_applet), path = appletPath)
+            findNavController().navigate(HomeNavigationDirections.actionGlobalEmulationActivity(qlaunchGame))
         } catch (e: Exception) {
-            Toast.makeText(
-                requireContext(),
-                "Failed to launch QLaunch: ${e.message}",
-                Toast.LENGTH_SHORT
-            ).show()
+            Toast.makeText(requireContext(), "Failed to launch QLaunch: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
-    private fun updateButtonsVisibility() {
-        val showQLaunch = BooleanSetting.ENABLE_QLAUNCH_BUTTON.getBoolean()
-        val showFolder = BooleanSetting.ENABLE_FOLDER_BUTTON.getBoolean()
-        val isFirmwareAvailable = NativeLibrary.isFirmwareAvailable()
-
-        val shouldShowQLaunch = showQLaunch && isFirmwareAvailable
-        binding.launchQlaunch.visibility = if (shouldShowQLaunch) View.VISIBLE else View.GONE
-
-        binding.addDirectory.visibility = if (showFolder) View.VISIBLE else View.GONE
+    private fun setInsets() = ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, windowInsets ->
+        val barInsets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+        val cutoutInsets = windowInsets.getInsets(WindowInsetsCompat.Type.displayCutout())
+        val leftInset = barInsets.left + cutoutInsets.left
+        val rightInset = barInsets.right + cutoutInsets.right
+        val topInset = maxOf(barInsets.top, cutoutInsets.top)
+        val navInsets = windowInsets.getInsets(WindowInsetsCompat.Type.navigationBars())
+        val gestureInsets = windowInsets.getInsets(WindowInsetsCompat.Type.systemGestures())
+        val bottomInset = maxOf(navInsets.bottom, gestureInsets.bottom, cutoutInsets.bottom)
+        fallbackBottomInset = bottomInset
+        binding.root.updatePadding(left = leftInset, right = rightInset, top = topInset, bottom = bottomInset)
+        (binding.swipeRefresh as? SwipeRefreshLayout)?.setProgressViewEndTarget(false, topInset + resources.getDimensionPixelSize(R.dimen.spacing_refresh_end))
+        (binding.gridGames as? CarouselRecyclerView)?.notifyInsetsReady(bottomInset)
+        windowInsets
     }
-
-    private fun setInsets() =
-        ViewCompat.setOnApplyWindowInsetsListener(
-            binding.root
-        ) { _: View, windowInsets: WindowInsetsCompat ->
-            val barInsets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val cutoutInsets = windowInsets.getInsets(WindowInsetsCompat.Type.displayCutout())
-            val spacingNavigation = resources.getDimensionPixelSize(R.dimen.spacing_navigation)
-            resources.getDimensionPixelSize(R.dimen.spacing_navigation_rail)
-
-            (binding.swipeRefresh as? SwipeRefreshLayout)?.setProgressViewEndTarget(
-                false,
-                barInsets.top + resources.getDimensionPixelSize(R.dimen.spacing_refresh_end)
-            )
-
-            val leftInset = barInsets.left + cutoutInsets.left
-            val rightInset = barInsets.right + cutoutInsets.right
-            val topInset = maxOf(barInsets.top, cutoutInsets.top)
-
-            val mlpSwipe = binding.swipeRefresh.layoutParams as ViewGroup.MarginLayoutParams
-            mlpSwipe.leftMargin = leftInset
-            mlpSwipe.rightMargin = rightInset
-            binding.swipeRefresh.layoutParams = mlpSwipe
-
-            val mlpHeader = binding.header.layoutParams as ViewGroup.MarginLayoutParams
-
-            // Store original margins only once
-            if (originalHeaderTopMargin == null) {
-                originalHeaderTopMargin = mlpHeader.topMargin
-                originalHeaderRightMargin = mlpHeader.rightMargin
-                originalHeaderLeftMargin = mlpHeader.leftMargin
-            }
-
-            // Always set margin as original + insets
-            mlpHeader.leftMargin = (originalHeaderLeftMargin ?: 0) + leftInset
-            mlpHeader.rightMargin = (originalHeaderRightMargin ?: 0) + rightInset
-            mlpHeader.topMargin = (originalHeaderTopMargin ?: 0) + topInset + resources.getDimensionPixelSize(
-                R.dimen.spacing_med
-            )
-            binding.header.layoutParams = mlpHeader
-
-            binding.noticeText.updatePadding(bottom = spacingNavigation)
-
-            binding.gridGames.updatePadding(
-                top = resources.getDimensionPixelSize(R.dimen.spacing_med)
-            )
-
-            val mlpFab = binding.addDirectory.layoutParams as ViewGroup.MarginLayoutParams
-            val fabPadding = resources.getDimensionPixelSize(R.dimen.spacing_large)
-            mlpFab.leftMargin = leftInset + fabPadding
-            mlpFab.bottomMargin = barInsets.bottom + fabPadding
-            mlpFab.rightMargin = rightInset + fabPadding
-            binding.addDirectory.layoutParams = mlpFab
-
-            binding.launchQlaunch?.let { qlaunchButton ->
-                val mlpQLaunch = qlaunchButton.layoutParams as ViewGroup.MarginLayoutParams
-                mlpQLaunch.leftMargin = leftInset + fabPadding
-                mlpQLaunch.bottomMargin = barInsets.bottom + fabPadding
-                qlaunchButton.layoutParams = mlpQLaunch
-            }
-
-            val navInsets = windowInsets.getInsets(WindowInsetsCompat.Type.navigationBars())
-            val gestureInsets = windowInsets.getInsets(WindowInsetsCompat.Type.systemGestures())
-            val bottomInset = maxOf(navInsets.bottom, gestureInsets.bottom, cutoutInsets.bottom)
-            fallbackBottomInset = bottomInset
-            (binding.gridGames as? CarouselRecyclerView)?.notifyInsetsReady(bottomInset)
-            windowInsets
-        }
 }

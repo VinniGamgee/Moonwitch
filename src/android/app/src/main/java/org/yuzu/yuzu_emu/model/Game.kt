@@ -34,6 +34,7 @@ class Game(
 ) : Parcelable {
     val keyAddedToLibraryTime get() = "${path}_AddedToLibraryTime"
     val keyLastPlayedTime get() = "${path}_LastPlayed"
+    val keyFavorite get() = "${path}_MoonwitchFavorite"
 
     val settingsName: String
         get() {
@@ -75,16 +76,13 @@ class Game(
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
-
         other as Game
-
         if (title != other.title) return false
         if (path != other.path) return false
         if (programId != other.programId) return false
         if (developer != other.developer) return false
         if (version != other.version) return false
         if (isHomebrew != other.isHomebrew) return false
-
         return true
     }
 
@@ -99,8 +97,6 @@ class Game(
     }
 
     companion object {
-        val extensions: Set<String> = HashSet(
-            listOf("xci", "nsp", "nca", "nro")
-        )
+        val extensions: Set<String> = HashSet(listOf("xci", "nsp", "nca", "nro"))
     }
 }
