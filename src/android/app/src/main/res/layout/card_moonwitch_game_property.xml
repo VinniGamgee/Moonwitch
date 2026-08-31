@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="5dp"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardBackgroundColor="@color/moonwitch_panel_soft"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="0dp"
+    app:rippleColor="#3035D8FF"
+    app:strokeColor="@color/moonwitch_border_soft"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:minHeight="74dp"
+            android:orientation="horizontal"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="11dp">
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                app:cardBackgroundColor="@color/moonwitch_panel_high"
+                app:cardCornerRadius="13dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/moonwitch_border"
+                app:strokeWidth="1dp">
+
+                <ImageView
+                    android:id="@+id/icon"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    app:tint="@color/moonwitch_cyan"
+                    tools:src="@drawable/ic_settings" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:textColor="@color/moonwitch_text"
+                    android:textSize="12.5sp"
+                    tools:text="Configurações" />
+
+                <TextView
+                    android:id="@+id/description"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:maxLines="2"
+                    android:textColor="@color/moonwitch_text_muted"
+                    android:textSize="9.5sp"
+                    tools:text="Edite configurações específicas para este jogo" />
+
+                <TextView
+                    android:id="@+id/details"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:textColor="@color/moonwitch_cyan"
+                    android:textSize="9.5sp"
+                    android:visibility="gone"
+                    tools:text="Turnip Adreno Driver"
+                    tools:visibility="visible" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="›"
+                android:textColor="@color/moonwitch_text_muted"
+                android:textSize="24sp" />
+        </LinearLayout>
+
+        <View
+            android:id="@+id/dividerSecondaryActions"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginHorizontal="14dp"
+            android:background="@color/moonwitch_border_soft"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <LinearLayout
+            android:id="@+id/layoutSecondaryActions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="end|center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="6dp"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>
