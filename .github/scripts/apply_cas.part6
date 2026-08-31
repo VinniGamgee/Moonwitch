@@ -1,0 +1,31 @@
+replace_once(
+    'src/video_core/renderer_opengl/present/layer.cpp',
+    '#include "video_core/framebuffer_config.h"',
+    '#include "common/moonwitch_cas_settings.h"\n#include "video_core/framebuffer_config.h"',
+)
+replace_once(
+    'src/video_core/renderer_opengl/present/layer.cpp',
+    '#include "video_core/renderer_opengl/present/fsr.h"',
+    '#include "video_core/renderer_opengl/present/cas.h"\n#include "video_core/renderer_opengl/present/fsr.h"',
+)
+replace_once(
+    'src/video_core/renderer_opengl/present/layer.cpp',
+    '''    if (filters.get_scaling_filter() == Settings::ScalingFilter::Fsr) {\n        if (!fsr || fsr->NeedsRecreation(layout.screen)) {\n            fsr.emplace(layout.screen.GetWidth(), layout.screen.GetHeight());\n        }\n\n        texture = fsr->Draw(program_manager, texture, info.scaled_width, info.scaled_height, crop);\n        crop = {0, 0, 1, 1};\n    }\n\n    out_matrix =''',
+    '''    if (filters.get_scaling_filter() == Settings::ScalingFilter::Fsr) {\n        if (!fsr || fsr->NeedsRecreation(layout.screen)) {\n            fsr.emplace(layout.screen.GetWidth(), layout.screen.GetHeight());\n        }\n\n        texture = fsr->Draw(program_manager, texture, info.scaled_width, info.scaled_height, crop);\n        crop = {0, 0, 1, 1};\n    }\n\n    if (Settings::IsCasEnabled()) {\n        const bool after_fsr = filters.get_scaling_filter() == Settings::ScalingFilter::Fsr;\n        const u32 cas_width =\n            after_fsr ? layout.screen.GetWidth() : static_cast<u32>(info.scaled_width);\n        const u32 cas_height =\n            after_fsr ? layout.screen.GetHeight() : static_cast<u32>(info.scaled_height);\n        if (!cas || cas->NeedsRecreation(cas_width, cas_height)) {\n            cas.emplace(cas_width, cas_height);\n        }\n        texture = cas->Draw(program_manager, texture);\n    }\n\n    out_matrix =''',
+)
+
+# Restore the normal workflow and remove this bootstrapper from the final tree before amending.
+workflow = ROOT / '.github/workflows/build-android-baseline.yml'
+workflow.write_text('''name: Moonwitch V1.2 Performance Preview\n\non:\n  workflow_dispatch:\n  push:\n    branches:\n      - perf/moonwitch-v1.2\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    timeout-minutes: 120\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n        with:\n          submodules: recursive\n          fetch-depth: 1\n\n      - name: Java 17\n        uses: actions/setup-java@v4\n        with:\n          distribution: temurin\n          java-version: '17'\n\n      - name: Dependencies\n        shell: bash\n        run: |\n          sudo apt-get update\n          sudo apt-get install -y glslang-tools spirv-tools\n          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true\n          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0" "ndk;28.2.13676358" "cmake;3.31.6"\n\n      - name: Build\n        shell: bash\n        env:\n          CCACHE: 'false'\n        run: |\n          chmod +x .ci/android/build.sh src/android/gradlew\n          .ci/android/build.sh -t standard -b Release\n\n      - name: Upload APK\n        uses: actions/upload-artifact@v4\n        with:\n          name: MOONWITCH-V1-2-PERF-PREVIEW\n          path: artifacts/*.apk\n          if-no-files-found: error\n          retention-days: 7\n''', encoding='utf-8')
+
+for rel in tuple(f'.github/scripts/apply_cas.part{i}' for i in range(1, 7)):
+    part = ROOT / rel
+    if part.exists():
+        part.unlink()
+
+subprocess.run(['git', 'config', 'user.name', 'Moonwitch CI'], check=True)
+subprocess.run(['git', 'config', 'user.email', 'moonwitch-ci@users.noreply.github.com'], check=True)
+subprocess.run(['git', 'add', '-A'], check=True)
+subprocess.run(['git', 'reset', '--soft', 'a54d475a3384dec44f5ab533f054ad64f0345ad6'], check=True)
+subprocess.run(['git', 'commit', '-m', '[skip ci] renderer: add standalone FidelityFX CAS'], check=True)
+subprocess.run(['git', 'push', '--force', 'origin', 'HEAD:perf/moonwitch-v1.2'], check=True)
