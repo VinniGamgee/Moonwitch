@@ -60,7 +60,6 @@ class GamesFragment : Fragment() {
     companion object {
         private const val SEARCH_TEXT = "SearchText"
         private const val PREF_SORT_TYPE = "GamesSortType"
-        private const val LEGACY_FILTER_FAVORITES = -1001
     }
 
     private val gamesViewModel: GamesViewModel by activityViewModels()
@@ -346,8 +345,8 @@ class GamesFragment : Fragment() {
     }
 
     private fun normalizeStoredFilter(filter: Int): Int = when (filter) {
-        R.id.filter_recently_played, LEGACY_FILTER_FAVORITES -> View.NO_ID
-        else -> filter
+        R.id.alphabetical, R.id.filter_recently_added -> filter
+        else -> View.NO_ID
     }
 
     private fun setInsets() = ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, windowInsets ->
