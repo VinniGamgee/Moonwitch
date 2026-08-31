@@ -11,6 +11,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.sin
 import org.yuzu.yuzu_emu.R
 import org.yuzu.yuzu_emu.adapters.GameAdapter
 import androidx.core.view.doOnNextLayout
@@ -43,6 +45,13 @@ class CarouselRecyclerView @JvmOverloads constructor(
         private const val CAROUSEL_OVERLAP_FACTOR = "CarouselOverlapFactor"
         private const val CAROUSEL_MAX_FLING_COUNT = "CarouselMaxFlingCount"
         private const val CAROUSEL_FLING_MULTIPLIER = "CarouselFlingMultiplier"
+        private const val CAROUSEL_ARC_ANGLE_STEP_DEGREES = 15.0
+        private const val CAROUSEL_ARC_MAX_ANGLE_DEGREES = 165.0
+        private const val CAROUSEL_ARC_DEPTH_MAX_ANGLE_DEGREES = 85.0
+        private const val CAROUSEL_ARC_DEPTH_STRETCH = 5.0f
+        private const val CAROUSEL_ARC_X_DEPTH_FACTOR = 0.55f
+        private const val CAROUSEL_ARC_FADE_OUT_START_DEGREES = 60.0
+        private const val CAROUSEL_ARC_FADE_OUT_END_DEGREES = 95.0
         const val CAROUSEL_LAST_SCROLL_POSITION = "CarouselLastScrollPosition"
         const val CAROUSEL_VIEW_TYPE_PORTRAIT = "GamesViewTypePortrait"
         const val CAROUSEL_VIEW_TYPE_LANDSCAPE = "GamesViewTypeLandscape"
@@ -73,10 +82,6 @@ class CarouselRecyclerView @JvmOverloads constructor(
 
     var pendingScrollAfterReload: Boolean = false
 
-    var onCenteredItemChanged: ((Int) -> Unit)? = null
-
-    private var lastCenteredPosition = RecyclerView.NO_POSITION
-
     var useCustomDrawingOrder: Boolean = false
         set(value) {
             field = value
@@ -98,7 +103,6 @@ class CarouselRecyclerView @JvmOverloads constructor(
         super.setAdapter(adapter)
 
         (adapter as? GameAdapter)?.registerAdapterDataObserver(carouselAdapterObserver)
-        lastCenteredPosition = RecyclerView.NO_POSITION
     }
 
     private fun calculateCenter(width: Int, paddingStart: Int, paddingEnd: Int): Int {
@@ -158,44 +162,76 @@ class CarouselRecyclerView @JvmOverloads constructor(
     }
 
     fun updateChildScalesAndAlpha() {
-        val centeredPosition = getClosestChildPosition()
         for (i in 0 until childCount) {
             val child = getChildAt(i) ?: continue
-            updateChildScaleAndAlphaForPosition(child, centeredPosition)
-        }
-        if (centeredPosition != RecyclerView.NO_POSITION && centeredPosition != lastCenteredPosition) {
-            lastCenteredPosition = centeredPosition
-            onCenteredItemChanged?.invoke(centeredPosition)
+            updateChildScaleAndAlphaForPosition(child)
         }
     }
 
-    private fun updateChildScaleAndAlphaForPosition(child: View, centeredPosition: Int) {
+    fun updateChildScaleAndAlphaForPosition(child: View) {
         val cardSize = (adapter as? GameAdapter ?: return).cardSize
-        val cardWidth = carouselCardWidth(cardSize)
         val position = getChildViewHolder(child).bindingAdapterPosition
         if (position == RecyclerView.NO_POSITION || cardSize <= 0) {
             return // No valid position or card size
         }
         val layoutParams = child.layoutParams
-        if (layoutParams.width != cardWidth || layoutParams.height != cardSize) {
+        if (layoutParams.width != cardSize || layoutParams.height != cardSize) {
             child.layoutParams = layoutParams.apply {
-                width = cardWidth
+                width = cardSize
                 height = cardSize
             }
         }
 
         val signedDistance = getChildDistanceToCenter(child)
-        child.animate().cancel()
-        child.translationX = 0f
+        val itemStep = (cardSize - overlapPx).toFloat().coerceAtLeast(1f)
+        val angleStep = Math.toRadians(CAROUSEL_ARC_ANGLE_STEP_DEGREES).toFloat()
+        val maxAngle = Math.toRadians(CAROUSEL_ARC_MAX_ANGLE_DEGREES).toFloat()
+        val depthMaxAngle = Math.toRadians(CAROUSEL_ARC_DEPTH_MAX_ANGLE_DEGREES).toFloat()
+        val fadeOutStartAngle = Math.toRadians(CAROUSEL_ARC_FADE_OUT_START_DEGREES).toFloat()
+        val fadeOutEndAngle = Math.toRadians(CAROUSEL_ARC_FADE_OUT_END_DEGREES).toFloat()
+        val angle = (signedDistance / itemStep * angleStep).coerceIn(-maxAngle, maxAngle)
+        val arcRadius = itemStep / angleStep
+        val arcX = sin(angle) * arcRadius
+        val absoluteAngle = abs(angle)
+        val rawDepthInput = ((1f - cos(absoluteAngle)) / (1f - cos(depthMaxAngle)))
+            .coerceIn(0f, 1f)
+        val easedDepthTail = Math.pow(
+            (1f - rawDepthInput).toDouble(),
+            CAROUSEL_ARC_DEPTH_STRETCH.toDouble()
+        ).toFloat()
+        val depthInput = (1f - easedDepthTail).coerceIn(0f, 1f)
+        val projectedArcX = arcX * (1f - rawDepthInput * CAROUSEL_ARC_X_DEPTH_FACTOR)
 
-        val distanceInCards = abs(signedDistance) / cardWidth.coerceAtLeast(1)
-        val scale = (1f - 0.17f * distanceInCards.coerceAtMost(1f)).coerceAtLeast(0.83f)
-        val alpha = (1f - 0.12f * distanceInCards.coerceAtMost(3f)).coerceAtLeast(0.64f)
+        child.animate().cancel()
+        child.translationX = projectedArcX - signedDistance
+
+        val internalBorderScale = resources.getFraction(R.fraction.carousel_bordercards_scale, 1, 1)
+        val borderScale = preferences.getFloat(CAROUSEL_BORDERCARDS_SCALE, internalBorderScale).coerceIn(
+            0f,
+            1f
+        )
+
+        val shapedScaling = 1f - depthInput
+        val scale = (borderScale + (1f - borderScale) * shapedScaling).coerceIn(0f, 1f)
+
+        val internalBordersAlpha = resources.getFraction(
+            R.fraction.carousel_bordercards_alpha,
+            1,
+            1
+        )
+        val borderAlpha = preferences.getFloat(CAROUSEL_BORDERCARDS_ALPHA, internalBordersAlpha).coerceIn(
+            0f,
+            1f
+        )
+        val shapedAlpha = cos(depthInput * Math.PI).toFloat()
+        val baseAlpha = (borderAlpha + (1f - borderAlpha) * shapedAlpha).coerceIn(0f, 1f)
+        val rearPresence = (1f - (absoluteAngle - fadeOutStartAngle) /
+            (fadeOutEndAngle - fadeOutStartAngle)).coerceIn(0f, 1f)
+        val alpha = (baseAlpha * rearPresence).coerceIn(0f, 1f)
 
         child.alpha = alpha
         child.scaleX = scale
         child.scaleY = scale
-        child.isSelected = position == centeredPosition
     }
 
     fun focusCenteredCard() {
@@ -253,8 +289,6 @@ class CarouselRecyclerView @JvmOverloads constructor(
         return minOf(scaledHeight.toInt(), availableHeight.toInt())
     }
 
-    private fun carouselCardWidth(cardSize: Int): Int = (cardSize * 0.64f).toInt()
-
     fun setupCarousel(enabled: Boolean) {
         if (enabled) {
             val gameAdapter = adapter as? GameAdapter ?: return
@@ -271,9 +305,9 @@ class CarouselRecyclerView @JvmOverloads constructor(
             useCustomDrawingOrder = true
             val cardSize = gameAdapter.cardSize
 
-            // The Moonwitch Big Picture library uses a clean, non-overlapping cover row.
-            overlapFactor = 0f
-            overlapPx = 0
+            val internalOverlapFactor = resources.getFraction(R.fraction.carousel_overlap_factor,1,1)
+            overlapFactor = preferences.getFloat(CAROUSEL_OVERLAP_FACTOR, internalOverlapFactor).coerceIn(0f,1f)
+            overlapPx = (cardSize * overlapFactor).toInt()
 
             val internalFlingMultiplier = resources.getFraction(R.fraction.carousel_fling_multiplier,1,1)
             flingMultiplier = preferences.getFloat(
@@ -303,7 +337,7 @@ class CarouselRecyclerView @JvmOverloads constructor(
 
             if (cardSize > 0) {
                 val topPadding = ((height - bottomInset - cardSize) / 2).coerceAtLeast(0) // Center vertically
-                val sidePadding = (width - carouselCardWidth(cardSize)) / 2 // Center first/last card
+                val sidePadding = (width - cardSize) / 2 // Center first/last card
                 setPadding(sidePadding, topPadding, sidePadding, 0)
                 clipToPadding = false
             }
@@ -347,7 +381,6 @@ class CarouselRecyclerView @JvmOverloads constructor(
     override fun onScrollStateChanged(state: Int) {
         super.onScrollStateChanged(state)
         if (state == RecyclerView.SCROLL_STATE_IDLE && isCarouselMode) {
-            updateChildScalesAndAlpha()
             focusCenteredCard()
         }
     }

@@ -5,7 +5,6 @@ package org.yuzu.yuzu_emu.adapters
 
 import android.content.DialogInterface
 import android.text.Html
-import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -65,8 +64,6 @@ class GameAdapter(private val activity: AppCompatActivity) :
             notifyDataSetChanged()
         }
     }
-
-    fun gameAt(position: Int): Game? = currentList.getOrNull(position)
 
     override fun getItemViewType(position: Int): Int = viewType
 
@@ -170,23 +167,14 @@ class GameAdapter(private val activity: AppCompatActivity) :
 
         private fun bindCarouselView(model: Game) {
             val b = binding as CardGameCarouselBinding
-            b.imageGameScreen.scaleType = ImageView.ScaleType.FIT_CENTER
+            b.imageGameScreen.scaleType = ImageView.ScaleType.CENTER_CROP
             GameIconUtils.loadGameIcon(model, b.imageGameScreen)
             b.textGameTitle.text = model.title.replace("[\\t\\n\\r]+".toRegex(), " ")
             b.textGameTitle.marquee()
             b.cardGameCarousel.setOnClickListener { onClick(model) }
             b.cardGameCarousel.setOnLongClickListener { onLongClick(model) }
-            b.cardGameCarousel.setOnKeyListener { _, keyCode, event ->
-                if (keyCode == KeyEvent.KEYCODE_BUTTON_X || keyCode == KeyEvent.KEYCODE_X) {
-                    if (event.action == KeyEvent.ACTION_UP) onLongClick(model)
-                    true
-                } else {
-                    false
-                }
-            }
             b.imageGameScreen.contentDescription = binding.root.context.getString(R.string.game_image_desc, model.title)
-            b.root.layoutParams.width = (cardSize * 0.64f).toInt()
-            b.root.layoutParams.height = cardSize
+            b.root.layoutParams.width = cardSize
         }
 
         fun onClick(game: Game) {

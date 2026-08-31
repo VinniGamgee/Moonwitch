@@ -6,13 +6,11 @@ package org.yuzu.yuzu_emu.fragments
 import android.content.Intent
 import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
-import android.content.res.Configuration
 import android.os.Bundle
 import android.provider.DocumentsContract
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
@@ -24,7 +22,6 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.navArgs
-import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.google.android.material.transition.MaterialSharedAxis
 import kotlinx.coroutines.Dispatchers
@@ -71,7 +68,6 @@ class GamePropertiesFragment : Fragment() {
     private val driverViewModel: DriverViewModel by activityViewModels()
 
     private val args by navArgs<GamePropertiesFragmentArgs>()
-    private var gameReady = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -118,18 +114,15 @@ class GamePropertiesFragment : Fragment() {
         GameIconUtils.loadGameIcon(args.game, binding.imageGameScreen)
         binding.title.text = args.game.title
         binding.title.marquee()
-        view.findViewById<TextView>(R.id.game_version_value)?.text =
-            args.game.version.ifBlank { getString(R.string.mw_not_available) }
-        view.findViewById<TextView>(R.id.game_title_id_value)?.text = args.game.programIdHex
 
         getPlayTime()
 
         binding.buttonStart.setOnClickListener {
-            launchSelectedGame()
+            LaunchGameDialogFragment.newInstance(args.game)
+                .show(childFragmentManager, LaunchGameDialogFragment.TAG)
         }
 
         if (GameHelper.cachedGameList.isEmpty()) {
-            gameReady = false
             binding.buttonStart.isEnabled = false
             viewLifecycleOwner.lifecycleScope.launch {
                 withContext(Dispatchers.IO) {
@@ -139,7 +132,6 @@ class GamePropertiesFragment : Fragment() {
                     return@launch
                 }
                 addonViewModel.onAddonsViewStarted(args.game)
-                gameReady = true
                 binding.buttonStart.isEnabled = true
             }
         }
@@ -156,15 +148,6 @@ class GamePropertiesFragment : Fragment() {
         ) { if (it) reloadList() }
 
         setInsets()
-    }
-
-    private fun launchSelectedGame() {
-        if (!gameReady) {
-            Toast.makeText(requireContext(), R.string.mw_game_loading, Toast.LENGTH_SHORT).show()
-            return
-        }
-        LaunchGameDialogFragment.newInstance(args.game)
-            .show(childFragmentManager, LaunchGameDialogFragment.TAG)
     }
 
     override fun onDestroy() {
@@ -358,19 +341,7 @@ class GamePropertiesFragment : Fragment() {
         _binding ?: return
 
         driverViewModel.updateDriverNameForGame(args.game)
-        val isLandscapeHub =
-            resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
         val properties = mutableListOf<GameProperty>().apply {
-            if (isLandscapeHub) {
-                add(
-                    SubmenuProperty(
-                        R.string.mw_hub_play,
-                        R.string.mw_hub_play_desc,
-                        R.drawable.ic_play,
-                        action = { launchSelectedGame() }
-                    )
-                )
-            }
             add(
                 SubmenuProperty(
                     R.string.info,
@@ -637,110 +608,16 @@ class GamePropertiesFragment : Fragment() {
                 }
             }
         }
-
-        if (
-            isLandscapeHub &&
-            !args.game.isHomebrew &&
-            properties.none { it.titleId == R.string.clear_shader_cache }
-        ) {
-            properties.add(
-                SubmenuProperty(
-                    R.string.clear_shader_cache,
-                    R.string.clear_shader_cache_description,
-                    R.drawable.ic_mw_layers,
-                    details = { getString(R.string.mw_shader_cache_empty) },
-                    action = {
-                        Toast.makeText(
-                            requireContext(),
-                            R.string.mw_shader_cache_empty,
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                )
-            )
-        }
-
-        val displayedProperties = if (isLandscapeHub) {
-            properties
-                .sortedBy { hubTilePriority(it.titleId) }
-                .map(::asHubTile)
-        } else {
-            properties
-        }
-
         binding.listProperties.apply {
-            layoutManager = if (isLandscapeHub) {
-                GridLayoutManager(requireContext(), 3)
-            } else {
-                val spanCount = resources.getInteger(R.integer.grid_columns)
-                StaggeredGridLayoutManager(
-                    spanCount,
-                    StaggeredGridLayoutManager.VERTICAL
-                ).apply {
-                    gapStrategy =
-                        StaggeredGridLayoutManager.GAP_HANDLING_MOVE_ITEMS_BETWEEN_SPANS
-                }
+            val spanCount = resources.getInteger(R.integer.grid_columns)
+            val staggered = StaggeredGridLayoutManager(
+                spanCount,
+                StaggeredGridLayoutManager.VERTICAL
+            ).apply {
+                gapStrategy = StaggeredGridLayoutManager.GAP_HANDLING_MOVE_ITEMS_BETWEEN_SPANS
             }
-            adapter = GamePropertiesAdapter(viewLifecycleOwner, displayedProperties)
-        }
-    }
-
-    private fun hubTilePriority(titleId: Int): Int = when (titleId) {
-        R.string.mw_hub_play -> 0
-        R.string.preferences_settings -> 1
-        R.string.device_profile_title -> 2
-        R.string.gpu_driver_manager -> 3
-        R.string.add_ons -> 4
-        R.string.save_data -> 5
-        R.string.clear_shader_cache -> 6
-        R.string.frame_gen -> 7
-        R.string.freedreno_per_game_title -> 8
-        R.string.info -> 9
-        else -> 10
-    }
-
-    private fun asHubTile(property: GameProperty): GameProperty {
-        val titleAndDescription = when (property.titleId) {
-            R.string.preferences_settings ->
-                R.string.mw_hub_settings to R.string.mw_hub_settings_desc
-            R.string.device_profile_title ->
-                R.string.mw_hub_profile to R.string.mw_hub_profile_desc
-            R.string.gpu_driver_manager ->
-                R.string.mw_hub_driver to R.string.mw_hub_driver_desc
-            R.string.add_ons -> R.string.mw_hub_addons to R.string.mw_hub_addons_desc
-            R.string.save_data -> R.string.mw_hub_saves to R.string.mw_hub_saves_desc
-            R.string.clear_shader_cache ->
-                R.string.mw_hub_shader_cache to R.string.mw_hub_shader_cache_desc
-            R.string.frame_gen ->
-                R.string.mw_hub_frame_generation to R.string.mw_hub_frame_generation_desc
-            R.string.freedreno_per_game_title ->
-                R.string.mw_hub_freedreno to R.string.mw_hub_freedreno_desc
-            else -> property.titleId to property.descriptionId
-        }
-        val iconId = when (property.titleId) {
-            R.string.preferences_settings -> R.drawable.ic_settings
-            R.string.device_profile_title -> R.drawable.ic_user
-            R.string.gpu_driver_manager -> R.drawable.ic_build
-            R.string.add_ons -> R.drawable.ic_install
-            R.string.save_data -> R.drawable.ic_save
-            R.string.clear_shader_cache -> R.drawable.ic_mw_layers
-            R.string.frame_gen -> R.drawable.ic_frames
-            R.string.freedreno_per_game_title -> R.drawable.ic_mw_gauge
-            else -> property.iconId
-        }
-
-        return when (property) {
-            is SubmenuProperty -> property.copy(
-                titleId = titleAndDescription.first,
-                descriptionId = titleAndDescription.second,
-                iconId = iconId
-            )
-            is InstallableProperty -> property.copy(
-                titleId = titleAndDescription.first,
-                descriptionId = titleAndDescription.second,
-                iconId = iconId
-            )
-            else -> property
+            layoutManager = staggered
+            adapter = GamePropertiesAdapter(viewLifecycleOwner, properties)
         }
     }
 

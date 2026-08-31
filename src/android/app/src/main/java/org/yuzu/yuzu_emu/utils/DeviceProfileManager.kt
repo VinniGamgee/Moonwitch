@@ -48,8 +48,6 @@ object DeviceProfileManager {
         val driverOutcome: DriverOutcome
     )
 
-    fun currentDeviceName(): String = deviceName(isPocoF5())
-
     enum class DriverOutcome {
         SELECTED,
         ALREADY_SELECTED,

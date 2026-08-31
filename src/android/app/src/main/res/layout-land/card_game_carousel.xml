@@ -5,42 +5,63 @@
     android:id="@+id/card_game_carousel"
     android:layout_width="wrap_content"
     android:layout_height="match_parent"
-    android:layout_marginHorizontal="5dp"
-    android:layout_marginVertical="6dp"
+    android:layout_margin="2dp"
     android:clickable="true"
     android:clipChildren="true"
     android:focusable="true"
     app:cardBackgroundColor="@color/moonwitch_panel"
-    app:cardCornerRadius="8dp"
+    app:cardCornerRadius="28dp"
     app:cardElevation="0dp"
+    app:cardPreventCornerOverlap="true"
     app:rippleColor="@color/game_card_ripple"
-    app:strokeColor="@color/moonwitch_game_card_stroke"
+    app:strokeColor="@color/moonwitch_border_soft"
     app:strokeWidth="1dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="4dp">
+        android:padding="6dp">
 
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/image_game_screen"
             android:layout_width="0dp"
             android:layout_height="0dp"
-            android:adjustViewBounds="true"
             android:contentDescription="@string/game_image_desc"
-            android:scaleType="fitCenter"
-            app:layout_constraintBottom_toBottomOf="parent"
+            android:scaleType="centerCrop"
+            app:layout_constraintBottom_toTopOf="@id/game_meta"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:shapeAppearanceOverlay="@style/ShapeAppearance.Eden.CarouselImage" />
 
-        <com.google.android.material.textview.MaterialTextView
-            android:id="@+id/text_game_title"
-            android:layout_width="1dp"
-            android:layout_height="1dp"
-            android:visibility="gone"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+        <LinearLayout
+            android:id="@+id/game_meta"
+            android:layout_width="0dp"
+            android:layout_height="62dp"
+            android:gravity="center_vertical"
+            android:orientation="vertical"
+            android:paddingHorizontal="14dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
+
+            <View
+                android:layout_width="42dp"
+                android:layout_height="2dp"
+                android:background="@drawable/moonwitch_accent_line" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/text_game_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:ellipsize="end"
+                android:fontFamily="sans-serif-medium"
+                android:maxLines="1"
+                android:requiresFadingEdge="horizontal"
+                android:text="Game Title"
+                android:textColor="@color/moonwitch_text"
+                android:textSize="15sp" />
+        </LinearLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 </org.yuzu.yuzu_emu.views.GradientBorderCardView>

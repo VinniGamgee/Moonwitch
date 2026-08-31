@@ -6,12 +6,9 @@
 
 package org.yuzu.yuzu_emu.adapters
 
-import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
-import androidx.core.widget.ImageViewCompat
 import androidx.lifecycle.LifecycleOwner
 import com.google.android.material.button.MaterialButton
 import org.yuzu.yuzu_emu.R
@@ -78,31 +75,6 @@ class GamePropertiesAdapter(
                     binding.icon.context.resources,
                     submenuProperty.iconId,
                     binding.icon.context.theme
-                )
-            )
-
-            val isPlayAction = submenuProperty.titleId == R.string.mw_hub_play
-            val context = binding.root.context
-            binding.root.setCardBackgroundColor(
-                ContextCompat.getColor(
-                    context,
-                    if (isPlayAction) R.color.moonwitch_red_panel else R.color.moonwitch_panel_soft
-                )
-            )
-            binding.root.strokeColor = ContextCompat.getColor(
-                context,
-                if (isPlayAction) R.color.moonwitch_red else R.color.moonwitch_border_soft
-            )
-            binding.root.strokeWidth = context.resources.displayMetrics.density
-                .times(if (isPlayAction) 2f else 1f)
-                .toInt()
-            ImageViewCompat.setImageTintList(
-                binding.icon,
-                ColorStateList.valueOf(
-                    ContextCompat.getColor(
-                        context,
-                        if (isPlayAction) R.color.moonwitch_red else R.color.moonwitch_cyan
-                    )
                 )
             )
 
