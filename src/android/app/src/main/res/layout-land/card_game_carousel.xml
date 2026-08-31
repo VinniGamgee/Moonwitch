@@ -35,7 +35,7 @@
             app:layout_constraintTop_toTopOf="parent"
             app:shapeAppearanceOverlay="@style/ShapeAppearance.Eden.CarouselImage" />
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/text_game_title"
             android:layout_width="1dp"
             android:layout_height="1dp"
