@@ -142,7 +142,7 @@ class GameAdapter(private val activity: AppCompatActivity) :
 
         private fun bindGridView(model: Game) {
             val b = binding as CardGameGridBinding
-            b.imageGameScreen.scaleType = ImageView.ScaleType.CENTER_CROP
+            b.imageGameScreen.scaleType = ImageView.ScaleType.FIT_CENTER
             GameIconUtils.loadGameIcon(model, b.imageGameScreen)
             b.textGameTitle.text = model.title.replace("[\\t\\n\\r]+".toRegex(), " ")
             b.cardGameGrid.setOnClickListener { onClick(model) }
