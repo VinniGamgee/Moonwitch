@@ -1,0 +1,30 @@
+replace_once(
+    'src/video_core/renderer_vulkan/present/layer.cpp',
+    '    , filters(filters_)\n    , image_count(image_count_)\n{',
+    '    , filters(filters_)\n    , image_count(image_count_)\n    , output_size_extent(output_size)\n{',
+)
+replace_once(
+    'src/video_core/renderer_vulkan/present/layer.cpp',
+    '''    if (auto* fsr = std::get_if<FSR>(&sr_filter)) {\n        source_image_view = fsr->Draw(device, scheduler, image_index, source_image, source_image_view, render_extent, crop_rect);\n        crop_rect = {0, 0, 1, 1};\n    } else if (auto* sgsr = std::get_if<SGSR>(&sr_filter)) {\n        source_image_view = sgsr->Draw(device, scheduler, image_index, source_image, source_image_view, render_extent, crop_rect);\n        crop_rect = {0, 0, 1, 1};\n    }\n\n    SetMatrixData(device, *out_push_constants, layout);''',
+    '''    if (auto* fsr = std::get_if<FSR>(&sr_filter)) {\n        source_image_view = fsr->Draw(device, scheduler, image_index, source_image, source_image_view, render_extent, crop_rect);\n        crop_rect = {0, 0, 1, 1};\n    } else if (auto* sgsr = std::get_if<SGSR>(&sr_filter)) {\n        source_image_view = sgsr->Draw(device, scheduler, image_index, source_image, source_image_view, render_extent, crop_rect);\n        crop_rect = {0, 0, 1, 1};\n    }\n\n    if (Settings::IsCasEnabled()) {\n        const VkExtent2D cas_extent = std::holds_alternative<std::monostate>(sr_filter)\n                                          ? render_extent\n                                          : output_size_extent;\n        if (!cas_pass || cas_pass->NeedsRecreation(cas_extent)) {\n            cas_pass.emplace(device, memory_allocator, image_count, cas_extent);\n        }\n        source_image_view = cas_pass->Draw(device, scheduler, image_index, source_image_view);\n    }\n\n    SetMatrixData(device, *out_push_constants, layout);''',
+)
+
+# OpenGL CAS pass.
+write(
+    'src/video_core/renderer_opengl/present/cas.h',
+    '''// SPDX-FileCopyrightText: Copyright 2026 Moonwitch Project\n// SPDX-License-Identifier: GPL-3.0-or-later\n\n#pragma once\n\n#include "common/common_types.h"\n#include "video_core/renderer_opengl/gl_resource_manager.h"\n\nnamespace OpenGL {\n\nclass ProgramManager;\n\nclass CAS final {\npublic:\n    explicit CAS(u32 width, u32 height);\n    ~CAS();\n\n    GLuint Draw(ProgramManager& program_manager, GLuint texture);\n    [[nodiscard]] bool NeedsRecreation(u32 width, u32 height) const;\n\nprivate:\n    u32 width{};\n    u32 height{};\n    OGLFramebuffer framebuffer;\n    OGLSampler sampler;\n    OGLProgram vert;\n    OGLProgram frag;\n    OGLTexture texture;\n};\n\n} // namespace OpenGL\n''',
+)
+write(
+    'src/video_core/renderer_opengl/present/cas.cpp',
+    '''// SPDX-FileCopyrightText: Copyright 2026 Moonwitch Project\n// SPDX-License-Identifier: GPL-3.0-or-later\n\n#include <algorithm>\n\n#include "common/moonwitch_cas_settings.h"\n#include "video_core/host_shaders/full_screen_triangle_vert.h"\n#include "video_core/host_shaders/opengl_fidelityfx_cas_frag.h"\n#include "video_core/renderer_opengl/gl_shader_manager.h"\n#include "video_core/renderer_opengl/gl_shader_util.h"\n#include "video_core/renderer_opengl/present/cas.h"\n#include "video_core/renderer_opengl/present/util.h"\n\nnamespace OpenGL {\n\nCAS::CAS(u32 width_, u32 height_) : width{width_}, height{height_} {\n    vert = CreateProgram(HostShaders::FULL_SCREEN_TRIANGLE_VERT, GL_VERTEX_SHADER);\n    frag = CreateProgram(HostShaders::OPENGL_FIDELITYFX_CAS_FRAG, GL_FRAGMENT_SHADER);\n\n    glProgramUniform2f(vert.handle, 0, 1.0f, -1.0f);\n    glProgramUniform2f(vert.handle, 1, 0.0f, 1.0f);\n\n    sampler = CreateNearestNeighborSampler();\n    framebuffer.Create();\n    texture.Create(GL_TEXTURE_2D);\n    glTextureStorage2D(texture.handle, 1, GL_RGBA16F, static_cast<GLsizei>(width),\n                       static_cast<GLsizei>(height));\n}\n\nCAS::~CAS() = default;\n\nGLuint CAS::Draw(ProgramManager& program_manager, GLuint source_texture) {\n    const float sharpness = std::clamp(static_cast<float>(Settings::GetCasSharpness()) / 100.0f,\n                                       0.0f, 1.0f);\n    glProgramUniform1f(frag.handle, 0, sharpness);\n\n    glFrontFace(GL_CW);\n    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer.handle);\n    glNamedFramebufferTexture(framebuffer.handle, GL_COLOR_ATTACHMENT0, texture.handle, 0);\n    glViewportIndexedf(0, 0.0f, 0.0f, static_cast<GLfloat>(width), static_cast<GLfloat>(height));\n    program_manager.BindPresentPrograms(vert.handle, frag.handle);\n    glBindTextureUnit(0, source_texture);\n    glBindSampler(0, sampler.handle);\n    glDrawArrays(GL_TRIANGLES, 0, 3);\n    return texture.handle;\n}\n\nbool CAS::NeedsRecreation(u32 new_width, u32 new_height) const {\n    return new_width != width || new_height != height;\n}\n\n} // namespace OpenGL\n''',
+)
+replace_once(
+    'src/video_core/renderer_opengl/present/layer.h',
+    '#include "video_core/renderer_opengl/present/smaa.h"\n#include "video_core/renderer_opengl/present/fxaa.h"',
+    '#include "video_core/renderer_opengl/present/smaa.h"\n#include "video_core/renderer_opengl/present/fxaa.h"\n#include "video_core/renderer_opengl/present/cas.h"',
+)
+replace_once(
+    'src/video_core/renderer_opengl/present/layer.h',
+    '    std::optional<FSR> fsr;\n    std::variant<std::monostate, FXAA, SMAA> anti_alias;',
+    '    std::optional<FSR> fsr;\n    std::optional<CAS> cas;\n    std::variant<std::monostate, FXAA, SMAA> anti_alias;',
+)
