@@ -1,0 +1,31 @@
+from pathlib import Path
+import subprocess
+
+ROOT = Path.cwd()
+
+
+def replace_once(rel, old, new):
+    path = ROOT / rel
+    text = path.read_text(encoding='utf-8')
+    if old not in text:
+        raise RuntimeError(f'Anchor not found in {rel}: {old[:120]!r}')
+    path.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+
+def write(rel, content):
+    path = ROOT / rel
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding='utf-8')
+
+# Register CAS with the existing Settings::Linkage without bloating Values/settings.h.
+replace_once(
+    'src/common/settings.cpp',
+    '#include "common/settings.h"\n#include "common/time_zone.h"',
+    '#include "common/settings.h"\n#include "common/moonwitch_cas_settings.h"\n#include "common/time_zone.h"',
+)
+replace_once(
+    'src/common/settings.cpp',
+    'Values values;\n\nstd::string GetTimeZoneString(TimeZone time_zone) {',
+    '''Values values;\n\nnamespace {\nSwitchableSetting<bool> cas_enabled_setting{values.linkage, false, "cas_enabled",\n                                            Category::Renderer, Specialization::Paired, true, true};\nSwitchableSetting<int, true> cas_sharpness_setting{\n    values.linkage, 35, 0, 100, "cas_sharpness", Category::Renderer,\n    Specialization::Scalar | Specialization::Percentage, true, true, &cas_enabled_setting};\n} // namespace\n\nbool IsCasEnabled() {\n    return cas_enabled_setting.GetValue();\n}\n\nint GetCasSharpness() {\n    return cas_sharpness_setting.GetValue();\n}\n\nstd::string GetTimeZoneString(TimeZone time_zone) {''',
+)
+write(
