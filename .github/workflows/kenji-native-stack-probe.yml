@@ -1,0 +1,147 @@
+name: Moonwitch Kenji Native Stack Probe
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - perf/moonwitch-v1.2
+    paths:
+      - '.github/workflows/kenji-native-stack-probe.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kenji-native-stack-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  KENJI_COMMIT: 72ad0e108d0781a07b6a598c8403205ee7a3322e
+  ANDROID_PLATFORM: 'android-37.0'
+  ANDROID_BUILD_TOOLS: '37.0.0'
+  NDK_VERSION: '28.2.13676358'
+  CMAKE_SDK_VERSION: '3.22.1'
+  CMAKE_NATIVE_VERSION: '4.1.2'
+  JAVA_VERSION: '21'
+  DOTNET_VERSION: '9.0.x'
+  CMDLINE_TOOLS_BUILD: '11076708'
+
+jobs:
+  build-native-stack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+
+    steps:
+      - name: Checkout Moonwitch
+        uses: actions/checkout@v4
+
+      - name: Checkout pinned Kenji
+        uses: actions/checkout@v4
+        with:
+          repository: Grantierm/Kenji-sc
+          ref: ${{ env.KENJI_COMMIT }}
+          path: kenji
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Free disk space
+        shell: bash
+        run: |
+          sudo rm -rf /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL || true
+          sudo docker image prune --all --force || true
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install Android toolchain
+        shell: bash
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            "platform-tools" \
+            "platforms;${ANDROID_PLATFORM}" \
+            "build-tools;${ANDROID_BUILD_TOOLS}" \
+            "ndk;${NDK_VERSION}" \
+            "cmake;${CMAKE_SDK_VERSION}"
+
+          cd /tmp
+          wget -q "https://github.com/Kitware/CMake/releases/download/v${CMAKE_NATIVE_VERSION}/cmake-${CMAKE_NATIVE_VERSION}-linux-x86_64.tar.gz" -O cmake.tar.gz
+          tar -xzf cmake.tar.gz
+          CMAKE_INSTALL_DIR="$ANDROID_HOME/cmake/${CMAKE_NATIVE_VERSION}"
+          mkdir -p "$CMAKE_INSTALL_DIR"
+          cp -r "cmake-${CMAKE_NATIVE_VERSION}-linux-x86_64/." "$CMAKE_INSTALL_DIR/"
+
+          if [ -d "$ANDROID_HOME/platforms/android-37.0" ] && [ ! -d "$ANDROID_HOME/platforms/android-37" ]; then
+            ln -s android-37.0 "$ANDROID_HOME/platforms/android-37"
+          fi
+
+          NDK_PATH="$ANDROID_HOME/ndk/${NDK_VERSION}"
+          TOOLCHAIN="$NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64"
+          echo "ANDROID_NDK_HOME=$NDK_PATH" >> "$GITHUB_ENV"
+          echo "$TOOLCHAIN/bin" >> "$GITHUB_PATH"
+          echo "$ANDROID_HOME/cmake/${CMAKE_NATIVE_VERSION}/bin" >> "$GITHUB_PATH"
+
+      - name: Configure Kenji NuGet feeds
+        working-directory: kenji
+        shell: bash
+        run: |
+          find . -iname 'nuget.config' -delete
+          cat > nuget.config <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <packageSources>
+              <clear />
+              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+              <add key="ryujinx-projects" value="https://git.ryujinx.app/api/packages/projects/nuget/index.json" />
+            </packageSources>
+          </configuration>
+          EOF
+          dotnet nuget locals all --clear
+
+      - name: Build Kenji Android standard
+        working-directory: kenji/src/KenjinxAndroid
+        shell: bash
+        run: |
+          chmod +x gradlew
+          cat > local.properties <<EOF
+          sdk.dir=$ANDROID_HOME
+          ndk.dir=$ANDROID_NDK_HOME
+          cmake.dir=$ANDROID_HOME/cmake/${CMAKE_NATIVE_VERSION}
+          EOF
+          ./gradlew assembleMainlineArmv82Release \
+            -Porg.kenjinx.config=release \
+            -Pandroid.ndkPath="$ANDROID_NDK_HOME" \
+            --no-daemon \
+            --build-cache
+
+      - name: Extract ARM64 native stack
+        shell: bash
+        run: |
+          APK_PATH=$(find kenji/src/KenjinxAndroid/app/build/outputs/apk/mainlineArmv82/release -name '*.apk' | head -n 1)
+          test -n "$APK_PATH"
+          mkdir -p kenji-native-stack
+          unzip -j "$APK_PATH" 'lib/arm64-v8a/*.so' -d kenji-native-stack
+          cp kenji/LICENSE.txt kenji-native-stack/KENJI-LICENSE.txt
+          ls -lah kenji-native-stack | tee kenji-native-stack/CONTENTS.txt
+          for lib in kenji-native-stack/*.so; do
+            echo "===== $lib =====" | tee -a kenji-native-stack/ELF-INFO.txt
+            file "$lib" | tee -a kenji-native-stack/ELF-INFO.txt
+            readelf -h "$lib" | grep -E 'Class:|Machine:' | tee -a kenji-native-stack/ELF-INFO.txt
+          done
+          sha256sum kenji-native-stack/*.so | tee kenji-native-stack/SHA256SUMS
+
+      - name: Upload native stack
+        uses: actions/upload-artifact@v4
+        with:
+          name: MOONWITCH-KENJI-NATIVE-STACK
+          path: kenji-native-stack/
+          if-no-files-found: error
+          retention-days: 7
