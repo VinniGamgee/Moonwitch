@@ -13,6 +13,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.PopupMenu
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
@@ -34,6 +35,7 @@ import info.debatty.java.stringsimilarity.Jaccard
 import info.debatty.java.stringsimilarity.JaroWinkler
 import java.util.Locale
 import org.yuzu.yuzu_emu.HomeNavigationDirections
+import org.yuzu.yuzu_emu.NativeLibrary
 import org.yuzu.yuzu_emu.R
 import org.yuzu.yuzu_emu.YuzuApplication
 import org.yuzu.yuzu_emu.adapters.GameAdapter
@@ -75,6 +77,7 @@ class GamesFragment : Fragment() {
 
     private fun getCurrentViewType(): Int {
         val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        if (isLandscape) return GameAdapter.VIEW_TYPE_CAROUSEL
         val key = if (isLandscape) CarouselRecyclerView.CAROUSEL_VIEW_TYPE_LANDSCAPE else CarouselRecyclerView.CAROUSEL_VIEW_TYPE_PORTRAIT
         val fallback = if (isLandscape) GameAdapter.VIEW_TYPE_CAROUSEL else GameAdapter.VIEW_TYPE_GRID
         return preferences.getInt(key, fallback)
@@ -172,6 +175,7 @@ class GamesFragment : Fragment() {
             }
             if (savedViewType == GameAdapter.VIEW_TYPE_CAROUSEL) {
                 (this as? CarouselRecyclerView)?.let { carousel ->
+                    carousel.onCenteredItemChanged = ::updateSelectedGame
                     ViewCompat.requestApplyInsets(carousel)
                     doOnNextLayout { carousel.notifyLaidOut(fallbackBottomInset) }
                 }
@@ -212,7 +216,37 @@ class GamesFragment : Fragment() {
         val submitGeneration = ++gameListSubmitGeneration
         adapter.submitList(games) {
             if (committedGameListSubmitGeneration < submitGeneration) committedGameListSubmitGeneration = submitGeneration
+            (binding.gridGames as? CarouselRecyclerView)?.post {
+                if (_binding != null) (binding.gridGames as? CarouselRecyclerView)?.refreshView()
+            }
             schedulePostReloadListSettle()
+        }
+    }
+
+    private fun updateSelectedGame(position: Int) {
+        val game = gameAdapter.gameAt(position) ?: return
+        view?.findViewById<TextView>(R.id.selected_game_title)?.text =
+            game.title.replace("[\\t\\n\\r]+".toRegex(), " ")
+
+        val details = buildList {
+            game.developer.takeIf { it.isNotBlank() }?.let(::add)
+            game.version.takeIf { it.isNotBlank() }?.let(::add)
+            val playTimeSeconds = runCatching {
+                NativeLibrary.playTimeManagerGetPlayTime(game.programId)
+            }.getOrDefault(0L)
+            if (playTimeSeconds > 0L) add(formatPlayTime(playTimeSeconds))
+        }
+        view?.findViewById<TextView>(R.id.selected_game_meta)?.text =
+            details.joinToString("  •  ")
+    }
+
+    private fun formatPlayTime(totalSeconds: Long): String {
+        val hours = totalSeconds / 3600
+        val minutes = (totalSeconds % 3600) / 60
+        return if (hours > 0) {
+            getString(R.string.mw_played_hours_minutes, hours, minutes)
+        } else {
+            getString(R.string.mw_played_minutes, minutes)
         }
     }
 

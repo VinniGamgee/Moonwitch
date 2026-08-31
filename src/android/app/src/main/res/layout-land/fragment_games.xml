@@ -1,42 +1,268 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/moonwitch_background" android:clipChildren="false">
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/moonwitch_background"
+    android:clipChildren="false">
 
-    <ImageView android:id="@+id/ambient_logo" android:layout_width="360dp" android:layout_height="360dp" android:alpha="0.022" android:contentDescription="@null" android:src="@drawable/ic_moonwitch_mark" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent"/>
+    <ImageView
+        android:id="@+id/ambient_logo"
+        android:layout_width="430dp"
+        android:layout_height="430dp"
+        android:alpha="0.025"
+        android:contentDescription="@null"
+        android:src="@drawable/ic_moonwitch_mark"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <androidx.constraintlayout.widget.ConstraintLayout android:id="@+id/header" android:layout_width="0dp" android:layout_height="58dp" android:layout_marginStart="18dp" android:layout_marginTop="6dp" android:layout_marginEnd="18dp" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent">
-        <ImageView android:id="@+id/brand_mark" android:layout_width="42dp" android:layout_height="42dp" android:contentDescription="@string/app_name" android:src="@drawable/ic_moonwitch_mark" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent"/>
-        <LinearLayout android:id="@+id/brand_text" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:orientation="vertical" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toEndOf="@id/brand_mark" app:layout_constraintTop_toTopOf="parent">
-            <com.google.android.material.textview.MaterialTextView android:id="@+id/title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="sans-serif-medium" android:letterSpacing="0.10" android:maxLines="1" android:text="@string/app_name" android:textAllCaps="true" android:textColor="@color/moonwitch_text" android:textSize="19sp"/>
-            <com.google.android.material.textview.MaterialTextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="sans-serif-medium" android:letterSpacing="0.20" android:text="@string/mw_game_frontend" android:textColor="@color/moonwitch_cyan" android:textSize="8sp"/>
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/header"
+        android:layout_width="0dp"
+        android:layout_height="80dp"
+        android:layout_marginStart="18dp"
+        android:layout_marginEnd="18dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:id="@+id/brand_group"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <View
+                android:layout_width="120dp"
+                android:layout_height="1dp"
+                android:layout_marginEnd="16dp"
+                android:background="@color/moonwitch_border" />
+
+            <ImageView
+                android:id="@+id/brand_mark"
+                android:layout_width="58dp"
+                android:layout_height="58dp"
+                android:contentDescription="@string/app_name"
+                android:src="@drawable/ic_moonwitch_mark" />
+
+            <LinearLayout
+                android:id="@+id/brand_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:gravity="center_vertical"
+                android:orientation="vertical">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="serif"
+                    android:letterSpacing="0.24"
+                    android:maxLines="1"
+                    android:text="@string/app_name"
+                    android:textAllCaps="true"
+                    android:textColor="@color/moonwitch_text"
+                    android:textSize="29sp" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:fontFamily="sans-serif-medium"
+                    android:letterSpacing="0.32"
+                    android:text="@string/mw_game_frontend"
+                    android:textColor="@color/moonwitch_cyan"
+                    android:textSize="7sp" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="120dp"
+                android:layout_height="1dp"
+                android:layout_marginStart="16dp"
+                android:background="@color/moonwitch_border" />
         </LinearLayout>
 
-        <com.google.android.material.card.MaterialCardView android:id="@+id/search_shell" android:layout_width="0dp" android:layout_height="46dp" android:layout_marginStart="18dp" android:layout_marginEnd="8dp" app:cardBackgroundColor="@color/moonwitch_panel_soft" app:cardCornerRadius="16dp" app:cardElevation="0dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@id/settings_button" app:layout_constraintStart_toEndOf="@id/brand_text" app:layout_constraintTop_toTopOf="parent" app:strokeColor="@color/moonwitch_border_soft" app:strokeWidth="1dp">
-            <androidx.constraintlayout.widget.ConstraintLayout android:id="@+id/library_tools" android:layout_width="match_parent" android:layout_height="match_parent">
-                <com.google.android.material.card.MaterialCardView android:id="@+id/search_background" android:layout_width="0dp" android:layout_height="38dp" android:layout_marginStart="4dp" android:layout_marginEnd="5dp" android:clickable="true" android:focusable="true" app:cardBackgroundColor="@color/moonwitch_panel_high" app:cardCornerRadius="13dp" app:cardElevation="0dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@id/add_directory" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent">
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginStart="11dp" android:layout_marginEnd="32dp" android:gravity="center_vertical" android:orientation="horizontal">
-                        <ImageView android:layout_width="17dp" android:layout_height="17dp" android:layout_marginEnd="8dp" android:contentDescription="@null" android:src="@drawable/ic_search" app:tint="@color/moonwitch_cyan"/>
-                        <EditText android:id="@+id/search_text" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@android:color/transparent" android:hint="@string/mw_search_games" android:imeOptions="flagNoFullscreen" android:inputType="text" android:maxLines="1" android:textColor="@color/moonwitch_text" android:textColorHint="@color/moonwitch_text_muted" android:textSize="12sp"/>
-                    </LinearLayout>
-                    <ImageView android:id="@+id/clear_button" android:layout_width="17dp" android:layout_height="17dp" android:layout_gravity="center_vertical|end" android:layout_marginEnd="9dp" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="@string/clear" android:src="@drawable/ic_clear" android:visibility="invisible" app:tint="@color/moonwitch_text_muted"/>
-                </com.google.android.material.card.MaterialCardView>
-                <com.google.android.material.card.MaterialCardView android:id="@+id/add_directory" android:layout_width="36dp" android:layout_height="36dp" android:layout_marginEnd="4dp" android:clickable="true" android:contentDescription="@string/mw_add_games" android:focusable="true" app:cardBackgroundColor="@color/moonwitch_panel_high" app:cardCornerRadius="12dp" app:cardElevation="0dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@id/explore_directory" app:layout_constraintTop_toTopOf="parent"><ImageView android:layout_width="16dp" android:layout_height="16dp" android:layout_gravity="center" android:contentDescription="@null" android:src="@drawable/ic_add" app:tint="@color/moonwitch_cyan"/></com.google.android.material.card.MaterialCardView>
-                <com.google.android.material.card.MaterialCardView android:id="@+id/explore_directory" android:layout_width="36dp" android:layout_height="36dp" android:layout_marginEnd="4dp" android:clickable="true" android:contentDescription="@string/mw_explore_folder" android:focusable="true" app:cardBackgroundColor="@color/moonwitch_panel_high" app:cardCornerRadius="12dp" app:cardElevation="0dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@id/view_button" app:layout_constraintTop_toTopOf="parent"><ImageView android:layout_width="16dp" android:layout_height="16dp" android:layout_gravity="center" android:contentDescription="@null" android:src="@drawable/ic_folder_open" app:tint="@color/moonwitch_text_muted"/></com.google.android.material.card.MaterialCardView>
-                <com.google.android.material.card.MaterialCardView android:id="@+id/view_button" android:layout_width="36dp" android:layout_height="36dp" android:layout_marginEnd="4dp" android:clickable="true" android:contentDescription="@string/view_carousel" android:focusable="true" app:cardBackgroundColor="@color/moonwitch_panel_high" app:cardCornerRadius="12dp" app:cardElevation="0dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@id/filter_button" app:layout_constraintTop_toTopOf="parent"><ImageView android:layout_width="16dp" android:layout_height="16dp" android:layout_gravity="center" android:contentDescription="@null" android:src="@drawable/ic_mw_library" app:tint="@color/moonwitch_text_muted"/></com.google.android.material.card.MaterialCardView>
-                <com.google.android.material.card.MaterialCardView android:id="@+id/filter_button" android:layout_width="36dp" android:layout_height="36dp" android:layout_marginEnd="5dp" android:clickable="true" android:contentDescription="@string/mw_filters" android:focusable="true" app:cardBackgroundColor="@color/moonwitch_panel_high" app:cardCornerRadius="12dp" app:cardElevation="0dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toTopOf="parent"><ImageView android:layout_width="16dp" android:layout_height="16dp" android:layout_gravity="center" android:contentDescription="@null" android:src="@drawable/ic_filter" app:tint="@color/moonwitch_cyan"/></com.google.android.material.card.MaterialCardView>
-            </androidx.constraintlayout.widget.ConstraintLayout>
-        </com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/settings_button"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:clickable="true"
+            android:contentDescription="@string/mw_settings"
+            android:focusable="true"
+            app:cardBackgroundColor="@color/moonwitch_panel_high"
+            app:cardCornerRadius="13dp"
+            app:cardElevation="0dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:rippleColor="#3035D8FF"
+            app:strokeColor="@color/moonwitch_border"
+            app:strokeWidth="1dp">
 
-        <com.google.android.material.card.MaterialCardView android:id="@+id/settings_button" android:layout_width="42dp" android:layout_height="42dp" android:clickable="true" android:contentDescription="@string/mw_settings" android:focusable="true" app:cardBackgroundColor="@color/moonwitch_panel_high" app:cardCornerRadius="14dp" app:cardElevation="0dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toTopOf="parent" app:rippleColor="#30FF3B55" app:strokeColor="@color/moonwitch_border" app:strokeWidth="1dp"><ImageView android:layout_width="18dp" android:layout_height="18dp" android:layout_gravity="center" android:contentDescription="@null" android:src="@drawable/ic_settings" app:tint="@color/moonwitch_red"/></com.google.android.material.card.MaterialCardView>
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_gravity="center"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_settings"
+                app:tint="@color/moonwitch_cyan" />
+        </com.google.android.material.card.MaterialCardView>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <com.google.android.material.textview.MaterialTextView android:id="@+id/library_section_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="26dp" android:layout_marginTop="8dp" android:fontFamily="sans-serif-medium" android:letterSpacing="0.18" android:text="@string/mw_choose_game" android:textColor="@color/moonwitch_text_muted" android:textSize="9sp" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/header"/>
-    <com.google.android.material.textview.MaterialTextView android:id="@+id/library_count" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginEnd="26dp" android:text="0 jogos" android:textColor="@color/moonwitch_text_muted" android:textSize="9sp" app:layout_constraintBaseline_toBaselineOf="@id/library_section_label" app:layout_constraintEnd_toEndOf="parent"/>
+    <!-- Kept for ViewBinding and all existing library actions; hidden in Big Picture mode. -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/search_shell"
+        android:layout_width="1dp"
+        android:layout_height="1dp"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/header">
 
-    <org.yuzu.yuzu_emu.ui.MidScreenSwipeRefreshLayout android:id="@+id/swipe_refresh" android:layout_width="0dp" android:layout_height="0dp" android:layout_marginTop="3dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/library_section_label">
-        <RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent">
-            <com.google.android.material.textview.MaterialTextView android:id="@+id/notice_text" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:padding="@dimen/spacing_large" android:text="@string/empty_gamelist" android:textColor="@color/moonwitch_text_muted" android:textSize="15sp" android:visibility="gone"/>
-            <org.yuzu.yuzu_emu.ui.CarouselRecyclerView android:id="@+id/grid_games" android:layout_width="match_parent" android:layout_height="match_parent" android:clipChildren="false" android:clipToPadding="false" android:fadeScrollbars="true" android:scrollbarStyle="outsideOverlay" android:scrollbars="horizontal"/>
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/library_tools"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/search_background"
+                android:layout_width="1dp"
+                android:layout_height="1dp">
+                <EditText
+                    android:id="@+id/search_text"
+                    android:layout_width="1dp"
+                    android:layout_height="1dp"
+                    android:background="@android:color/transparent"
+                    android:inputType="text" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <ImageView
+                android:id="@+id/clear_button"
+                android:layout_width="1dp"
+                android:layout_height="1dp"
+                android:contentDescription="@string/clear" />
+            <View android:id="@+id/add_directory" android:layout_width="1dp" android:layout_height="1dp" />
+            <View android:id="@+id/explore_directory" android:layout_width="1dp" android:layout_height="1dp" />
+            <View android:id="@+id/view_button" android:layout_width="1dp" android:layout_height="1dp" />
+            <View android:id="@+id/filter_button" android:layout_width="1dp" android:layout_height="1dp" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/library_section_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/header" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/library_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/header" />
+
+    <org.yuzu.yuzu_emu.ui.MidScreenSwipeRefreshLayout
+        android:id="@+id/swipe_refresh"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@id/selection_details"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/header">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/notice_text"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:padding="@dimen/spacing_large"
+                android:text="@string/empty_gamelist"
+                android:textColor="@color/moonwitch_text_muted"
+                android:textSize="15sp"
+                android:visibility="gone" />
+
+            <org.yuzu.yuzu_emu.ui.CarouselRecyclerView
+                android:id="@+id/grid_games"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:fadeScrollbars="false"
+                android:overScrollMode="never" />
         </RelativeLayout>
     </org.yuzu.yuzu_emu.ui.MidScreenSwipeRefreshLayout>
+
+    <LinearLayout
+        android:id="@+id/selection_details"
+        android:layout_width="0dp"
+        android:layout_height="55dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toTopOf="@id/controller_hints"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/selected_game_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif-medium"
+            android:maxLines="1"
+            android:textColor="@color/moonwitch_text"
+            android:textSize="15sp" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/selected_game_meta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/moonwitch_text_muted"
+            android:textSize="10sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/controller_hints"
+        android:layout_width="0dp"
+        android:layout_height="50dp"
+        android:background="#7A080C17"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:weightSum="3"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:orientation="horizontal">
+            <TextView android:layout_width="25dp" android:layout_height="25dp" android:background="@drawable/mw_controller_hint_cyan" android:gravity="center" android:text="A" android:textColor="@color/moonwitch_text" android:textSize="12sp" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="9dp" android:text="@string/mw_open" android:textColor="@color/moonwitch_text" android:textSize="11sp" />
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:orientation="horizontal">
+            <TextView android:layout_width="25dp" android:layout_height="25dp" android:background="@drawable/mw_controller_hint_cyan" android:gravity="center" android:text="X" android:textColor="@color/moonwitch_text" android:textSize="12sp" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="9dp" android:text="@string/mw_options" android:textColor="@color/moonwitch_text" android:textSize="11sp" />
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:orientation="horizontal">
+            <TextView android:layout_width="25dp" android:layout_height="25dp" android:background="@drawable/mw_controller_hint_red" android:gravity="center" android:text="B" android:textColor="@color/moonwitch_text" android:textSize="12sp" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="9dp" android:text="@string/mw_back" android:textColor="@color/moonwitch_text" android:textSize="11sp" />
+        </LinearLayout>
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
