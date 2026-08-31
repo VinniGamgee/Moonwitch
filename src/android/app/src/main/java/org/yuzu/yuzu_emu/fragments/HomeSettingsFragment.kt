@@ -70,31 +70,57 @@ class HomeSettingsFragment : Fragment() {
     }
 
     private fun buildCategories(): List<HomeSetting> = listOf(
-        HomeSetting(R.string.mw_cat_general, R.string.mw_cat_general_desc, R.drawable.ic_settings) {
-            openSettings(Settings.MenuTag.SECTION_ROOT)
-        },
-        HomeSetting(R.string.mw_cat_graphics, R.string.mw_cat_graphics_desc, R.drawable.ic_graphics) {
-            openSettings(Settings.MenuTag.SECTION_RENDERER)
-        },
-        HomeSetting(R.string.mw_cat_audio, R.string.mw_cat_audio_desc, R.drawable.ic_mw_audio) {
-            openSettings(Settings.MenuTag.SECTION_AUDIO)
-        },
-        HomeSetting(R.string.mw_cat_controls, R.string.mw_cat_controls_desc, R.drawable.ic_controller) {
-            openSettings(Settings.MenuTag.SECTION_INPUT)
-        },
-        HomeSetting(R.string.mw_cat_system, R.string.mw_cat_system_desc, R.drawable.ic_mw_system) {
-            openSettings(Settings.MenuTag.SECTION_SYSTEM)
-        },
-        HomeSetting(R.string.mw_cat_interface, R.string.mw_cat_interface_desc, R.drawable.ic_palette) {
-            openSettings(Settings.MenuTag.SECTION_APP_SETTINGS)
-        },
-        HomeSetting(R.string.mw_cat_library, R.string.mw_cat_library_desc, R.drawable.ic_mw_library) {
-            val action = HomeNavigationDirections.actionGlobalSettingsSubscreenActivity(SettingsSubscreen.GAME_FOLDERS, null)
-            binding.root.findNavController().navigate(action)
-        },
-        HomeSetting(R.string.mw_cat_lab, R.string.mw_cat_lab_desc, R.drawable.ic_mw_gauge) {
-            openSettings(Settings.MenuTag.SECTION_PERFORMANCE_STATS)
-        }
+        HomeSetting(
+            R.string.mw_cat_general,
+            R.string.mw_cat_general_desc,
+            R.drawable.ic_settings,
+            onClick = { openSettings(Settings.MenuTag.SECTION_ROOT) }
+        ),
+        HomeSetting(
+            R.string.mw_cat_graphics,
+            R.string.mw_cat_graphics_desc,
+            R.drawable.ic_graphics,
+            onClick = { openSettings(Settings.MenuTag.SECTION_RENDERER) }
+        ),
+        HomeSetting(
+            R.string.mw_cat_audio,
+            R.string.mw_cat_audio_desc,
+            R.drawable.ic_mw_audio,
+            onClick = { openSettings(Settings.MenuTag.SECTION_AUDIO) }
+        ),
+        HomeSetting(
+            R.string.mw_cat_controls,
+            R.string.mw_cat_controls_desc,
+            R.drawable.ic_controller,
+            onClick = { openSettings(Settings.MenuTag.SECTION_INPUT) }
+        ),
+        HomeSetting(
+            R.string.mw_cat_system,
+            R.string.mw_cat_system_desc,
+            R.drawable.ic_mw_system,
+            onClick = { openSettings(Settings.MenuTag.SECTION_SYSTEM) }
+        ),
+        HomeSetting(
+            R.string.mw_cat_interface,
+            R.string.mw_cat_interface_desc,
+            R.drawable.ic_palette,
+            onClick = { openSettings(Settings.MenuTag.SECTION_APP_SETTINGS) }
+        ),
+        HomeSetting(
+            R.string.mw_cat_library,
+            R.string.mw_cat_library_desc,
+            R.drawable.ic_mw_library,
+            onClick = {
+                val action = HomeNavigationDirections.actionGlobalSettingsSubscreenActivity(SettingsSubscreen.GAME_FOLDERS, null)
+                binding.root.findNavController().navigate(action)
+            }
+        ),
+        HomeSetting(
+            R.string.mw_cat_lab,
+            R.string.mw_cat_lab_desc,
+            R.drawable.ic_mw_gauge,
+            onClick = { openSettings(Settings.MenuTag.SECTION_PERFORMANCE_STATS) }
+        )
     )
 
     private fun renderOptions(items: List<HomeSetting>) {
