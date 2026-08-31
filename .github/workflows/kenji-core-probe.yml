@@ -1,0 +1,119 @@
+name: Moonwitch Kenji Core Probe
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - perf/moonwitch-v1.2
+    paths:
+      - '.github/workflows/kenji-core-probe.yml'
+      - 'src/android/app/src/main/java/dev/moonwitch/core/**'
+      - 'src/android/app/build.gradle.kts'
+      - 'THIRDPARTY.md'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kenji-core-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  KENJI_REPOSITORY: Grantierm/Kenji-sc
+  KENJI_COMMIT: 72ad0e108d0781a07b6a598c8403205ee7a3322e
+  DOTNET_VERSION: '9.0.x'
+  NDK_VERSION: '28.2.13676358'
+
+jobs:
+  build-core:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout Moonwitch
+        uses: actions/checkout@v4
+
+      - name: Checkout pinned Kenji core
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.KENJI_REPOSITORY }}
+          ref: ${{ env.KENJI_COMMIT }}
+          path: kenji
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install Android NDK toolchain
+        shell: bash
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "ndk;${NDK_VERSION}"
+
+          NDK_PATH="$ANDROID_HOME/ndk/${NDK_VERSION}"
+          TOOLCHAIN="$NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64"
+
+          echo "ANDROID_NDK_HOME=$NDK_PATH" >> "$GITHUB_ENV"
+          echo "$TOOLCHAIN/bin" >> "$GITHUB_PATH"
+
+      - name: Configure Kenji NuGet feeds
+        working-directory: kenji
+        shell: bash
+        run: |
+          find . -iname 'nuget.config' -delete
+          cat > nuget.config <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <packageSources>
+              <clear />
+              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+              <add key="ryujinx-projects" value="https://git.ryujinx.app/api/packages/projects/nuget/index.json" />
+            </packageSources>
+          </configuration>
+          EOF
+          dotnet nuget locals all --clear
+
+      - name: Publish LibKenjinx for Android ARM64
+        working-directory: kenji
+        shell: bash
+        run: |
+          dotnet publish src/LibKenjinx/LibKenjinx.csproj \
+            -r linux-bionic-arm64 \
+            -c Release \
+            -o "$GITHUB_WORKSPACE/kenji-core-out" \
+            -p:DisableUnsupportedError=true \
+            -p:PublishAotUsingRuntimePack=true \
+            -p:StripSymbols=true \
+            -p:DefineConstants=ANDROID \
+            -p:IlcOptimizationPreference=Speed \
+            -p:IlcOptimizationLevel=3 \
+            -p:IlcGenerateStackTraceData=false \
+            -p:TrimMode=full \
+            -p:IlcTrimMetadata=true \
+            -p:DebuggerSupport=false \
+            -p:StackTraceSupport=false \
+            -p:InvariantGlobalization=true
+
+      - name: Validate native core
+        shell: bash
+        run: |
+          test -f kenji-core-out/libkenjinx.so
+          file kenji-core-out/libkenjinx.so
+          readelf -h kenji-core-out/libkenjinx.so | tee kenji-core-out/elf-header.txt
+          readelf -h kenji-core-out/libkenjinx.so | grep -q 'AArch64'
+          sha256sum kenji-core-out/libkenjinx.so | tee kenji-core-out/SHA256SUMS
+
+      - name: Preserve Kenji license
+        shell: bash
+        run: cp kenji/LICENSE.txt kenji-core-out/KENJI-LICENSE.txt
+
+      - name: Upload Kenji core probe
+        uses: actions/upload-artifact@v4
+        with:
+          name: MOONWITCH-KENJI-CORE-PROBE
+          path: kenji-core-out/
+          if-no-files-found: error
+          retention-days: 7
