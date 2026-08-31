@@ -1,0 +1,31 @@
+replace_once(
+    'src/video_core/CMakeLists.txt',
+    '    target_sources(video_core PRIVATE\n        renderer_opengl/present/filters.cpp',
+    '    target_sources(video_core PRIVATE\n        renderer_opengl/present/cas.cpp\n        renderer_opengl/present/cas.h\n        renderer_opengl/present/filters.cpp',
+)
+
+replace_once(
+    'src/video_core/renderer_vulkan/present/layer.h',
+    '#include "video_core/renderer_vulkan/present/fsr.h"',
+    '#include "video_core/renderer_vulkan/present/cas.h"\n#include "video_core/renderer_vulkan/present/fsr.h"',
+)
+replace_once(
+    'src/video_core/renderer_vulkan/present/layer.h',
+    '    const size_t image_count{};\n    vk::DescriptorPool descriptor_pool{};',
+    '    const size_t image_count{};\n    const VkExtent2D output_size_extent{};\n    vk::DescriptorPool descriptor_pool{};',
+)
+replace_once(
+    'src/video_core/renderer_vulkan/present/layer.h',
+    '    std::variant<std::monostate, SGSR, FSR> sr_filter{};\n    std::vector<u64> resource_ticks{};',
+    '    std::variant<std::monostate, SGSR, FSR> sr_filter{};\n    std::optional<CAS> cas_pass{};\n    std::vector<u64> resource_ticks{};',
+)
+replace_once(
+    'src/video_core/renderer_vulkan/present/layer.cpp',
+    '#include "common/settings.h"\n#include "video_core/framebuffer_config.h"',
+    '#include "common/settings.h"\n#include "common/moonwitch_cas_settings.h"\n#include "video_core/framebuffer_config.h"',
+)
+replace_once(
+    'src/video_core/renderer_vulkan/present/layer.cpp',
+    '#include "video_core/renderer_vulkan/present/fsr.h"',
+    '#include "video_core/renderer_vulkan/present/cas.h"\n#include "video_core/renderer_vulkan/present/fsr.h"',
+)
