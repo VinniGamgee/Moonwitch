@@ -22,6 +22,7 @@ import org.yuzu.yuzu_emu.features.settings.model.BooleanSetting
 import org.yuzu.yuzu_emu.features.settings.model.ByteSetting
 import org.yuzu.yuzu_emu.features.settings.model.IntSetting
 import org.yuzu.yuzu_emu.features.settings.model.LongSetting
+import org.yuzu.yuzu_emu.features.settings.model.MoonwitchCasSettings
 import org.yuzu.yuzu_emu.features.settings.model.Settings
 import org.yuzu.yuzu_emu.features.settings.model.Settings.MenuTag
 import org.yuzu.yuzu_emu.features.settings.model.ShortSetting
@@ -484,6 +485,24 @@ class SettingsFragmentPresenter(
                 add(IntSetting.FSR_SHARPENING_SLIDER.key)
             }
             add(IntSetting.RENDERER_ANTI_ALIASING.key)
+
+            add(
+                SwitchSetting(
+                    MoonwitchCasSettings.enabled,
+                    titleString = "AMD FidelityFX™ CAS",
+                    descriptionString = "Ativa o Contrast Adaptive Sharpening como pós-processamento independente. Desligado, o passe não é executado e não tem custo de GPU."
+                )
+            )
+            add(
+                SliderSetting(
+                    MoonwitchCasSettings.sharpness,
+                    titleString = "Intensidade CAS",
+                    descriptionString = "0% = perfil suave/padrão AMD; 20% suave; 35% balanceado; 50% forte; 70%+ agressivo.",
+                    min = 0,
+                    max = 100,
+                    units = "%"
+                )
+            )
 
             add(HeaderSetting(R.string.advanced))
 

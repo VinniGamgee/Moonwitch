@@ -119,6 +119,8 @@ add_library(video_core STATIC
 
     # Vulkan
     renderer_vulkan/present/anti_alias_pass.h
+    renderer_vulkan/present/cas.cpp
+    renderer_vulkan/present/cas.h
     renderer_vulkan/present/filters.cpp
     renderer_vulkan/present/filters.h
     renderer_vulkan/present/fsr.cpp
@@ -301,6 +303,8 @@ endif()
 
 if (ENABLE_OPENGL)
     target_sources(video_core PRIVATE
+        renderer_opengl/present/cas.cpp
+        renderer_opengl/present/cas.h
         renderer_opengl/present/filters.cpp
         renderer_opengl/present/filters.h
         renderer_opengl/present/fsr.cpp

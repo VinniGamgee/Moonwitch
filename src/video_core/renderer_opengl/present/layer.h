@@ -14,6 +14,7 @@
 #include "video_core/renderer_opengl/gl_resource_manager.h"
 #include "video_core/renderer_opengl/present/smaa.h"
 #include "video_core/renderer_opengl/present/fxaa.h"
+#include "video_core/renderer_opengl/present/cas.h"
 #include "video_core/renderer_opengl/present/fsr.h"
 
 namespace Layout {
@@ -81,6 +82,7 @@ private:
     TextureInfo framebuffer_texture;
 
     std::optional<FSR> fsr;
+    std::optional<CAS> cas;
     std::variant<std::monostate, FXAA, SMAA> anti_alias;
 };
 

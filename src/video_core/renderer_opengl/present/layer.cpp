@@ -4,10 +4,12 @@
 // SPDX-FileCopyrightText: Copyright 2024 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include "common/moonwitch_cas_settings.h"
 #include "video_core/framebuffer_config.h"
 #include "video_core/present.h"
 #include "video_core/renderer_opengl/gl_blit_screen.h"
 #include "video_core/renderer_opengl/gl_rasterizer.h"
+#include "video_core/renderer_opengl/present/cas.h"
 #include "video_core/renderer_opengl/present/fsr.h"
 #include "video_core/renderer_opengl/present/fxaa.h"
 #include "video_core/renderer_opengl/present/layer.h"
@@ -76,6 +78,18 @@ GLuint Layer::ConfigureDraw(std::array<GLfloat, 3 * 2>& out_matrix,
 
         texture = fsr->Draw(program_manager, texture, info.scaled_width, info.scaled_height, crop);
         crop = {0, 0, 1, 1};
+    }
+
+    if (Settings::IsCasEnabled()) {
+        const bool after_fsr = filters.get_scaling_filter() == Settings::ScalingFilter::Fsr;
+        const u32 cas_width =
+            after_fsr ? layout.screen.GetWidth() : static_cast<u32>(info.scaled_width);
+        const u32 cas_height =
+            after_fsr ? layout.screen.GetHeight() : static_cast<u32>(info.scaled_height);
+        if (!cas || cas->NeedsRecreation(cas_width, cas_height)) {
+            cas.emplace(cas_width, cas_height);
+        }
+        texture = cas->Draw(program_manager, texture);
     }
 
     out_matrix =

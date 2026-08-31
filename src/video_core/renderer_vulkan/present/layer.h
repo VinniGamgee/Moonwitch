@@ -12,6 +12,7 @@
 #include "common/math_util.h"
 #include "video_core/host1x/gpu_device_memory_manager.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
+#include "video_core/renderer_vulkan/present/cas.h"
 #include "video_core/renderer_vulkan/present/fsr.h"
 #include "video_core/renderer_vulkan/present/sgsr.h"
 #include "video_core/renderer_vulkan/present/fxaa.h"
@@ -82,6 +83,7 @@ private:
     Tegra::MaxwellDeviceMemoryManager& device_memory;
     const PresentFilters& filters;
     const size_t image_count{};
+    const VkExtent2D output_size_extent{};
     vk::DescriptorPool descriptor_pool{};
     vk::DescriptorSets descriptor_sets{};
 
@@ -95,6 +97,7 @@ private:
     Settings::AntiAliasing anti_alias_setting{};
     std::variant<std::monostate, FXAA, SMAA> anti_alias{};
     std::variant<std::monostate, SGSR, FSR> sr_filter{};
+    std::optional<CAS> cas_pass{};
     std::vector<u64> resource_ticks{};
 };
 

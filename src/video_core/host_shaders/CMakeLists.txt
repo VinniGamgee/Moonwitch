@@ -43,6 +43,7 @@ set(SHADER_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/fxaa.vert
     ${CMAKE_CURRENT_SOURCE_DIR}/opengl_convert_s8d24.comp
     ${CMAKE_CURRENT_SOURCE_DIR}/opengl_copy_bc4.comp
+    ${CMAKE_CURRENT_SOURCE_DIR}/opengl_fidelityfx_cas.frag
     ${CMAKE_CURRENT_SOURCE_DIR}/opengl_fidelityfx_fsr.frag
     ${CMAKE_CURRENT_SOURCE_DIR}/opengl_fidelityfx_fsr_easu.frag
     ${CMAKE_CURRENT_SOURCE_DIR}/opengl_fidelityfx_fsr_rcas.frag
@@ -74,6 +75,7 @@ set(SHADER_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/vulkan_color_clear.frag
     ${CMAKE_CURRENT_SOURCE_DIR}/vulkan_color_clear.vert
     ${CMAKE_CURRENT_SOURCE_DIR}/vulkan_depthstencil_clear.frag
+    ${CMAKE_CURRENT_SOURCE_DIR}/vulkan_fidelityfx_cas.frag
     ${CMAKE_CURRENT_SOURCE_DIR}/vulkan_fidelityfx_fsr.vert
     ${CMAKE_CURRENT_SOURCE_DIR}/vulkan_fidelityfx_fsr_easu_fp16.frag
     ${CMAKE_CURRENT_SOURCE_DIR}/vulkan_fidelityfx_fsr_easu_fp32.frag

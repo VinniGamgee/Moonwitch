@@ -13,7 +13,9 @@
 #include "video_core/renderer_vulkan/vk_rasterizer.h"
 
 #include "common/settings.h"
+#include "common/moonwitch_cas_settings.h"
 #include "video_core/framebuffer_config.h"
+#include "video_core/renderer_vulkan/present/cas.h"
 #include "video_core/renderer_vulkan/present/fsr.h"
 #include "video_core/renderer_vulkan/present/sgsr.h"
 #include "video_core/renderer_vulkan/present/fxaa.h"
@@ -62,6 +64,7 @@ Layer::Layer(const Device& device, MemoryAllocator& memory_allocator_, Scheduler
     , device_memory(device_memory_)
     , filters(filters_)
     , image_count(image_count_)
+    , output_size_extent(output_size)
 {
     CreateDescriptorPool(device);
     CreateDescriptorSets(device, layout);
@@ -127,6 +130,16 @@ void Layer::ConfigureDraw(const Device& device, PresentPushConstants* out_push_c
     } else if (auto* sgsr = std::get_if<SGSR>(&sr_filter)) {
         source_image_view = sgsr->Draw(device, scheduler, image_index, source_image, source_image_view, render_extent, crop_rect);
         crop_rect = {0, 0, 1, 1};
+    }
+
+    if (Settings::IsCasEnabled()) {
+        const VkExtent2D cas_extent = std::holds_alternative<std::monostate>(sr_filter)
+                                          ? render_extent
+                                          : output_size_extent;
+        if (!cas_pass || cas_pass->NeedsRecreation(cas_extent)) {
+            cas_pass.emplace(device, memory_allocator, image_count, cas_extent);
+        }
+        source_image_view = cas_pass->Draw(device, scheduler, image_index, source_image_view);
     }
 
     SetMatrixData(device, *out_push_constants, layout);

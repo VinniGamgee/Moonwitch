@@ -25,6 +25,7 @@
 #include "common/fs/path_util.h"
 #include "common/logging.h"
 #include "common/settings.h"
+#include "common/moonwitch_cas_settings.h"
 #include "common/time_zone.h"
 
 #if defined(__linux__ ) && defined(ARCHITECTURE_arm64)
@@ -81,6 +82,22 @@ SWITCHABLE(ConfirmStop, true);
 #endif
 
 Values values;
+
+namespace {
+SwitchableSetting<bool> cas_enabled_setting{values.linkage, false, "cas_enabled",
+                                            Category::Renderer, Specialization::Paired, true, true};
+SwitchableSetting<int, true> cas_sharpness_setting{
+    values.linkage, 35, 0, 100, "cas_sharpness", Category::Renderer,
+    Specialization::Scalar | Specialization::Percentage, true, true, &cas_enabled_setting};
+} // namespace
+
+bool IsCasEnabled() {
+    return cas_enabled_setting.GetValue();
+}
+
+int GetCasSharpness() {
+    return cas_sharpness_setting.GetValue();
+}
 
 std::string GetTimeZoneString(TimeZone time_zone) {
     const auto time_zone_index = static_cast<std::size_t>(time_zone);
