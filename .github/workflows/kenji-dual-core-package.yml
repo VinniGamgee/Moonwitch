@@ -132,7 +132,6 @@ jobs:
             libopenal.so \
             libsdl3.so \
             libskiasharp.so \
-            libjnidispatch.so \
             libcrypto.so \
             libssl.so \
             libavcodec.so \
