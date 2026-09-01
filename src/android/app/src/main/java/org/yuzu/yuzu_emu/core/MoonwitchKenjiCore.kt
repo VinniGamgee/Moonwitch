@@ -6,7 +6,6 @@ package org.yuzu.yuzu_emu.core
 import android.content.Context
 import android.net.Uri
 import android.os.ParcelFileDescriptor
-import android.system.Os
 import android.view.Surface
 import com.sun.jna.JNIEnv
 import java.io.File
@@ -280,22 +279,31 @@ object MoonwitchKenjiCore {
             }
         }
 
-        // Ryujinx calls its NAND root "bis" while the Yuzu-derived core calls it "nand".
-        // Re-use the existing firmware/NAND without duplicating hundreds of MB when the Android
-        // filesystem supports symlinks. Failure is non-fatal and is logged for the first device test.
-        val moonwitchNand = File(moonwitchBase, "nand")
-        val kenjiBis = File(kenjiBase, "bis")
-        if (moonwitchNand.isDirectory && !kenjiBis.exists()) {
-            runCatching {
-                Os.symlink(moonwitchNand.absolutePath, kenjiBis.absolutePath)
-                Log.info("$TAG Reusing Moonwitch NAND through Kenji bis symlink")
-            }.onFailure {
-                Log.warning("$TAG NAND symlink unavailable; Kenji may require firmware import: ${it.message}")
-            }
+        // Keep Ryujinx writable NAND isolated. Only firmware content is mirrored from the existing
+        // Moonwitch NAND so saves/system metadata from the two cores cannot corrupt each other.
+        val sourceFirmware = File(moonwitchBase, "nand/system/Contents/registered")
+        val kenjiFirmware = File(kenjiBase, "bis/system/Contents/registered")
+        if (sourceFirmware.isDirectory) {
+            syncDirectoryBySize(sourceFirmware, kenjiFirmware)
+        } else {
+            Log.warning("$TAG Moonwitch firmware directory was not found at ${sourceFirmware.absolutePath}")
         }
 
         kenjiBase.mkdirs()
         return kenjiBase.absolutePath
+    }
+
+    private fun syncDirectoryBySize(sourceRoot: File, destinationRoot: File) {
+        sourceRoot.walkTopDown().forEach { source ->
+            val relativePath = source.relativeTo(sourceRoot).path
+            val destination = if (relativePath.isEmpty()) destinationRoot else File(destinationRoot, relativePath)
+            if (source.isDirectory) {
+                destination.mkdirs()
+            } else if (!destination.isFile || destination.length() != source.length()) {
+                destination.parentFile?.mkdirs()
+                source.copyTo(destination, overwrite = true)
+            }
+        }
     }
 
     private fun openGameDescriptor(context: Context, gamePath: String): ParcelFileDescriptor? {
