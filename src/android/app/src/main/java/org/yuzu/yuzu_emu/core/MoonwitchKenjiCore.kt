@@ -35,6 +35,9 @@ object MoonwitchKenjiCore {
     var isPaused: Boolean = false
         private set
 
+    @Volatile
+    private var inputPumpRunning = false
+
     private var initialized = false
     private var rendererInitialized = false
     private var gameDescriptor: ParcelFileDescriptor? = null
@@ -42,6 +45,7 @@ object MoonwitchKenjiCore {
     private var lastSurface: Surface? = null
     private var lastWidth = 1280
     private var lastHeight = 720
+    private var inputThread: Thread? = null
 
     @Synchronized
     fun prepare(
@@ -117,12 +121,14 @@ object MoonwitchKenjiCore {
 
             KenjinxNative.deviceSetWindowHandle(nativeWindow)
             KenjinxNative.graphicsRendererSetSize(lastWidth, lastHeight)
-            runCatching { KenjinxNative.inputInitialize(lastWidth, lastHeight) }
-            runCatching { KenjinxNative.inputSetClientSize(lastWidth, lastHeight) }
+            KenjinxNative.inputInitialize(lastWidth, lastHeight)
+            KenjinxNative.inputSetClientSize(lastWidth, lastHeight)
+            KenjiInputBridge.connect()
             runCatching { KenjinxNative.graphicsSetPresentEnabled(true) }
 
             isPaused = false
             isRunning = true
+            startInputPump()
             Log.info("$TAG Kenji core prepared successfully (${lastWidth}x$lastHeight)")
             true
         }.getOrElse { throwable ->
@@ -140,6 +146,8 @@ object MoonwitchKenjiCore {
         } catch (throwable: Throwable) {
             Log.error("$TAG Renderer run loop failed: ${throwable.message}")
         } finally {
+            inputPumpRunning = false
+            KenjiInputBridge.disconnect()
             isRunning = false
             isPaused = false
             closeDescriptor()
@@ -193,6 +201,8 @@ object MoonwitchKenjiCore {
             return
         }
         Log.info("$TAG Stopping Kenji core")
+        inputPumpRunning = false
+        KenjiInputBridge.disconnect()
         runCatching { KenjinxNative.graphicsSetPresentEnabled(false) }
         runCatching { KenjinxNative.deviceSignalEmulationClose() }
         runCatching { KenjinxNative.deviceCloseEmulation() }
@@ -201,6 +211,7 @@ object MoonwitchKenjiCore {
         rendererInitialized = false
         closeDescriptor()
         releaseNativeWindow()
+        inputThread = null
     }
 
     fun getPerfStats(): FloatArray = floatArrayOf(
@@ -208,6 +219,20 @@ object MoonwitchKenjiCore {
         runCatching { KenjinxNative.deviceGetGameFrameRate().toFloat() }.getOrDefault(0f),
         runCatching { KenjinxNative.deviceGetGameFrameTime().toFloat() / 1000f }.getOrDefault(0f)
     )
+
+    private fun startInputPump() {
+        inputPumpRunning = true
+        inputThread = Thread({
+            while (inputPumpRunning && isRunning) {
+                runCatching { KenjinxNative.inputUpdate() }
+                try {
+                    Thread.sleep(1)
+                } catch (_: InterruptedException) {
+                    break
+                }
+            }
+        }, "KenjiInputPump").also { it.start() }
+    }
 
     private fun bindSurface(surface: Surface, width: Int, height: Int) {
         lastSurface = surface
@@ -299,12 +324,15 @@ object MoonwitchKenjiCore {
     }
 
     private fun cleanupFailedStart() {
+        inputPumpRunning = false
+        KenjiInputBridge.disconnect()
         isRunning = false
         isPaused = false
         rendererInitialized = false
         closeDescriptor()
         runCatching { KenjinxNative.deviceCloseEmulation() }
         releaseNativeWindow()
+        inputThread = null
     }
 
     private fun closeDescriptor() {
