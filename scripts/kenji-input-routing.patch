@@ -1,0 +1,40 @@
+diff --git a/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/input/NativeInput.kt b/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/input/NativeInput.kt
+index 15d776311..000000000 100644
+--- a/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/input/NativeInput.kt
++++ b/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/input/NativeInput.kt
+@@ -3,6 +3,7 @@
+ 
+ package org.yuzu.yuzu_emu.features.input
+ 
++import org.yuzu.yuzu_emu.core.KenjiInputBridge
+ import org.yuzu.yuzu_emu.features.input.model.NativeButton
+ import org.yuzu.yuzu_emu.features.input.model.NativeAnalog
+ import org.yuzu.yuzu_emu.features.input.model.InputType
+@@ -124,8 +125,12 @@ object NativeInput {
+      * @param button The [NativeButton] corresponding to this event.
+      * @param action Mask identifying which action is happening (button pressed down, or button released).
+      */
+-    fun onOverlayButtonEvent(port: Int, button: NativeButton, action: Int) =
++    fun onOverlayButtonEvent(port: Int, button: NativeButton, action: Int) {
++        if (KenjiInputBridge.onOverlayButton(button, action)) {
++            return
++        }
+         onOverlayButtonEventImpl(port, button.int, action)
++    }
+ 
+     private external fun onOverlayButtonEventImpl(port: Int, buttonId: Int, action: Int)
+ 
+@@ -137,8 +142,12 @@ object NativeInput {
+      * @param xAxis Value along the X axis.
+      * @param yAxis Value along the Y axis.
+      */
+-    fun onOverlayJoystickEvent(port: Int, stick: NativeAnalog, xAxis: Float, yAxis: Float) =
++    fun onOverlayJoystickEvent(port: Int, stick: NativeAnalog, xAxis: Float, yAxis: Float) {
++        if (KenjiInputBridge.onOverlayJoystick(stick, xAxis, yAxis)) {
++            return
++        }
+         onOverlayJoystickEventImpl(port, stick.int, xAxis, yAxis)
++    }
+ 
+     private external fun onOverlayJoystickEventImpl(
+         port: Int,
