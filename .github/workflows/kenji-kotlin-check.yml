@@ -9,6 +9,7 @@ on:
       - '.github/workflows/kenji-kotlin-check.yml'
       - 'scripts/kenji-first-boot.patch'
       - 'scripts/kenji-first-boot-postprocess.py'
+      - 'scripts/kenji-bind-surface-postprocess.py'
       - 'scripts/kenji-input-routing.patch'
       - 'src/android/app/build.gradle.kts'
       - 'src/android/app/src/main/java/org/kenjinx/**'
@@ -54,6 +55,7 @@ jobs:
             git apply "$patch"
           done
           python3 scripts/kenji-first-boot-postprocess.py
+          python3 scripts/kenji-bind-surface-postprocess.py
           git diff --check
 
       - name: Compile Kotlin bridge
