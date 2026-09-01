@@ -1,0 +1,385 @@
+diff --git a/src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/EmulationFragment.kt b/src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/EmulationFragment.kt
+index 016ac5735..000000000 100644
+--- a/src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/EmulationFragment.kt
++++ b/src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/EmulationFragment.kt
+@@ -52,6 +52,7 @@ import kotlinx.coroutines.launch
+ import kotlinx.coroutines.withContext
+ import org.yuzu.yuzu_emu.HomeNavigationDirections
+ import org.yuzu.yuzu_emu.NativeLibrary
++import org.yuzu.yuzu_emu.core.MoonwitchKenjiCore
+ import org.yuzu.yuzu_emu.R
+ import org.yuzu.yuzu_emu.activities.EmulationActivity
+ import org.yuzu.yuzu_emu.databinding.DialogOverlayAdjustBinding
+@@ -83,6 +84,7 @@ import org.yuzu.yuzu_emu.utils.InputHandler
+ import org.yuzu.yuzu_emu.utils.Log
+ import org.yuzu.yuzu_emu.utils.NativeConfig
+ import org.yuzu.yuzu_emu.utils.NativeFreedrenoConfig
++import org.yuzu.yuzu_emu.utils.EmulationCorePreference
+ import org.yuzu.yuzu_emu.utils.ViewUtils
+ import org.yuzu.yuzu_emu.utils.ViewUtils.setVisible
+ import org.yuzu.yuzu_emu.utils.collect
+@@ -349,10 +351,21 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
+             Log.warning("[EmulationFragment] Failed to load Freedreno config: ${e.message}")
+         }
+ 
+-        emulationState = EmulationState(game!!.path) {
+-            return@EmulationState driverViewModel.isInteractionAllowed.value &&
+-                !isStoppingForRomSwap
+-        }
++        val selectedCore = EmulationCorePreference.get(requireContext())
++        Log.info("[EmulationFragment] Selected emulation core: $selectedCore")
++        emulationState = EmulationState(
++            context = requireContext().applicationContext,
++            gamePath = game!!.path,
++            core = selectedCore,
++            emulationCanStart = {
++                driverViewModel.isInteractionAllowed.value && !isStoppingForRomSwap
++            },
++            onCoreStarted = {
++                emulationViewModel.setEmulationStarted(true)
++            },
++            onCoreStopped = {
++                emulationViewModel.setEmulationStarted(false)
++                emulationViewModel.setEmulationStopped(true)
++            }
++        )
+     }
+@@ -529,7 +542,11 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
+                                     binding.root.post {
+                                         if (binding.surfaceEmulation.holder.surface?.isValid == true && !emulationStarted) {
+                                             emulationStarted = true
+                                             emulationState.newSurface(
+-                                                binding.surfaceEmulation.holder.surface
++                                                binding.surfaceEmulation.holder.surface,
++                                                binding.surfaceEmulation.width,
++                                                binding.surfaceEmulation.height
+                                             )
+                                         }
+                                     }
+@@ -873,8 +890,10 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
+         requireActivity().onBackPressedDispatcher.addCallback(
+             requireActivity(),
+             object : OnBackPressedCallback(true) {
+                 override fun handleOnBackPressed() {
+-                    if (!NativeLibrary.isRunning()) {
++                    if (!this@EmulationFragment::emulationState.isInitialized ||
++                        (!emulationState.isRunning && !emulationState.isPaused)
++                    ) {
+                         return
+                     }
+                     emulationViewModel.setDrawerOpen(!binding.drawerLayout.isOpen)
+@@ -973,8 +992,13 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
+                     val vendorLabel = findViewById<TextView>(R.id.gpu_vendor)
+ 
+                     titleView.text = game?.title ?: ""
+-                    cpuBackendLabel.text = NativeLibrary.getCpuBackend()
+-                    vendorLabel.text = NativeLibrary.getGpuDriver()
++                    if (emulationState.usesKenji) {
++                        cpuBackendLabel.text = "Ryujinx / Kenji"
++                        vendorLabel.text = "Kenji Vulkan"
++                    } else {
++                        cpuBackendLabel.text = NativeLibrary.getCpuBackend()
++                        vendorLabel.text = NativeLibrary.getGpuDriver()
++                    }
+                 }
+@@ -1041,8 +1065,10 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
+         driverViewModel.isInteractionAllowed.collect(viewLifecycleOwner) {
++            val coreBusy = this::emulationState.isInitialized && !emulationState.isStopped
+             if (it &&
+                 !isStoppingForRomSwap &&
++                !coreBusy &&
+                 !NativeLibrary.isRunning() &&
+                 !NativeLibrary.isPaused()
+             ) {
+@@ -1265,8 +1291,12 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
+     private fun pauseEmulationAndCaptureFrame() {
+         emulationState.pause()
+         updatePauseMenuEntry(true)
+-        capturePausedFrameFromCore()
++        if (emulationState.usesKenji) {
++            clearPausedFrame()
++        } else {
++            capturePausedFrameFromCore()
++        }
+         updatePausedFrameVisibility()
+     }
+@@ -1497,7 +1527,11 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
+-                    val perfStats = NativeLibrary.getPerfStats()
++                    val perfStats = if (emulationState.usesKenji) {
++                        MoonwitchKenjiCore.getPerfStats()
++                    } else {
++                        NativeLibrary.getPerfStats()
++                    }
+                     val actualFps = perfStats[FPS]
+@@ -1554,7 +1588,9 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
+-                    val shadersBuilding = NativeLibrary.getShadersBuilding()
++                    val shadersBuilding = if (emulationState.usesKenji) {
++                        0
++                    } else NativeLibrary.getShadersBuilding()
+@@ -1906,7 +1942,7 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
+-            emulationState.newSurface(holder.surface)
++            emulationState.newSurface(holder.surface, width, height)
+         } else {
+             // Surface changed due to rotation/config change
+             // Only update surface reference, don't trigger state changes
+-            emulationState.updateSurfaceReference(holder.surface)
++            emulationState.updateSurfaceReference(holder.surface, width, height)
+         }
+@@ -2240,9 +2276,15 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
+     }
+ 
+     private class EmulationState(
++        private val context: Context,
+         private val gamePath: String,
+-        private val emulationCanStart: () -> Boolean
++        private val core: EmulationCorePreference.Core,
++        private val emulationCanStart: () -> Boolean,
++        private val onCoreStarted: () -> Unit,
++        private val onCoreStopped: () -> Unit
+     ) {
+         private var state: State
+         private var surface: Surface? = null
++        private var surfaceWidth = 1280
++        private var surfaceHeight = 720
+         lateinit var emulationThread: Thread
+ 
+         init {
+@@ -2251,6 +2293,9 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
+         val isStopped: Boolean
+             get() = state == State.STOPPED
+ 
++        val usesKenji: Boolean
++            get() = core == EmulationCorePreference.Core.Kenji
++
+         @get:Synchronized
+         val isPaused: Boolean
+             get() = state == State.PAUSED
+@@ -2263,11 +2308,16 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
+         fun stop() {
+             if (state != State.STOPPED) {
+                 Log.debug("[EmulationFragment] Stopping emulation.")
+-                NativeLibrary.stopEmulation()
++                if (usesKenji) {
++                    MoonwitchKenjiCore.stop()
++                } else {
++                    NativeLibrary.stopEmulation()
++                }
+                 state = State.STOPPED
+             } else {
+                 Log.warning("[EmulationFragment] Stop called while already stopped.")
+-                NativeLibrary.stopEmulation()
++                if (usesKenji) MoonwitchKenjiCore.stop() else NativeLibrary.stopEmulation()
+             }
+         }
+@@ -2276,9 +2326,13 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
+             if (state != State.PAUSED) {
+                 Log.debug("[EmulationFragment] Pausing emulation.")
+ 
+-                NativeLibrary.pauseEmulation()
+-                NativeLibrary.playTimeManagerStop()
++                if (usesKenji) {
++                    MoonwitchKenjiCore.pause()
++                } else {
++                    NativeLibrary.pauseEmulation()
++                    NativeLibrary.playTimeManagerStop()
++                }
+ 
+                 state = State.PAUSED
+             } else {
+@@ -2289,7 +2343,9 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
+         @Synchronized
+         fun run(isActivityRecreated: Boolean, programIndex: Int = 0) {
+             if (isActivityRecreated) {
+-                if (NativeLibrary.isRunning()) {
++                if ((usesKenji && MoonwitchKenjiCore.isRunning) ||
++                    (!usesKenji && NativeLibrary.isRunning())
++                ) {
+                     state = State.PAUSED
+                 }
+             } else {
+@@ -2314,11 +2370,16 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
+                 return
+             }
+ 
+-            NativeLibrary.surfaceChanged(currentSurface)
+             Log.debug("[EmulationFragment] Resuming emulation.")
+-            NativeLibrary.unpauseEmulation()
+-            NativeLibrary.playTimeManagerStart()
++            if (usesKenji) {
++                MoonwitchKenjiCore.resume(currentSurface)
++            } else {
++                NativeLibrary.surfaceChanged(currentSurface)
++                NativeLibrary.unpauseEmulation()
++                NativeLibrary.playTimeManagerStart()
++            }
+             state = State.RUNNING
+         }
+ 
+         @Synchronized
+         fun changeProgram(programIndex: Int) {
++            if (usesKenji) {
++                Log.warning("[EmulationFragment] Program switching is not enabled for Kenji first-boot mode.")
++                return
++            }
+             emulationThread.join()
+             emulationThread = Thread({
+@@ -2331,31 +2392,51 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
+ 
+         // Surface callbacks
+         @Synchronized
+-        fun newSurface(surface: Surface?) {
++        fun newSurface(surface: Surface?, width: Int = 0, height: Int = 0) {
+             this.surface = surface
++            if (width > 0) surfaceWidth = width
++            if (height > 0) surfaceHeight = height
+             if (this.surface != null) {
+                 runWithValidSurface()
+             }
+         }
+ 
+         @Synchronized
+         fun updateSurface() {
+             if (surface != null && state == State.RUNNING) {
+-                NativeLibrary.surfaceChanged(surface)
++                if (usesKenji) {
++                    MoonwitchKenjiCore.updateSurface(surface!!, surfaceWidth, surfaceHeight)
++                } else {
++                    NativeLibrary.surfaceChanged(surface)
++                }
+             }
+         }
+ 
+         @Synchronized
+-        fun updateSurfaceReference(surface: Surface?) {
++        fun updateSurfaceReference(surface: Surface?, width: Int = 0, height: Int = 0) {
+             this.surface = surface
++            if (width > 0) surfaceWidth = width
++            if (height > 0) surfaceHeight = height
+             if (this.surface != null && state == State.RUNNING) {
+-                NativeLibrary.surfaceChanged(this.surface)
++                if (usesKenji) {
++                    MoonwitchKenjiCore.updateSurface(this.surface!!, surfaceWidth, surfaceHeight)
++                } else {
++                    NativeLibrary.surfaceChanged(this.surface)
++                }
+             }
+         }
+@@ -2367,7 +2448,11 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
+                 if (state == State.RUNNING) {
+                     pause()
+                 }
+-                NativeLibrary.surfaceDestroyed()
++                if (usesKenji) {
++                    MoonwitchKenjiCore.detachSurface()
++                } else {
++                    NativeLibrary.surfaceDestroyed()
++                }
+                 surface = null
+                 Log.debug("[EmulationFragment] Surface destroyed.")
+@@ -2393,13 +2478,32 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
+ 
+             when (state) {
+                 State.STOPPED -> {
+-                    NativeLibrary.surfaceChanged(currentSurface)
+-                    emulationThread = Thread({
+-                        Log.debug("[EmulationFragment] Starting emulation thread.")
+-                        NativeLibrary.run(gamePath, programIndex, true)
+-                    }, "NativeEmulation")
++                    if (usesKenji) {
++                        Log.info("[EmulationFragment] Preparing real Kenji/Ryujinx core.")
++                        if (!MoonwitchKenjiCore.prepare(
++                                context,
++                                gamePath,
++                                currentSurface,
++                                surfaceWidth,
++                                surfaceHeight
++                            )
++                        ) {
++                            Log.error("[EmulationFragment] Kenji core failed to prepare.")
++                            onCoreStopped()
++                            return
++                        }
++                        onCoreStarted()
++                        emulationThread = Thread({
++                            try {
++                                MoonwitchKenjiCore.runLoop()
++                            } finally {
++                                synchronized(this) { state = State.STOPPED }
++                                onCoreStopped()
++                            }
++                        }, "KenjiEmulation")
++                    } else {
++                        NativeLibrary.surfaceChanged(currentSurface)
++                        emulationThread = Thread({
++                            Log.debug("[EmulationFragment] Starting emulation thread.")
++                            NativeLibrary.run(gamePath, programIndex, true)
++                        }, "NativeEmulation")
++                    }
+                     emulationThread.start()
+                     state = State.RUNNING
+                 }
+diff --git a/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/ui/SettingsFragmentPresenter.kt b/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/ui/SettingsFragmentPresenter.kt
+index 7f9aa5185..000000000 100644
+--- a/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/ui/SettingsFragmentPresenter.kt
++++ b/src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/ui/SettingsFragmentPresenter.kt
+@@ -5,10 +5,12 @@ package org.yuzu.yuzu_emu.features.settings.ui
+ import android.annotation.SuppressLint
+ import android.content.Intent
+ import android.os.Build
+ import android.widget.Toast
++import com.google.android.material.dialog.MaterialAlertDialogBuilder
+ import org.yuzu.yuzu_emu.NativeLibrary
+ import org.yuzu.yuzu_emu.R
+ import org.yuzu.yuzu_emu.YuzuApplication
+ import org.yuzu.yuzu_emu.activities.EmulationActivity
++import org.yuzu.yuzu_emu.core.MoonwitchKenjiCore
+ import org.yuzu.yuzu_emu.features.input.NativeInput
+@@ -30,6 +32,7 @@ import org.yuzu.yuzu_emu.utils.NativeConfig
+ import org.yuzu.yuzu_emu.utils.DirectoryInitialization
++import org.yuzu.yuzu_emu.utils.EmulationCorePreference
+ import org.yuzu.yuzu_emu.utils.FullscreenHelper
+ import org.yuzu.yuzu_emu.utils.PerformanceLabNative
+@@ -449,6 +452,38 @@ class SettingsFragmentPresenter(
+ 
+     private fun addSystemSettings(sl: ArrayList<SettingsItem>) {
+         sl.apply {
++            val currentCore = EmulationCorePreference.get(context)
++            add(HeaderSetting(titleString = "Emulation engine"))
++            add(
++                RunnableSetting(
++                    titleString = "Emulation core",
++                    descriptionString = if (currentCore == EmulationCorePreference.Core.Kenji) {
++                        "Kenji / Ryujinx (experimental)"
++                    } else {
++                        "Moonwitch / Yuzu"
++                    },
++                    isRunnable = !NativeLibrary.isRunning() && !MoonwitchKenjiCore.isRunning,
++                    iconId = R.drawable.ic_system
++                ) {
++                    val host = activity
++                    if (host != null) {
++                        val options = arrayOf(
++                            "Moonwitch / Yuzu",
++                            "Kenji / Ryujinx (experimental)"
++                        )
++                        val selected = if (
++                            EmulationCorePreference.get(host) == EmulationCorePreference.Core.Kenji
++                        ) 1 else 0
++                        MaterialAlertDialogBuilder(host)
++                            .setTitle("Emulation core")
++                            .setSingleChoiceItems(options, selected) { dialog, which ->
++                                EmulationCorePreference.set(
++                                    host,
++                                    if (which == 1) EmulationCorePreference.Core.Kenji
++                                    else EmulationCorePreference.Core.Moonwitch
++                                )
++                                dialog.dismiss()
++                                loadSettingsList(true)
++                            }
++                            .setNegativeButton(android.R.string.cancel, null)
++                            .show()
++                    }
++                }
++            )
+             add(StringSetting.DEVICE_NAME.key)
+             add(BooleanSetting.RENDERER_USE_SPEED_LIMIT.key)
