@@ -12,13 +12,17 @@ def replace_once(path_str: str, old: str, new: str, label: str) -> None:
     if count != 1:
         raise SystemExit(f"{label}: expected exactly one match, found {count}")
     path.write_text(text.replace(old, new, 1), encoding="utf-8")
-    print(f"EXP4 patched: {label}")
+    print(f"EXP5 patched: {label}")
 
 
-# Experiment #4: restore the reactive-flushing behavior that historically fixed
-# TOTK's disappearing grass on desktop Yuzu. Moonwitch/Eden still carries the
-# setting and fastmem side of the feature, but Android defaults it off and the
-# current BufferCache no longer gates predictive downloads on preflushability.
+# Experiment #5: keep the final upstream reactive-flushing model and remove the
+# heavy intermediate BufferCache gating used by EXP4.
+#
+# Yuzu's final reactive-flushing merge deliberately backed the feature out of
+# the general BufferCache and kept the accuracy-critical behavior in fastmem /
+# texture-cache paths. Moonwitch already carries the final texture-cache pieces
+# (PreemtiveDownload, forced_flushed and dma_downloaded), so Android only needs
+# reactive flushing enabled and its CPU-read fault semantics restored.
 
 replace_once(
     "src/common/settings.h",
@@ -30,22 +34,8 @@ replace_once(
 replace_once(
     "src/core/memory.cpp",
     '''            Common::MemoryPermission perm{};\n            if (!Settings::values.use_reactive_flushing.GetValue() || !cached) {\n                perm |= Common::MemoryPermission::Read;\n            }\n''',
-    '''            Common::MemoryPermission perm{};\n#if defined(__ANDROID__)\n            // Moonwitch graphics research EXP4: force reactive-flushing fastmem\n            // semantics regardless of a stale persisted Android setting. Cached\n            // GPU pages lose CPU read permission and fault reactively when read.\n            if (!cached) {\n#else\n            if (!Settings::values.use_reactive_flushing.GetValue() || !cached) {\n#endif\n                perm |= Common::MemoryPermission::Read;\n            }\n''',
-    "force reactive fastmem protection on Android",
+    '''            Common::MemoryPermission perm{};\n#if defined(__ANDROID__)\n            // EXP5: use the final upstream reactive-flushing model on Android.\n            // Cached GPU-owned pages fault only when the guest CPU actually reads\n            // them; BufferCache remains on its modern asynchronous/predictive path.\n            if (!cached) {\n#else\n            if (!Settings::values.use_reactive_flushing.GetValue() || !cached) {\n#endif\n                perm |= Common::MemoryPermission::Read;\n            }\n''',
+    "force reactive fastmem read protection on Android",
 )
 
-replace_once(
-    "src/video_core/buffer_cache/buffer_cache.h",
-    '''        tmp_intervals.push_back({new_base_address, size});\n        uncommitted_gpu_modified_ranges.Add(new_base_address, size);\n''',
-    '''        tmp_intervals.push_back({new_base_address, size});\n#if defined(__ANDROID__)\n        // Reactive flushing: only queue a predictive download after a CPU read\n        // has made this region preflushable. GPU ownership is still tracked below.\n        if (memory_tracker.IsRegionPreflushable(new_base_address, size)) {\n            uncommitted_gpu_modified_ranges.Add(new_base_address, size);\n        }\n#else\n        if (!Settings::values.use_reactive_flushing.GetValue() ||\n            memory_tracker.IsRegionPreflushable(new_base_address, size)) {\n            uncommitted_gpu_modified_ranges.Add(new_base_address, size);\n        }\n#endif\n''',
-    "restore reactive DMA-copy download gating",
-)
-
-replace_once(
-    "src/video_core/buffer_cache/buffer_cache.h",
-    '''    memory_tracker.MarkRegionAsGpuModified(device_addr, size);\n    gpu_modified_ranges.Add(device_addr, size);\n    uncommitted_gpu_modified_ranges.Add(device_addr, size);\n}\n''',
-    '''    memory_tracker.MarkRegionAsGpuModified(device_addr, size);\n    gpu_modified_ranges.Add(device_addr, size);\n#if defined(__ANDROID__)\n    // Reactive flushing: do not schedule a predictive GPU->CPU download until\n    // the guest actually reads this GPU-owned region and marks it preflushable.\n    if (!memory_tracker.IsRegionPreflushable(device_addr, size)) {\n        return;\n    }\n#else\n    if (Settings::values.use_reactive_flushing.GetValue() &&\n        !memory_tracker.IsRegionPreflushable(device_addr, size)) {\n        return;\n    }\n#endif\n    uncommitted_gpu_modified_ranges.Add(device_addr, size);\n}\n''',
-    "restore reactive written-buffer download gating",
-)
-
-print("Applied graphics research experiment #4: forced functional reactive flushing on Android.")
+print("Applied graphics research experiment #5: final-path Android reactive flushing without BufferCache gating.")
