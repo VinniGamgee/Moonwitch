@@ -10,6 +10,7 @@ on:
       - 'scripts/kenji-first-boot.patch'
       - 'scripts/kenji-first-boot-postprocess.py'
       - 'scripts/kenji-bind-surface-postprocess.py'
+      - 'scripts/kenji-anr-postprocess.py'
       - 'scripts/kenji-input-routing.patch'
       - 'src/android/app/build.gradle.kts'
       - 'src/android/app/src/main/jni/CMakeLists.txt'
@@ -214,7 +215,8 @@ jobs:
           done
           python3 scripts/kenji-first-boot-postprocess.py
           python3 scripts/kenji-bind-surface-postprocess.py
-          echo 'First-boot routing patches applied; Surface and JNA boot stages isolated.'
+          python3 scripts/kenji-anr-postprocess.py
+          echo 'First-boot routing patches applied; Surface/JNI stages isolated and UI lock inversion removed.'
           git diff --check
           git diff --stat
 
