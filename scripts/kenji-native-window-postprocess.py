@@ -16,15 +16,11 @@ path = Path(
 )
 text = path.read_text(encoding="utf-8")
 
-# #20 proved that libkenjinxjni itself can load, while the durable breadcrumb
-# consistently reaches 01d-get-native-window before the app enters ANR. Do not
-# bounce ANativeWindow_fromSurface back onto Android's UI Looper. JNI external
-# calls already receive a valid JNIEnv for the calling thread, and the NDK
-# ANativeWindow API does not require the Java main thread.
-#
-# Run acquisition on an isolated worker with a hard timeout. If a vendor/Surface
-# implementation ever blocks, Moonwitch fails this boot without freezing the UI
-# and leaves a precise persistent breadcrumb for the next launch.
+# #20 proved that libkenjinxjni itself can load. #21 then proved that
+# ANativeWindow_fromSurface() returns successfully on the isolated worker, but
+# the durable breadcrumb stopped at the worker-return point. Remove FutureTask
+# from this path completely and use a CountDownLatch + atomics so there is no
+# FutureTask state transition between the native return and the caller.
 old_acquire = '''        markBootStage("01c-load-kenjinxjni")
         val helpers = callOnMainThread("01c-load-kenjinxjni") { NativeHelpers.instance }
 
@@ -42,6 +38,7 @@ new_acquire = '''        markBootStage("01c-load-kenjinxjni")
 
         markBootStage("01d-get-native-window")
         nativeWindow = acquireNativeWindowWithTimeout(helpers, surface)
+        markBootStage("01d4-native-window-assigned")
         if (nativeWindow <= 0L) {
             error("Unable to acquire ANativeWindow")
         }
@@ -50,35 +47,85 @@ new_acquire = '''        markBootStage("01c-load-kenjinxjni")
 text = replace_once(text, old_acquire, new_acquire, "move ANativeWindow acquisition off UI thread")
 
 # Insert the bounded worker helper immediately before installNativeWindowProviders.
+# All durable breadcrumbs are written by the caller thread, not by the worker,
+# so their ordering cannot regress due to two concurrent SharedPreferences commits.
 needle = '''    private fun installNativeWindowProviders() {
 '''
 helper = '''    private fun acquireNativeWindowWithTimeout(
         helpers: NativeHelpers,
         surface: Surface
     ): Long {
-        val task = java.util.concurrent.FutureTask<Long> {
-            markBootStage("01d1-native-window-worker-enter")
-            val window = helpers.getNativeWindow(surface)
-            markBootStage("01d2-native-window-worker-return")
-            window
-        }
-        val worker = Thread(task, "KenjiNativeWindowAcquire").apply {
+        val result = java.util.concurrent.atomic.AtomicLong(-1L)
+        val failure = java.util.concurrent.atomic.AtomicReference<Throwable?>(null)
+        val completed = java.util.concurrent.CountDownLatch(1)
+
+        markBootStage("01d1-native-window-worker-start")
+        val worker = Thread({
+            try {
+                result.set(helpers.getNativeWindow(surface))
+            } catch (throwable: Throwable) {
+                failure.set(throwable)
+            } finally {
+                completed.countDown()
+            }
+        }, "KenjiNativeWindowAcquire").apply {
             isDaemon = true
             start()
         }
 
-        return try {
-            task.get(5, java.util.concurrent.TimeUnit.SECONDS)
-        } catch (_: java.util.concurrent.TimeoutException) {
-            markBootStage("01d-timeout-after-5s")
+        val finished = try {
+            completed.await(5, java.util.concurrent.TimeUnit.SECONDS)
+        } catch (_: InterruptedException) {
+            Thread.currentThread().interrupt()
+            false
+        }
+
+        if (!finished) {
+            val returnedWindow = result.get()
+            markBootStage(
+                if (returnedWindow > 0L) {
+                    "01d-timeout-after-native-return"
+                } else {
+                    "01d-timeout-inside-native-window"
+                }
+            )
             worker.interrupt()
             error("Timed out acquiring ANativeWindow")
         }
+
+        markBootStage("01d2-native-window-worker-finished")
+        failure.get()?.let { throw it }
+        val window = result.get()
+        markBootStage("01d3-native-window-result-read")
+        return window
     }
 
     private fun installNativeWindowProviders() {
 '''
-text = replace_once(text, needle, helper, "add bounded ANativeWindow worker")
+text = replace_once(text, needle, helper, "add latch-based ANativeWindow worker")
+
+# EmulationFragment marks its state RUNNING immediately after starting the Kenji
+# thread, while MoonwitchKenjiCore.isRunning is only true after prepare succeeds.
+# A second Surface callback in that gap must not start a second bind concurrently
+# with first boot. Keep the newest Surface and let prepare rebind it later.
+text = replace_once(
+    text,
+    '''        if (isPreparing) {
+            pendingSurface = surface
+            Log.debug("$TAG Surface update deferred while Kenji is preparing")
+            return
+        }
+        bindSurface(surface, lastWidth, lastHeight)
+''',
+    '''        if ((!isRunning && !initialized) || isPreparing) {
+            pendingSurface = surface
+            Log.debug("$TAG Surface update deferred until Kenji first boot is ready")
+            return
+        }
+        bindSurface(surface, lastWidth, lastHeight)
+''',
+    "prevent concurrent first-boot Surface bind",
+)
 
 # A failure before javaInitialize must not touch the NativeAOT/JNA core from the
 # cleanup path; doing so would reintroduce an early libkenjinx load while we are
@@ -97,4 +144,4 @@ text = replace_once(
 )
 
 path.write_text(text, encoding="utf-8")
-print("Kenji ANativeWindow acquisition moved off the UI thread with a 5s timeout.")
+print("Kenji ANativeWindow path now uses latch/atomics and serializes first-boot Surface binding.")
