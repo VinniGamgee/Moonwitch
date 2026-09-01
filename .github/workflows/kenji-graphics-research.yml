@@ -41,7 +41,7 @@ jobs:
         run: |
           python3 scripts/kenji-graphics-research-postprocess.py
           git diff --check
-          git diff -- src/common/settings.h src/core/memory.cpp src/video_core/buffer_cache/buffer_cache.h
+          git diff -- src/common/settings.h src/core/memory.cpp src/video_core/buffer_cache/buffer_cache.h src/video_core/texture_cache/texture_cache.h
 
       - name: Dependencies
         shell: bash
@@ -66,7 +66,7 @@ jobs:
       - name: Upload research APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-KENJI-GRAPHICS-RESEARCH-EXP4
+          name: MOONWITCH-KENJI-GRAPHICS-RESEARCH-EXP5
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7
