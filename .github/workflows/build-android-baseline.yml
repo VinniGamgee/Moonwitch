@@ -6,6 +6,10 @@ on:
     branches:
       - perf/moonwitch-v1.2
 
+concurrency:
+  group: moonwitch-v1-2-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
