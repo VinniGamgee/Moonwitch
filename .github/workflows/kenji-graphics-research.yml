@@ -1,0 +1,70 @@
+name: Moonwitch Kenji Graphics Research
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - exp/kenji-graphics-research
+    paths:
+      - '.github/workflows/kenji-graphics-research.yml'
+      - 'scripts/kenji-graphics-research-postprocess.py'
+      - 'src/video_core/**'
+
+concurrency:
+  group: moonwitch-kenji-graphics-research-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Apply graphics research experiment
+        shell: bash
+        run: |
+          python3 scripts/kenji-graphics-research-postprocess.py
+          git diff --check
+          git diff -- src/video_core/texture_cache/texture_cache.h
+
+      - name: Dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y glslang-tools spirv-tools
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            "platforms;android-36" \
+            "build-tools;36.0.0" \
+            "ndk;28.2.13676358" \
+            "cmake;3.31.6"
+
+      - name: Build Android research APK
+        shell: bash
+        env:
+          CCACHE: 'false'
+        run: |
+          chmod +x .ci/android/build.sh src/android/gradlew
+          .ci/android/build.sh -t standard -b Release
+
+      - name: Upload research APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MOONWITCH-KENJI-GRAPHICS-RESEARCH-EXP1
+          path: artifacts/*.apk
+          if-no-files-found: error
+          retention-days: 7
