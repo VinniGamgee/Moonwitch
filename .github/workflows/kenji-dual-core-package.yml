@@ -8,10 +8,12 @@ on:
     paths:
       - '.github/workflows/kenji-dual-core-package.yml'
       - 'scripts/kenji-first-boot.patch'
+      - 'scripts/kenji-input-routing.patch'
       - 'src/android/app/build.gradle.kts'
       - 'src/android/app/src/main/java/org/kenjinx/**'
       - 'src/android/app/src/main/java/org/yuzu/yuzu_emu/core/**'
       - 'src/android/app/src/main/java/org/yuzu/yuzu_emu/utils/EmulationCorePreference.kt'
+      - 'src/android/app/src/main/java/org/yuzu/yuzu_emu/utils/InputHandler.kt'
 
 permissions:
   contents: read
@@ -196,12 +198,15 @@ jobs:
             test ! -f "/tmp/kenji-stack/$forbidden"
           done
 
-      - name: Apply functional core-routing patch
+      - name: Apply functional core and input routing patches
         shell: bash
         run: |
-          git apply --check scripts/kenji-first-boot.patch
-          git apply scripts/kenji-first-boot.patch
-          echo 'First-boot routing patch applied.'
+          for patch in scripts/kenji-first-boot.patch scripts/kenji-input-routing.patch; do
+            echo "Checking $patch"
+            git apply --check "$patch"
+            git apply "$patch"
+          done
+          echo 'First-boot routing patches applied.'
           git diff --check
           git diff --stat
 
