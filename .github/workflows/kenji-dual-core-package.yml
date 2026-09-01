@@ -11,6 +11,7 @@ on:
       - 'scripts/kenji-first-boot-postprocess.py'
       - 'scripts/kenji-bind-surface-postprocess.py'
       - 'scripts/kenji-anr-postprocess.py'
+      - 'scripts/kenji-native-window-postprocess.py'
       - 'scripts/kenji-diagnostic-postprocess.py'
       - 'scripts/kenji-input-routing.patch'
       - 'src/android/app/build.gradle.kts'
@@ -217,8 +218,9 @@ jobs:
           python3 scripts/kenji-first-boot-postprocess.py
           python3 scripts/kenji-bind-surface-postprocess.py
           python3 scripts/kenji-anr-postprocess.py
+          python3 scripts/kenji-native-window-postprocess.py
           python3 scripts/kenji-diagnostic-postprocess.py
-          echo 'First-boot routing patches applied; Surface/JNI stages isolated, UI lock inversion removed, persistent diagnostics enabled.'
+          echo 'First-boot routing patches applied; ANativeWindow acquisition is isolated off the UI thread with persistent diagnostics.'
           git diff --check
           git diff --stat
 
