@@ -1,0 +1,237 @@
+name: Moonwitch Dual Core Packaging Probe
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - perf/moonwitch-v1.2
+    paths:
+      - '.github/workflows/kenji-dual-core-package.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kenji-dual-core-package-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  KENJI_COMMIT: 72ad0e108d0781a07b6a598c8403205ee7a3322e
+  NDK_VERSION: '28.2.13676358'
+  DOTNET_VERSION: '9.0.x'
+
+jobs:
+  build-kenji-stack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+
+    steps:
+      - name: Checkout pinned Kenji
+        uses: actions/checkout@v4
+        with:
+          repository: Grantierm/Kenji-sc
+          ref: ${{ env.KENJI_COMMIT }}
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Free disk space
+        shell: bash
+        run: |
+          sudo rm -rf /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL || true
+          sudo docker image prune --all --force || true
+
+      - name: Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install Kenji Android toolchain
+        shell: bash
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            "platform-tools" \
+            "platforms;android-37.0" \
+            "build-tools;37.0.0" \
+            "ndk;${NDK_VERSION}" \
+            "cmake;3.22.1"
+
+          cd /tmp
+          wget -q "https://github.com/Kitware/CMake/releases/download/v4.1.2/cmake-4.1.2-linux-x86_64.tar.gz" -O cmake.tar.gz
+          tar -xzf cmake.tar.gz
+          CMAKE_INSTALL_DIR="$ANDROID_HOME/cmake/4.1.2"
+          mkdir -p "$CMAKE_INSTALL_DIR"
+          cp -r cmake-4.1.2-linux-x86_64/. "$CMAKE_INSTALL_DIR/"
+
+          if [ -d "$ANDROID_HOME/platforms/android-37.0" ] && [ ! -d "$ANDROID_HOME/platforms/android-37" ]; then
+            ln -s android-37.0 "$ANDROID_HOME/platforms/android-37"
+          fi
+
+          NDK_PATH="$ANDROID_HOME/ndk/${NDK_VERSION}"
+          echo "ANDROID_NDK_HOME=$NDK_PATH" >> "$GITHUB_ENV"
+          echo "$NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin" >> "$GITHUB_PATH"
+          echo "$ANDROID_HOME/cmake/4.1.2/bin" >> "$GITHUB_PATH"
+
+      - name: Configure Kenji NuGet feeds
+        shell: bash
+        run: |
+          find . -iname 'nuget.config' -delete
+          cat > nuget.config <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <packageSources>
+              <clear />
+              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+              <add key="ryujinx-projects" value="https://git.ryujinx.app/api/packages/projects/nuget/index.json" />
+            </packageSources>
+          </configuration>
+          EOF
+          dotnet nuget locals all --clear
+
+      - name: Build Kenji Android standard
+        working-directory: src/KenjinxAndroid
+        shell: bash
+        run: |
+          chmod +x gradlew
+          cat > local.properties <<EOF
+          sdk.dir=$ANDROID_HOME
+          ndk.dir=$ANDROID_NDK_HOME
+          cmake.dir=$ANDROID_HOME/cmake/4.1.2
+          EOF
+          ./gradlew assembleMainlineArmv82Release \
+            -Porg.kenjinx.config=release \
+            -Pandroid.ndkPath="$ANDROID_NDK_HOME" \
+            --no-daemon \
+            --build-cache
+
+      - name: Extract conflict-safe Kenji stack
+        shell: bash
+        run: |
+          APK_PATH=$(find src/KenjinxAndroid/app/build/outputs/apk/mainlineArmv82/release -name '*.apk' | head -n 1)
+          test -n "$APK_PATH"
+          mkdir -p /tmp/kenji-apk /tmp/kenji-stack
+          unzip -q "$APK_PATH" 'lib/arm64-v8a/*.so' -d /tmp/kenji-apk
+          SRC=/tmp/kenji-apk/lib/arm64-v8a
+
+          for lib in \
+            libkenjinx.so \
+            libkenjinxjni.so \
+            libopenal.so \
+            libsdl3.so \
+            libskiasharp.so \
+            libjnidispatch.so \
+            libcrypto.so \
+            libssl.so \
+            libavcodec.so \
+            libavutil.so \
+            libswresample.so \
+            libswscale.so \
+            libc++_shared.so; do
+            test -f "$SRC/$lib"
+            cp "$SRC/$lib" /tmp/kenji-stack/
+          done
+
+          cp LICENSE.txt /tmp/kenji-stack/KENJI-LICENSE.txt
+          file /tmp/kenji-stack/*.so
+          sha256sum /tmp/kenji-stack/*.so | tee /tmp/kenji-stack/SHA256SUMS
+
+      - name: Upload conflict-safe Kenji stack
+        uses: actions/upload-artifact@v4
+        with:
+          name: MOONWITCH-KENJI-CONFLICT-SAFE-STACK
+          path: /tmp/kenji-stack/
+          if-no-files-found: error
+          retention-days: 7
+
+  build-moonwitch-dual-core:
+    needs: build-kenji-stack
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout Moonwitch
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Download Kenji native stack
+        uses: actions/download-artifact@v4
+        with:
+          name: MOONWITCH-KENJI-CONFLICT-SAFE-STACK
+          path: /tmp/kenji-stack
+
+      - name: Inject Kenji native stack without replacing Moonwitch hooks
+        shell: bash
+        run: |
+          DEST=src/android/app/src/main/jniLibs/arm64-v8a
+          mkdir -p "$DEST"
+          cp /tmp/kenji-stack/*.so "$DEST/"
+
+          LICENSE_DEST=src/android/app/src/main/assets/licenses
+          mkdir -p "$LICENSE_DEST"
+          cp /tmp/kenji-stack/KENJI-LICENSE.txt "$LICENSE_DEST/Kenji-NX-MIT.txt"
+
+          echo 'Injected Kenji libraries:'
+          ls -lh "$DEST"
+
+          for forbidden in libfile_redirect_hook.so libgsl_alloc_hook.so libhook_impl.so libmain_hook.so libandroidx.graphics.path.so; do
+            test ! -f "/tmp/kenji-stack/$forbidden"
+          done
+
+      - name: Moonwitch Android dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y glslang-tools spirv-tools
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            "platforms;android-36" \
+            "build-tools;36.0.0" \
+            "ndk;28.2.13676358" \
+            "cmake;3.31.6"
+
+      - name: Build Moonwitch dual-core packaging probe
+        shell: bash
+        env:
+          CCACHE: 'false'
+        run: |
+          chmod +x .ci/android/build.sh src/android/gradlew
+          .ci/android/build.sh -t standard -b Release
+
+      - name: Verify both cores are packaged
+        shell: bash
+        run: |
+          APK_PATH=$(find artifacts -name '*.apk' | head -n 1)
+          test -n "$APK_PATH"
+          unzip -l "$APK_PATH" > /tmp/apk-contents.txt
+
+          grep -q 'lib/arm64-v8a/libyuzu-android.so' /tmp/apk-contents.txt
+          grep -q 'lib/arm64-v8a/libkenjinx.so' /tmp/apk-contents.txt
+          grep -q 'lib/arm64-v8a/libkenjinxjni.so' /tmp/apk-contents.txt
+          grep -q 'lib/arm64-v8a/libopenal.so' /tmp/apk-contents.txt
+          grep -q 'lib/arm64-v8a/libc++_shared.so' /tmp/apk-contents.txt
+
+          echo 'Dual-core native payload verified:'
+          grep 'lib/arm64-v8a/.*\.so' /tmp/apk-contents.txt
+          ls -lh "$APK_PATH"
+
+      - name: Upload Moonwitch dual-core packaging probe
+        uses: actions/upload-artifact@v4
+        with:
+          name: MOONWITCH-DUAL-CORE-PACKAGING-PROBE
+          path: artifacts/*.apk
+          if-no-files-found: error
+          retention-days: 7
