@@ -9,6 +9,7 @@ package org.yuzu.yuzu_emu.utils
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
+import org.yuzu.yuzu_emu.core.KenjiInputBridge
 import org.yuzu.yuzu_emu.features.input.NativeInput
 import org.yuzu.yuzu_emu.features.input.YuzuInputOverlayDevice
 import org.yuzu.yuzu_emu.features.input.YuzuPhysicalDevice
@@ -78,6 +79,10 @@ object InputHandler {
     }
 
     fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (KenjiInputBridge.onKeyEvent(event)) {
+            return true
+        }
+
         val action = when (event.action) {
             KeyEvent.ACTION_DOWN -> NativeInput.ButtonState.PRESSED
             KeyEvent.ACTION_UP -> NativeInput.ButtonState.RELEASED
@@ -113,6 +118,10 @@ object InputHandler {
     }
 
     fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
+        if (KenjiInputBridge.onMotionEvent(event)) {
+            return true
+        }
+
         val controllerData =
             androidControllers[event.device.controllerNumber] ?: return false
         event.device.motionRanges.forEach {
