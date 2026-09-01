@@ -75,13 +75,11 @@ object MoonwitchKenjiCore {
                 error("LibKenjinx graphicsInitialize returned false")
             }
 
-            if (!rendererInitialized) {
-                val extensions = arrayOf("VK_KHR_surface", "VK_KHR_android_surface")
-                if (!KenjinxNative.graphicsInitializeRenderer(extensions, extensions.size, 0L)) {
-                    error("LibKenjinx graphicsInitializeRenderer returned false")
-                }
-                rendererInitialized = true
+            val extensions = arrayOf("VK_KHR_surface", "VK_KHR_android_surface")
+            if (!KenjinxNative.graphicsInitializeRenderer(extensions, extensions.size, 0L)) {
+                error("LibKenjinx graphicsInitializeRenderer returned false")
             }
+            rendererInitialized = true
 
             val docked = BooleanSetting.USE_DOCKED_MODE.getBoolean()
             val deviceReady = KenjinxNative.deviceInitialize(
@@ -200,6 +198,7 @@ object MoonwitchKenjiCore {
         runCatching { KenjinxNative.deviceCloseEmulation() }
         isRunning = false
         isPaused = false
+        rendererInitialized = false
         closeDescriptor()
         releaseNativeWindow()
     }
@@ -277,11 +276,11 @@ object MoonwitchKenjiCore {
     private fun openGameDescriptor(context: Context, gamePath: String): ParcelFileDescriptor? {
         val uri = Uri.parse(gamePath)
         return if (!uri.scheme.isNullOrBlank()) {
-            context.contentResolver.openFileDescriptor(uri, "r")
+            context.contentResolver.openFileDescriptor(uri, "rw")
         } else {
             val file = File(gamePath)
             if (file.isFile) {
-                ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+                ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_WRITE)
             } else {
                 null
             }
@@ -302,6 +301,7 @@ object MoonwitchKenjiCore {
     private fun cleanupFailedStart() {
         isRunning = false
         isPaused = false
+        rendererInitialized = false
         closeDescriptor()
         runCatching { KenjinxNative.deviceCloseEmulation() }
         releaseNativeWindow()
