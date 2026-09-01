@@ -10,6 +10,7 @@ on:
       - 'scripts/kenji-first-boot.patch'
       - 'scripts/kenji-first-boot-postprocess.py'
       - 'scripts/kenji-input-routing.patch'
+      - 'scripts/kenji-runtime-stability.patch'
       - 'src/android/app/build.gradle.kts'
       - 'src/android/app/src/main/java/org/kenjinx/**'
       - 'src/android/app/src/main/java/org/yuzu/yuzu_emu/core/**'
@@ -201,7 +202,7 @@ jobs:
       - name: Apply functional core and input routing patches
         shell: bash
         run: |
-          for patch in scripts/kenji-first-boot.patch scripts/kenji-input-routing.patch; do
+          for patch in scripts/kenji-first-boot.patch scripts/kenji-input-routing.patch scripts/kenji-runtime-stability.patch; do
             echo "Checking $patch"
             git apply --check "$patch"
             git apply "$patch"
