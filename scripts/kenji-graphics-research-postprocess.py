@@ -12,17 +12,15 @@ def replace_once(path_str: str, old: str, new: str, label: str) -> None:
     if count != 1:
         raise SystemExit(f"{label}: expected exactly one match, found {count}")
     path.write_text(text.replace(old, new, 1), encoding="utf-8")
-    print(f"EXP5 patched: {label}")
+    print(f"EXP6 patched: {label}")
 
 
-# Experiment #5: keep the final upstream reactive-flushing model and remove the
-# heavy intermediate BufferCache gating used by EXP4.
-#
-# Yuzu's final reactive-flushing merge deliberately backed the feature out of
-# the general BufferCache and kept the accuracy-critical behavior in fastmem /
-# texture-cache paths. Moonwitch already carries the final texture-cache pieces
-# (PreemtiveDownload, forced_flushed and dma_downloaded), so Android only needs
-# reactive flushing enabled and its CPU-read fault semantics restored.
+# Experiment #6: isolate the cost of reactive fastmem read faults on Android.
+# Keep Reactive Flushing enabled so the modern TextureCache/DMA machinery remains
+# available, but allow direct CPU reads from cached fastmem pages on Android.
+# Writes remain protected. This A/B tells us whether the huge EXP4/EXP5 slowdown
+# comes from global read faults and whether TOTK actually needs those faults to
+# keep foliage coherent.
 
 replace_once(
     "src/common/settings.h",
@@ -34,8 +32,8 @@ replace_once(
 replace_once(
     "src/core/memory.cpp",
     '''            Common::MemoryPermission perm{};\n            if (!Settings::values.use_reactive_flushing.GetValue() || !cached) {\n                perm |= Common::MemoryPermission::Read;\n            }\n''',
-    '''            Common::MemoryPermission perm{};\n#if defined(__ANDROID__)\n            // EXP5: use the final upstream reactive-flushing model on Android.\n            // Cached GPU-owned pages fault only when the guest CPU actually reads\n            // them; BufferCache remains on its modern asynchronous/predictive path.\n            if (!cached) {\n#else\n            if (!Settings::values.use_reactive_flushing.GetValue() || !cached) {\n#endif\n                perm |= Common::MemoryPermission::Read;\n            }\n''',
-    "force reactive fastmem read protection on Android",
+    '''            Common::MemoryPermission perm{};\n#if defined(__ANDROID__)\n            // EXP6 ablation: keep cached pages CPU-readable on Android so normal\n            // gameplay does not pay a page fault for every reactive read. Writes\n            // are still protected below, and TextureCache/DMA accuracy paths stay\n            // intact. If foliage regresses, the read-fault mechanism is necessary\n            // and must be narrowed rather than globally enabled.\n            perm |= Common::MemoryPermission::Read;\n#else\n            if (!Settings::values.use_reactive_flushing.GetValue() || !cached) {\n                perm |= Common::MemoryPermission::Read;\n            }\n#endif\n''',
+    "bypass global reactive fastmem read faults on Android",
 )
 
-print("Applied graphics research experiment #5: final-path Android reactive flushing without BufferCache gating.")
+print("Applied graphics research experiment #6: reactive-flushing read-fault ablation on Android.")
