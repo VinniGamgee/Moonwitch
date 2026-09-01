@@ -20,6 +20,14 @@ add_library(yuzu-android SHARED
     native_input.cpp
 )
 
+# Moonwitch-owned Android bridge for LibKenjinx/Ryujinx.  It intentionally
+# produces libkenjinxjni.so so NativeAOT's existing DllImport ABI keeps working,
+# while avoiding the prebuilt Kenji JNI binary/runtime collision inside Moonwitch.
+add_library(kenjinxjni SHARED
+    kenji_bridge.cpp
+)
+target_link_libraries(kenjinxjni PRIVATE android log vulkan dl)
+
 set_property(TARGET yuzu-android PROPERTY IMPORTED_LOCATION ${FFmpeg_LIBRARY_DIR})
 
 target_link_libraries(yuzu-android PRIVATE audio_core common core input_common frontend_common video_core)
@@ -33,6 +41,6 @@ if (ENABLE_UPDATE_CHECKER)
     target_compile_definitions(yuzu-android PUBLIC ENABLE_UPDATE_CHECKER)
 endif()
 
-set(CPACK_PACKAGE_EXECUTABLES ${CPACK_PACKAGE_EXECUTABLES} yuzu-android)
+set(CPACK_PACKAGE_EXECUTABLES ${CPACK_PACKAGE_EXECUTABLES} yuzu-android kenjinxjni)
 
 target_link_options(yuzu-android PRIVATE "-Wl,-Bsymbolic")
