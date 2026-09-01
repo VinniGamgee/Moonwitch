@@ -135,7 +135,7 @@ diff --git a/src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/Emulation
                  surface = null
                  Log.debug("[EmulationFragment] Surface destroyed.")
                  when (state) {
-@@ -2387,10 +2422,31 @@
+@@ -2387,10 +2422,35 @@
              when (state) {
                  State.STOPPED -> {
 -                    NativeLibrary.surfaceChanged(currentSurface)
@@ -145,15 +145,19 @@ diff --git a/src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/Emulation
 -                    }, "NativeEmulation")
 +                    if (usesKenji) {
 +                        Log.info("[EmulationFragment] Starting real Kenji/Ryujinx first boot.")
-+                        if (!MoonwitchKenjiCore.prepare(requireContext().applicationContext, gamePath, currentSurface)) {
-+                            Log.error("[EmulationFragment] Kenji core failed to prepare.")
-+                            emulationViewModel.setEmulationStopped(true)
-+                            return
-+                        }
-+                        emulationViewModel.setEmulationStarted(true)
 +                        emulationThread = Thread({
 +                            try {
-+                                MoonwitchKenjiCore.runLoop()
++                                val prepared = MoonwitchKenjiCore.prepare(
++                                    requireContext().applicationContext,
++                                    gamePath,
++                                    currentSurface
++                                )
++                                if (prepared) {
++                                    emulationViewModel.setEmulationStarted(true)
++                                    MoonwitchKenjiCore.runLoop()
++                                } else {
++                                    Log.error("[EmulationFragment] Kenji core failed to prepare.")
++                                }
 +                            } finally {
 +                                synchronized(this) {
 +                                    state = State.STOPPED
