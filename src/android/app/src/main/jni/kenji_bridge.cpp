@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: Copyright 2026 Moonwitch Project
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+#define VK_USE_PLATFORM_ANDROID_KHR 1
+
 #include <android/api-level.h>
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
