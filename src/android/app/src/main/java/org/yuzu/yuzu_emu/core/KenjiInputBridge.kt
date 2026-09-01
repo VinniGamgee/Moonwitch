@@ -3,6 +3,7 @@
 
 package org.yuzu.yuzu_emu.core
 
+import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
 import kotlin.math.abs
@@ -113,7 +114,7 @@ object KenjiInputBridge {
 
         val device = event.device ?: return false
         fun hasAxis(axis: Int): Boolean =
-            device.getMotionRange(axis, MotionEvent.SOURCE_JOYSTICK) != null ||
+            device.getMotionRange(axis, InputDevice.SOURCE_JOYSTICK) != null ||
                 device.getMotionRange(axis) != null
 
         fun value(axis: Int): Float = event.getAxisValue(axis)
