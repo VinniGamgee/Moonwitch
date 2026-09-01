@@ -59,9 +59,17 @@ interface KenjinxNativeJna : Library {
     fun graphicsRendererSetSize(width: Int, height: Int)
     fun graphicsRendererRunLoop()
     fun graphicsSetPresentEnabled(enabled: Boolean)
+
     fun inputInitialize(width: Int, height: Int)
     fun inputSetClientSize(width: Int, height: Int)
     fun inputUpdate()
+    fun inputConnectGamepad(index: Int): Int
+    fun inputSetButtonPressed(button: Int, id: Int)
+    fun inputSetButtonReleased(button: Int, id: Int)
+    fun inputSetStickAxis(stick: Int, x: Float, y: Float, id: Int)
+    fun inputSetTouchPoint(x: Int, y: Int)
+    fun inputReleaseTouchPoint()
+
     fun audioSetPaused(paused: Boolean)
     fun deviceGetGameFrameRate(): Double
     fun deviceGetGameFrameTime(): Double
