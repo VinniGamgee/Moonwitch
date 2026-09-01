@@ -347,6 +347,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics-android:1.7.8")
     implementation("androidx.compose.ui:ui-text-android:1.7.8")
     implementation("net.swiftzer.semver:semver:2.0.0")
+    implementation("net.java.dev.jna:jna:5.18.1@aar")
 }
 
 fun runGitCommand(command: List<String>): String {
