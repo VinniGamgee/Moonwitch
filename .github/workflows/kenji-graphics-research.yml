@@ -64,7 +64,7 @@ jobs:
       - name: Upload research APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-KENJI-GRAPHICS-RESEARCH-EXP1
+          name: MOONWITCH-KENJI-GRAPHICS-RESEARCH-EXP2
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7
