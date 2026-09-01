@@ -11,9 +11,9 @@ def replace_once(text: str, old: str, new: str, label: str) -> str:
     return text.replace(old, new, 1)
 
 
-# Persist the boot stage independently from the Kenji data directory. SharedPreferences
-# uses a synchronous commit here on purpose: if Android kills the process for ANR right
-# after the native call starts, the last stage must already be durable.
+# Persist the boot stage in a tiny internal file. Do not use SharedPreferences.commit()
+# on every stage: #22 reached 01d4, and there is no native work between 01d4 and 01e,
+# making synchronous preferences I/O itself a possible blocker in the hot boot path.
 core_path = Path(
     "src/android/app/src/main/java/org/yuzu/yuzu_emu/core/MoonwitchKenjiCore.kt"
 )
@@ -26,19 +26,22 @@ core = replace_once(
     }
 ''',
     '''    private fun markBootStage(stage: String) {
+        // Keep the Kenji-local trace for low-level recovery/debugging.
         runCatching { bootTraceFile?.writeText(stage) }
+
+        // Also mirror to app-internal storage so Application.onCreate() can read it
+        // without waiting for DirectoryInitialization or touching SharedPreferences.
         runCatching {
-            org.yuzu.yuzu_emu.YuzuApplication.appContext
-                .getSharedPreferences("moonwitch_kenji_boot_trace", Context.MODE_PRIVATE)
-                .edit()
-                .putString("last_stage", stage)
-                .putLong("updated_at", System.currentTimeMillis())
-                .commit()
+            java.io.File(
+                org.yuzu.yuzu_emu.YuzuApplication.appContext.filesDir,
+                "kenji-last-stage.txt"
+            ).writeText(stage)
         }
+
         Log.info("$TAG Boot stage: $stage")
     }
 ''',
-    "persist boot breadcrumb in SharedPreferences",
+    "persist boot breadcrumb without synchronous preferences",
 )
 core_path.write_text(core, encoding="utf-8")
 
@@ -61,8 +64,10 @@ app = replace_once(
     }
 
     private fun reportKenjiBootDiagnostic() {
-        val prefs = getSharedPreferences("moonwitch_kenji_boot_trace", Context.MODE_PRIVATE)
-        val stage = prefs.getString("last_stage", null)?.trim()
+        val traceFile = java.io.File(filesDir, "kenji-last-stage.txt")
+        val stage = runCatching {
+            traceFile.takeIf { it.isFile }?.readText()?.trim()
+        }.getOrNull()
         if (stage.isNullOrEmpty() || stage == "READY") return
 
         val message = "Kenji anterior parou em: $stage"
@@ -96,4 +101,4 @@ app = replace_once(
 )
 
 app_path.write_text(app, encoding="utf-8")
-print("Kenji breadcrumb now persists synchronously and reports at app startup.")
+print("Kenji breadcrumb now uses a lightweight internal file with no synchronous preferences commit.")
