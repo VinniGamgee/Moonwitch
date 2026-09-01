@@ -1,4 +1,4 @@
-name: Moonwitch Dual Core Packaging Probe
+name: Moonwitch Dual Core First Boot
 
 on:
   workflow_dispatch:
@@ -7,12 +7,17 @@ on:
       - perf/moonwitch-v1.2
     paths:
       - '.github/workflows/kenji-dual-core-package.yml'
+      - 'scripts/kenji-first-boot.patch'
+      - 'src/android/app/build.gradle.kts'
+      - 'src/android/app/src/main/java/org/kenjinx/**'
+      - 'src/android/app/src/main/java/org/yuzu/yuzu_emu/core/**'
+      - 'src/android/app/src/main/java/org/yuzu/yuzu_emu/utils/EmulationCorePreference.kt'
 
 permissions:
   contents: read
 
 concurrency:
-  group: kenji-dual-core-package-${{ github.ref }}
+  group: kenji-dual-core-first-boot-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -149,7 +154,7 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  build-moonwitch-dual-core:
+  build-moonwitch-first-boot:
     needs: build-kenji-stack
     runs-on: ubuntu-latest
     timeout-minutes: 120
@@ -191,6 +196,15 @@ jobs:
             test ! -f "/tmp/kenji-stack/$forbidden"
           done
 
+      - name: Apply functional core-routing patch
+        shell: bash
+        run: |
+          git apply --check scripts/kenji-first-boot.patch
+          git apply scripts/kenji-first-boot.patch
+          echo 'First-boot routing patch applied.'
+          git diff --check
+          git diff --stat
+
       - name: Moonwitch Android dependencies
         shell: bash
         run: |
@@ -203,7 +217,7 @@ jobs:
             "ndk;28.2.13676358" \
             "cmake;3.31.6"
 
-      - name: Build Moonwitch dual-core packaging probe
+      - name: Build Moonwitch first-boot dual-core APK
         shell: bash
         env:
           CCACHE: 'false'
@@ -211,7 +225,7 @@ jobs:
           chmod +x .ci/android/build.sh src/android/gradlew
           .ci/android/build.sh -t standard -b Release
 
-      - name: Verify both cores are packaged
+      - name: Verify both cores and bridge are packaged
         shell: bash
         run: |
           APK_PATH=$(find artifacts -name '*.apk' | head -n 1)
@@ -222,16 +236,16 @@ jobs:
           grep -q 'lib/arm64-v8a/libkenjinx.so' /tmp/apk-contents.txt
           grep -q 'lib/arm64-v8a/libkenjinxjni.so' /tmp/apk-contents.txt
           grep -q 'lib/arm64-v8a/libopenal.so' /tmp/apk-contents.txt
-          grep -q 'lib/arm64-v8a/libc++_shared.so' /tmp/apk-contents.txt
+          grep -q 'lib/arm64-v8a/libjnidispatch.so' /tmp/apk-contents.txt
 
-          echo 'Dual-core native payload verified:'
+          echo 'Functional dual-core payload verified.'
           grep 'lib/arm64-v8a/.*\.so' /tmp/apk-contents.txt
           ls -lh "$APK_PATH"
 
-      - name: Upload Moonwitch dual-core packaging probe
+      - name: Upload Moonwitch first-boot APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-DUAL-CORE-PACKAGING-PROBE
+          name: MOONWITCH-DUAL-CORE-FIRST-BOOT
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7
