@@ -1,0 +1,144 @@
+diff --git a/src/android/app/src/main/java/org/yuzu/yuzu_emu/core/MoonwitchKenjiCore.kt b/src/android/app/src/main/java/org/yuzu/yuzu_emu/core/MoonwitchKenjiCore.kt
+--- a/src/android/app/src/main/java/org/yuzu/yuzu_emu/core/MoonwitchKenjiCore.kt
++++ b/src/android/app/src/main/java/org/yuzu/yuzu_emu/core/MoonwitchKenjiCore.kt
+@@ -50,6 +50,8 @@ object MoonwitchKenjiCore {
+     private var lastHeight = 720
+     private var inputThread: Thread? = null
++    private var bootTraceFile: File? = null
++
+ 
+     @Synchronized
+     fun prepare(
+@@ -66,16 +68,20 @@ object MoonwitchKenjiCore {
+         return runCatching {
+             val appContext = context.applicationContext
+             val basePath = prepareDataDirectory(appContext)
++            bootTraceFile = File(basePath, "last-boot-stage.txt")
++            reportPreviousIncompleteBoot(appContext)
++            markBootStage("01-bind-surface")
+             bindSurface(surface, width, height)
+ 
+             if (!initialized) {
+                 Log.info("$TAG Initializing LibKenjinx at $basePath")
++                markBootStage("02-java-initialize")
+                 if (!KenjinxNative.javaInitialize(basePath, JNIEnv.CURRENT)) {
+                     error("LibKenjinx javaInitialize returned false")
+                 }
+                 initialized = true
+             } else {
++                markBootStage("02-device-reinit")
+                 KenjinxNative.deviceReinitEmulation()
+             }
+ 
++            markBootStage("03-graphics-initialize")
+             if (!KenjinxNative.initializeGraphicsStable()) {
+                 error("LibKenjinx graphicsInitialize returned false")
+             }
+ 
+             val extensions = arrayOf("VK_KHR_surface", "VK_KHR_android_surface")
++            markBootStage("04-renderer-initialize")
+             if (!KenjinxNative.graphicsInitializeRenderer(extensions, extensions.size, 0L)) {
+                 error("LibKenjinx graphicsInitializeRenderer returned false")
+             }
+@@ -83,24 +89,36 @@ object MoonwitchKenjiCore {
+ 
+             val docked = BooleanSetting.USE_DOCKED_MODE.getBoolean()
+-            val deviceReady = KenjinxNative.deviceInitialize(
+-                2, // HostMappedUnsafe - Kenji Android default
+-                false, // NCE stays off for the first compatibility boot
+-                0, // 4 GiB Switch memory configuration
+-                17, // BrazilianPortuguese
+-                1, // USA
+-                0, // Switch VSync
+-                docked,
+-                true, // PPTC
+-                false, // low-power PPTC
+-                true, // JIT cache eviction
+-                false, // guest internet access
+-                false, // FS integrity checks
+-                0,
+-                TimeZone.getDefault().id,
+-                false
+-            )
++            markBootStage("05-device-initialize-main-thread")
++            val initializeDevice = {
++                KenjinxNative.deviceInitialize(
++                    2, // HostMappedUnsafe - Kenji Android default
++                    false, // NCE stays off for the first compatibility boot
++                    0, // 4 GiB Switch memory configuration
++                    17, // BrazilianPortuguese
++                    1, // USA
++                    0, // Switch VSync
++                    docked,
++                    true, // PPTC
++                    false, // low-power PPTC
++                    true, // JIT cache eviction
++                    false, // guest internet access
++                    false, // FS integrity checks
++                    0,
++                    TimeZone.getDefault().id,
++                    false
++                )
++            }
++            val deviceReady = if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) {
++                initializeDevice()
++            } else {
++                val task = java.util.concurrent.FutureTask<Boolean> { initializeDevice() }
++                android.os.Handler(android.os.Looper.getMainLooper()).post(task)
++                task.get()
++            }
+             if (!deviceReady) {
+                 error("LibKenjinx deviceInitialize returned false")
+             }
+ 
++            markBootStage("06-open-game-descriptor")
+             gameDescriptor = openGameDescriptor(appContext, gamePath)
+                 ?: error("Unable to open game descriptor: $gamePath")
+ 
+@@ -110,6 +128,7 @@ object MoonwitchKenjiCore {
+                 error("Unsupported Kenji game type: $gamePath")
+             }
+ 
++            markBootStage("07-load-game-descriptor")
+             if (!KenjinxNative.deviceLoadDescriptor(gameDescriptor!!.fd, gameType, -1)) {
+                 error("LibKenjinx deviceLoadDescriptor returned false")
+             }
+@@ -124,6 +143,7 @@ object MoonwitchKenjiCore {
+             isPaused = false
+             isRunning = true
+             startInputPump()
++            markBootStage("READY")
+             Log.info("$TAG Kenji core prepared successfully (${lastWidth}x$lastHeight)")
+             true
+         }.getOrElse { throwable ->
+@@ -203,6 +223,31 @@ object MoonwitchKenjiCore {
+         )
+     )
+ 
++    private fun markBootStage(stage: String) {
++        runCatching { bootTraceFile?.writeText(stage) }
++        Log.info("$TAG Boot stage: $stage")
++    }
++
++    private fun reportPreviousIncompleteBoot(context: Context) {
++        val previous = runCatching {
++            bootTraceFile?.takeIf { it.isFile }?.readText()?.trim()
++        }.getOrNull()
++
++        if (previous.isNullOrBlank() || previous == "READY") {
++            return
++        }
++
++        Log.warning("$TAG Previous Kenji process ended during stage: $previous")
++        android.os.Handler(android.os.Looper.getMainLooper()).post {
++            android.widget.Toast.makeText(
++                context,
++                "Kenji anterior parou em: $previous",
++                android.widget.Toast.LENGTH_LONG
++            ).show()
++        }
++    }
++
+     private fun startInputPump() {
+         inputPumpRunning = true
+         inputThread = Thread({
