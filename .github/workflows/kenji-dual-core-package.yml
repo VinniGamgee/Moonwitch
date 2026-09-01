@@ -9,6 +9,7 @@ on:
       - '.github/workflows/kenji-dual-core-package.yml'
       - 'scripts/kenji-first-boot.patch'
       - 'scripts/kenji-first-boot-postprocess.py'
+      - 'scripts/kenji-bind-surface-postprocess.py'
       - 'scripts/kenji-input-routing.patch'
       - 'src/android/app/build.gradle.kts'
       - 'src/android/app/src/main/java/org/kenjinx/**'
@@ -207,7 +208,8 @@ jobs:
             git apply "$patch"
           done
           python3 scripts/kenji-first-boot-postprocess.py
-          echo 'First-boot routing patches applied and runtime-stabilized.'
+          python3 scripts/kenji-bind-surface-postprocess.py
+          echo 'First-boot routing patches applied; Surface and JNA boot stages isolated.'
           git diff --check
           git diff --stat
 
