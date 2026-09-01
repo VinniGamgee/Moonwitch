@@ -12,6 +12,8 @@ on:
       - 'scripts/kenji-bind-surface-postprocess.py'
       - 'scripts/kenji-input-routing.patch'
       - 'src/android/app/build.gradle.kts'
+      - 'src/android/app/src/main/jni/CMakeLists.txt'
+      - 'src/android/app/src/main/jni/kenji_bridge.cpp'
       - 'src/android/app/src/main/java/org/kenjinx/**'
       - 'src/android/app/src/main/java/org/yuzu/yuzu_emu/core/**'
       - 'src/android/app/src/main/java/org/yuzu/yuzu_emu/utils/EmulationCorePreference.kt'
@@ -128,9 +130,10 @@ jobs:
           unzip -q "$APK_PATH" 'lib/arm64-v8a/*.so' -d /tmp/kenji-apk
           SRC=/tmp/kenji-apk/lib/arm64-v8a
 
+          # libkenjinxjni.so is deliberately NOT imported. Moonwitch now builds
+          # an ABI-compatible replacement with its own Android NDK/runtime.
           for lib in \
             libkenjinx.so \
-            libkenjinxjni.so \
             libopenal.so \
             libsdl3.so \
             libskiasharp.so \
@@ -145,6 +148,7 @@ jobs:
             cp "$SRC/$lib" /tmp/kenji-stack/
           done
 
+          test ! -f /tmp/kenji-stack/libkenjinxjni.so
           cp LICENSE.txt /tmp/kenji-stack/KENJI-LICENSE.txt
           file /tmp/kenji-stack/*.so
           sha256sum /tmp/kenji-stack/*.so | tee /tmp/kenji-stack/SHA256SUMS
@@ -187,6 +191,7 @@ jobs:
           DEST=src/android/app/src/main/jniLibs/arm64-v8a
           mkdir -p "$DEST"
           cp /tmp/kenji-stack/*.so "$DEST/"
+          test ! -f "$DEST/libkenjinxjni.so"
 
           LICENSE_DEST=src/android/app/src/main/assets/licenses
           mkdir -p "$LICENSE_DEST"
@@ -233,7 +238,7 @@ jobs:
           chmod +x .ci/android/build.sh src/android/gradlew
           .ci/android/build.sh -t standard -b Release
 
-      - name: Verify both cores and bridge are packaged
+      - name: Verify both cores and Moonwitch bridge are packaged
         shell: bash
         run: |
           APK_PATH=$(find artifacts -name '*.apk' | head -n 1)
@@ -246,9 +251,17 @@ jobs:
           grep -q 'lib/arm64-v8a/libopenal.so' /tmp/apk-contents.txt
           grep -q 'lib/arm64-v8a/libjnidispatch.so' /tmp/apk-contents.txt
 
-          echo 'Functional dual-core payload verified.'
+          unzip -p "$APK_PATH" lib/arm64-v8a/libkenjinxjni.so > /tmp/libkenjinxjni.so
+          file /tmp/libkenjinxjni.so
+          nm -D /tmp/libkenjinxjni.so | grep -q 'Java_org_kenjinx_android_NativeHelpers_getNativeWindow'
+          nm -D /tmp/libkenjinxjni.so | grep -q 'Java_org_kenjinx_android_NativeHelpers_getCreateSurfacePtr'
+          nm -D /tmp/libkenjinxjni.so | grep -q ' setRenderingThread$'
+          nm -D /tmp/libkenjinxjni.so | grep -q ' setCurrentTransform$'
+          nm -D /tmp/libkenjinxjni.so | grep -q ' debug_break$'
+
+          echo 'Functional dual-core payload + Moonwitch-built Kenji JNI ABI verified.'
           grep 'lib/arm64-v8a/.*\.so' /tmp/apk-contents.txt
-          ls -lh "$APK_PATH"
+          ls -lh "$APK_PATH" /tmp/libkenjinxjni.so
 
       - name: Upload Moonwitch first-boot APK
         uses: actions/upload-artifact@v4
