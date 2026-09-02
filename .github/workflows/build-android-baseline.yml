@@ -1,16 +1,16 @@
-name: Moonwitch Reconstruction Stage 7
+name: Moonwitch Reconstruction Stage 8
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - exp/moonwitch-reconstruction-stage7
+      - exp/moonwitch-reconstruction-stage8
 
 permissions:
   contents: read
 
 concurrency:
-  group: moonwitch-reconstruction-stage7-${{ github.ref }}
+  group: moonwitch-reconstruction-stage8-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -54,7 +54,12 @@ jobs:
         run: |
           python3 .github/scripts/apply_moonwitch_reconstruction_stage7.py
 
-      - name: Guard temporal integrity and TOTK foliage workaround
+      - name: Apply Moonwitch Reconstruction Stage 8
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_moonwitch_reconstruction_stage8.py
+
+      - name: Guard scene-history integrity and TOTK foliage workaround
         shell: bash
         run: |
           if ! grep -q "TOTK_PROGRAM_ID" src/video_core/renderer_vulkan/vk_rasterizer.cpp; then
@@ -66,13 +71,14 @@ jobs:
             git diff -- src/video_core/renderer_vulkan/vk_rasterizer.cpp
             exit 1
           fi
+          grep -q "SGSR2_SCENE_HISTORY_CAPACITY" src/video_core/renderer_vulkan/vk_texture_cache.h
+          grep -q "SGSR2FindSceneHistory" src/video_core/renderer_vulkan/vk_texture_cache.cpp
+          grep -q "SGSR2RecordImageLineage" src/video_core/renderer_vulkan/vk_texture_cache.cpp
+          grep -q "scene_history_correlated" src/video_core/renderer_vulkan/vk_rasterizer.h
+          grep -q "Moonwitch SGSR2 scene history match" src/video_core/renderer_vulkan/present/layer.cpp
           grep -q "ReadyForTemporalDispatch" src/video_core/renderer_vulkan/present/sgsr2_runtime_inputs.h
-          grep -q "depth_scene_correlated" src/video_core/renderer_vulkan/present/sgsr2_runtime_inputs.h
-          grep -q "motion_probe_content_plausible" src/video_core/renderer_vulkan/present/sgsr2_runtime_inputs.h
-          grep -q "SGSR2MotionProbe" src/video_core/renderer_vulkan/present/sgsr2_motion_probe.cpp
-          grep -q "Moonwitch SGSR2 motion content probe" src/video_core/renderer_vulkan/present/layer.cpp
           if grep -Eq "sgsr2_inputs\.motion_valid[[:space:]]*=[[:space:]]*true" src/video_core/renderer_vulkan/present/layer.cpp; then
-            echo "Stage 7 attempted to promote diagnostic evidence to motion_valid; refusing to build."
+            echo "Stage 8 attempted to promote unverified motion data; refusing to build."
             exit 1
           fi
 
@@ -113,12 +119,12 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-RECONSTRUCTION-STAGE7
+          name: MOONWITCH-RECONSTRUCTION-STAGE8
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7
 
-      - name: Validate generated Stage 7 sources
+      - name: Validate generated Stage 8 sources
         shell: bash
         run: |
           git diff --check
