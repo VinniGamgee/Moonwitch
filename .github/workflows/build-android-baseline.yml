@@ -57,7 +57,7 @@ jobs:
       - name: Apply Moonwitch Reconstruction Stage 8
         shell: bash
         run: |
-          python3 .github/scripts/apply_moonwitch_reconstruction_stage8.py
+          python3 .github/scripts/apply_moonwitch_reconstruction_stage8_runner.py
 
       - name: Guard scene-history integrity and TOTK foliage workaround
         shell: bash
