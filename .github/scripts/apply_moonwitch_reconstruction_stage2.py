@@ -24,8 +24,7 @@ def download_if_missing(name: str) -> None:
     if destination.exists() and destination.stat().st_size > 0:
         return
     with urlopen(QUALCOMM_BASE + name, timeout=30) as response:
-        data = response.read()
-    destination.write_bytes(data)
+        destination.write_bytes(response.read())
 
 
 def insert_once(path: Path, anchor: str, addition: str) -> None:
@@ -34,8 +33,7 @@ def insert_once(path: Path, anchor: str, addition: str) -> None:
         return
     if anchor not in text:
         raise RuntimeError(f"anchor not found in {path}: {anchor!r}")
-    text = text.replace(anchor, anchor + addition, 1)
-    path.write_text(text, encoding="utf-8")
+    path.write_text(text.replace(anchor, anchor + addition, 1), encoding="utf-8")
 
 
 for shader in ("sgsr2_convert.comp", "sgsr2_activate.comp", "sgsr2_upscale.comp"):
@@ -48,6 +46,7 @@ resources_h = r'''// SPDX-FileCopyrightText: Copyright 2026 Moonwitch Project
 
 #include <array>
 #include <cstddef>
+
 #include "common/common_types.h"
 #include "video_core/vulkan_common/vulkan_memory_allocator.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
@@ -59,8 +58,8 @@ class Scheduler;
 
 // CPU-side mirror of the uniform block consumed by Qualcomm SGSR2.
 // Stage 2 deliberately does not dispatch the temporal passes yet: valid depth and
-// motion inputs must be wired first. Keeping the exact data model here lets us build
-// and validate the real shader/resource path without feeding fake motion vectors.
+// motion inputs must be wired first. Keeping the real data model here lets us build
+// and validate the shader/resource path without feeding fake motion vectors.
 struct alignas(16) SGSR2Params {
     std::array<u32, 2> render_size{};
     std::array<u32, 2> display_size{};
@@ -78,6 +77,13 @@ struct alignas(16) SGSR2Params {
     std::array<u32, 2> tail_padding{};
 };
 
+// Kept outside SGSR2Resources so construction helpers never need access to a
+// private nested type. This also makes ownership/lifetime explicit and simple.
+struct SGSR2ImageResource {
+    vk::Image image;
+    vk::ImageView view;
+};
+
 class SGSR2Resources {
 public:
     SGSR2Resources(const Device& device, MemoryAllocator& allocator, VkExtent2D render_extent,
@@ -85,16 +91,26 @@ public:
 
     SGSR2Resources(const SGSR2Resources&) = delete;
     SGSR2Resources& operator=(const SGSR2Resources&) = delete;
+    SGSR2Resources(SGSR2Resources&&) = default;
+    SGSR2Resources& operator=(SGSR2Resources&&) = default;
 
     void Clear(Scheduler& scheduler);
     void AdvanceFrame();
 
     [[nodiscard]] bool Matches(VkExtent2D render_extent, VkExtent2D display_extent) const;
-    [[nodiscard]] bool HasValidHistory() const { return history_valid; }
-    void InvalidateHistory() { history_valid = false; }
+    [[nodiscard]] bool HasValidHistory() const {
+        return history_valid;
+    }
+    void InvalidateHistory() {
+        history_valid = false;
+    }
 
-    [[nodiscard]] VkImageView YCoCgColorView() const { return *ycocg_color.view; }
-    [[nodiscard]] VkImageView MotionDepthAlphaView() const { return *motion_depth_alpha.view; }
+    [[nodiscard]] VkImageView YCoCgColorView() const {
+        return *ycocg_color.view;
+    }
+    [[nodiscard]] VkImageView MotionDepthAlphaView() const {
+        return *motion_depth_alpha.view;
+    }
     [[nodiscard]] VkImageView MotionDepthClipAlphaView() const {
         return *motion_depth_clip_alpha.view;
     }
@@ -110,25 +126,24 @@ public:
     [[nodiscard]] VkImageView CurrentHistoryOutputView() const {
         return *history_output[history_index].view;
     }
-    [[nodiscard]] VkImageView SceneColorView() const { return *scene_color.view; }
+    [[nodiscard]] VkImageView SceneColorView() const {
+        return *scene_color.view;
+    }
 
 private:
-    struct ImageResource {
-        vk::Image image;
-        vk::ImageView view;
-    };
-
-    [[nodiscard]] size_t PreviousIndex() const { return history_index ^ 1U; }
+    [[nodiscard]] std::size_t PreviousIndex() const {
+        return history_index ^ std::size_t{1};
+    }
 
     VkExtent2D render_extent{};
     VkExtent2D display_extent{};
-    ImageResource ycocg_color;
-    ImageResource motion_depth_alpha;
-    ImageResource motion_depth_clip_alpha;
-    std::array<ImageResource, 2> luma_history;
-    std::array<ImageResource, 2> history_output;
-    ImageResource scene_color;
-    size_t history_index{};
+    SGSR2ImageResource ycocg_color;
+    SGSR2ImageResource motion_depth_alpha;
+    SGSR2ImageResource motion_depth_clip_alpha;
+    std::array<SGSR2ImageResource, 2> luma_history;
+    std::array<SGSR2ImageResource, 2> history_output;
+    SGSR2ImageResource scene_color;
+    std::size_t history_index{};
     bool history_valid{};
 };
 
@@ -140,6 +155,8 @@ resources_cpp = r'''// SPDX-FileCopyrightText: Copyright 2026 Moonwitch Project
 
 #include "video_core/renderer_vulkan/present/sgsr2_resources.h"
 
+#include <utility>
+
 #include "video_core/renderer_vulkan/present/util.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/vulkan_common/vulkan_device.h"
@@ -147,11 +164,11 @@ resources_cpp = r'''// SPDX-FileCopyrightText: Copyright 2026 Moonwitch Project
 namespace Vulkan {
 namespace {
 
-SGSR2Resources::ImageResource MakeImage(const Device& device, MemoryAllocator& allocator,
-                                        VkExtent2D extent, VkFormat format) {
+SGSR2ImageResource MakeImage(const Device& device, MemoryAllocator& allocator,
+                             VkExtent2D extent, VkFormat format) {
     auto image = CreateWrappedImage(allocator, extent, format);
     auto view = CreateWrappedImageView(device, image, format);
-    return SGSR2Resources::ImageResource{std::move(image), std::move(view)};
+    return SGSR2ImageResource{std::move(image), std::move(view)};
 }
 
 } // namespace
@@ -164,10 +181,12 @@ SGSR2Resources::SGSR2Resources(const Device& device, MemoryAllocator& allocator,
                                    VK_FORMAT_R16G16B16A16_SFLOAT)},
       motion_depth_clip_alpha{MakeImage(device, allocator, render_extent,
                                         VK_FORMAT_R16G16B16A16_SFLOAT)},
-      luma_history{MakeImage(device, allocator, render_extent, VK_FORMAT_R32_UINT),
-                   MakeImage(device, allocator, render_extent, VK_FORMAT_R32_UINT)},
-      history_output{MakeImage(device, allocator, display_extent, VK_FORMAT_R16G16B16A16_SFLOAT),
-                     MakeImage(device, allocator, display_extent, VK_FORMAT_R16G16B16A16_SFLOAT)},
+      luma_history{{MakeImage(device, allocator, render_extent, VK_FORMAT_R32_UINT),
+                    MakeImage(device, allocator, render_extent, VK_FORMAT_R32_UINT)}},
+      history_output{{MakeImage(device, allocator, display_extent,
+                                VK_FORMAT_R16G16B16A16_SFLOAT),
+                      MakeImage(device, allocator, display_extent,
+                                VK_FORMAT_R16G16B16A16_SFLOAT)}},
       scene_color{MakeImage(device, allocator, display_extent, VK_FORMAT_R16G16B16A16_SFLOAT)} {}
 
 void SGSR2Resources::Clear(Scheduler& scheduler) {
@@ -176,11 +195,11 @@ void SGSR2Resources::Clear(Scheduler& scheduler) {
         ClearColorImage(cmdbuf, *ycocg_color.image);
         ClearColorImage(cmdbuf, *motion_depth_alpha.image);
         ClearColorImage(cmdbuf, *motion_depth_clip_alpha.image);
-        for (auto& image : luma_history) {
-            ClearColorImage(cmdbuf, *image.image);
+        for (auto& resource : luma_history) {
+            ClearColorImage(cmdbuf, *resource.image);
         }
-        for (auto& image : history_output) {
-            ClearColorImage(cmdbuf, *image.image);
+        for (auto& resource : history_output) {
+            ClearColorImage(cmdbuf, *resource.image);
         }
         ClearColorImage(cmdbuf, *scene_color.image);
     });
@@ -189,7 +208,7 @@ void SGSR2Resources::Clear(Scheduler& scheduler) {
 }
 
 void SGSR2Resources::AdvanceFrame() {
-    history_index ^= 1U;
+    history_index ^= std::size_t{1};
     history_valid = true;
 }
 
@@ -203,16 +222,6 @@ bool SGSR2Resources::Matches(VkExtent2D other_render_extent,
 
 } // namespace Vulkan
 '''
-
-# Make ImageResource accessible to the local MakeImage helper while keeping the rest private.
-resources_h = resources_h.replace(
-    "private:\n    struct ImageResource {",
-    "public:\n    struct ImageResource {"
-).replace(
-    "    };\n\n    [[nodiscard]] size_t PreviousIndex() const",
-    "    };\n\nprivate:\n    [[nodiscard]] size_t PreviousIndex() const",
-    1,
-)
 
 write_if_changed(ROOT / "src/video_core/renderer_vulkan/present/sgsr2_resources.h", resources_h)
 write_if_changed(ROOT / "src/video_core/renderer_vulkan/present/sgsr2_resources.cpp", resources_cpp)
