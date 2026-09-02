@@ -1,16 +1,16 @@
-name: Moonwitch Reconstruction Stage 4
+name: Moonwitch Reconstruction Stage 5
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - exp/moonwitch-reconstruction-stage4
+      - exp/moonwitch-reconstruction-stage5
 
 permissions:
   contents: read
 
 concurrency:
-  group: moonwitch-reconstruction-stage4-${{ github.ref }}
+  group: moonwitch-reconstruction-stage5-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -39,7 +39,12 @@ jobs:
         run: |
           python3 .github/scripts/apply_moonwitch_reconstruction_stage4.py
 
-      - name: Guard temporal input integrity and TOTK foliage workaround
+      - name: Apply Moonwitch Reconstruction Stage 5
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_moonwitch_reconstruction_stage5.py
+
+      - name: Guard temporal integrity and TOTK foliage workaround
         shell: bash
         run: |
           if ! grep -q "TOTK_PROGRAM_ID" src/video_core/renderer_vulkan/vk_rasterizer.cpp; then
@@ -52,11 +57,13 @@ jobs:
             exit 1
           fi
           grep -q "ReadyForTemporalDispatch" src/video_core/renderer_vulkan/present/sgsr2_runtime_inputs.h
-          grep -q "depth_candidate_valid" src/video_core/renderer_vulkan/present/sgsr2_runtime_inputs.h
-          grep -q "GetSGSR2DepthCandidate" src/video_core/renderer_vulkan/vk_rasterizer.h
-          grep -q "Intentionally NOT setting depth_valid" src/video_core/renderer_vulkan/present/layer.cpp
-          if grep -Eq "sgsr2_inputs\.depth_valid[[:space:]]*=[[:space:]]*true" src/video_core/renderer_vulkan/present/layer.cpp; then
-            echo "Stage 4 attempted to promote an unverified depth candidate; refusing to build."
+          grep -q "depth_scene_correlated" src/video_core/renderer_vulkan/present/sgsr2_runtime_inputs.h
+          grep -q "SGSR2ContainsColorImage" src/video_core/renderer_vulkan/vk_texture_cache.h
+          grep -q "GetSGSR2DepthCandidate(source_image)" src/video_core/renderer_vulkan/present/layer.cpp
+          grep -q "depth_valid = sgsr2_inputs.depth_scene_correlated" src/video_core/renderer_vulkan/present/layer.cpp
+          grep -q "motion_candidate_count" src/video_core/renderer_vulkan/present/layer.cpp
+          if grep -Eq "sgsr2_inputs\.motion_valid[[:space:]]*=[[:space:]]*true" src/video_core/renderer_vulkan/present/layer.cpp; then
+            echo "Stage 5 attempted to promote an unverified velocity target; refusing to build."
             exit 1
           fi
 
@@ -97,12 +104,12 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-RECONSTRUCTION-STAGE4
+          name: MOONWITCH-RECONSTRUCTION-STAGE5
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7
 
-      - name: Validate generated Stage 4 sources
+      - name: Validate generated Stage 5 sources
         shell: bash
         run: |
           git diff --check
@@ -113,6 +120,7 @@ jobs:
             src/video_core/renderer_vulkan/present/sgsr2_resources.cpp \
             src/video_core/renderer_vulkan/present/sgsr2_resources.h \
             src/video_core/renderer_vulkan/present/sgsr2_runtime_inputs.h \
+            src/video_core/renderer_vulkan/present/layer.cpp \
             src/video_core/renderer_vulkan/vk_texture_cache.cpp \
             src/video_core/renderer_vulkan/vk_texture_cache.h \
             src/video_core/renderer_vulkan/vk_rasterizer.h; do
