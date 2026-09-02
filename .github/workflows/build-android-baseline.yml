@@ -1,16 +1,16 @@
-name: Moonwitch Reconstruction Stage 6
+name: Moonwitch Reconstruction Stage 7
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - exp/moonwitch-reconstruction-stage6
+      - exp/moonwitch-reconstruction-stage7
 
 permissions:
   contents: read
 
 concurrency:
-  group: moonwitch-reconstruction-stage6-${{ github.ref }}
+  group: moonwitch-reconstruction-stage7-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -49,6 +49,11 @@ jobs:
         run: |
           python3 .github/scripts/apply_moonwitch_reconstruction_stage6.py
 
+      - name: Apply Moonwitch Reconstruction Stage 7
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_moonwitch_reconstruction_stage7.py
+
       - name: Guard temporal integrity and TOTK foliage workaround
         shell: bash
         run: |
@@ -63,11 +68,11 @@ jobs:
           fi
           grep -q "ReadyForTemporalDispatch" src/video_core/renderer_vulkan/present/sgsr2_runtime_inputs.h
           grep -q "depth_scene_correlated" src/video_core/renderer_vulkan/present/sgsr2_runtime_inputs.h
-          grep -q "motion_probe_candidate_valid" src/video_core/renderer_vulkan/present/sgsr2_runtime_inputs.h
-          grep -q "SGSR2MotionFormatScore" src/video_core/renderer_vulkan/present/layer.cpp
-          grep -q "motion probe candidate stable for 120" src/video_core/renderer_vulkan/present/layer.cpp
+          grep -q "motion_probe_content_plausible" src/video_core/renderer_vulkan/present/sgsr2_runtime_inputs.h
+          grep -q "SGSR2MotionProbe" src/video_core/renderer_vulkan/present/sgsr2_motion_probe.cpp
+          grep -q "Moonwitch SGSR2 motion content probe" src/video_core/renderer_vulkan/present/layer.cpp
           if grep -Eq "sgsr2_inputs\.motion_valid[[:space:]]*=[[:space:]]*true" src/video_core/renderer_vulkan/present/layer.cpp; then
-            echo "Stage 6 attempted to promote an unverified velocity target; refusing to build."
+            echo "Stage 7 attempted to promote diagnostic evidence to motion_valid; refusing to build."
             exit 1
           fi
 
@@ -108,12 +113,12 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-RECONSTRUCTION-STAGE6
+          name: MOONWITCH-RECONSTRUCTION-STAGE7
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7
 
-      - name: Validate generated Stage 6 sources
+      - name: Validate generated Stage 7 sources
         shell: bash
         run: |
           git diff --check
@@ -124,6 +129,8 @@ jobs:
             src/video_core/renderer_vulkan/present/sgsr2_resources.cpp \
             src/video_core/renderer_vulkan/present/sgsr2_resources.h \
             src/video_core/renderer_vulkan/present/sgsr2_runtime_inputs.h \
+            src/video_core/renderer_vulkan/present/sgsr2_motion_probe.cpp \
+            src/video_core/renderer_vulkan/present/sgsr2_motion_probe.h \
             src/video_core/renderer_vulkan/present/layer.cpp \
             src/video_core/renderer_vulkan/present/layer.h \
             src/video_core/renderer_vulkan/vk_texture_cache.cpp \
