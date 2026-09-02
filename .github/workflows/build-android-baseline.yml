@@ -1,13 +1,16 @@
-name: Moonwitch V1.2 Performance Preview
+name: Moonwitch Reconstruction Stage 1
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - perf/moonwitch-v1.2
+      - exp/moonwitch-reconstruction-stage1
+
+permissions:
+  contents: write
 
 concurrency:
-  group: moonwitch-v1-2-${{ github.ref }}
+  group: moonwitch-reconstruction-stage1-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -20,6 +23,24 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 1
+
+      - name: Apply Moonwitch Reconstruction Stage 1
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_moonwitch_reconstruction_stage1.py
+
+      - name: Guard TOTK foliage workaround
+        shell: bash
+        run: |
+          if ! grep -q "TOTK_PROGRAM_ID" src/video_core/renderer_vulkan/vk_rasterizer.cpp; then
+            echo "TOTK foliage workaround is missing; refusing to build."
+            exit 1
+          fi
+          if ! git diff --quiet -- src/video_core/renderer_vulkan/vk_rasterizer.cpp; then
+            echo "Reconstruction patch touched vk_rasterizer.cpp; refusing to build."
+            git diff -- src/video_core/renderer_vulkan/vk_rasterizer.cpp
+            exit 1
+          fi
 
       - name: Java 17
         uses: actions/setup-java@v4
@@ -43,10 +64,29 @@ jobs:
           chmod +x .ci/android/build.sh src/android/gradlew
           .ci/android/build.sh -t standard -b Release
 
+      - name: Persist validated reconstruction sources
+        if: success()
+        shell: bash
+        run: |
+          git config user.name "Moonwitch CI"
+          git config user.email "actions@users.noreply.github.com"
+          git add \
+            src/common/settings.h \
+            src/video_core/renderer_vulkan/vk_texture_cache.cpp \
+            src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/BooleanSetting.kt \
+            src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/IntSetting.kt \
+            src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/view/SettingsItem.kt \
+            src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/ui/SettingsFragmentPresenter.kt \
+            src/android/app/src/main/res/values/moonwitch_ui_strings.xml
+          if ! git diff --cached --quiet; then
+            git commit -m "[skip ci] feat(reconstruction): stage1 dynamic MIP LOD preservation"
+            git push origin HEAD:exp/moonwitch-reconstruction-stage1
+          fi
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-V1-2-PERF-PREVIEW
+          name: MOONWITCH-RECONSTRUCTION-STAGE1
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7
