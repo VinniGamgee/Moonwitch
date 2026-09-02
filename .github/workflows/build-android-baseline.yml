@@ -1,10 +1,10 @@
-name: Moonwitch V1.2 Performance Preview
+name: Moonwitch Super Resolution Preview
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - perf/moonwitch-v1.2
+      - feature/moonwitch-upscaler-63
 
 jobs:
   build:
@@ -42,7 +42,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-V1-2-PERF-PREVIEW
+          name: MOONWITCH-SUPER-RESOLUTION-63
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7
