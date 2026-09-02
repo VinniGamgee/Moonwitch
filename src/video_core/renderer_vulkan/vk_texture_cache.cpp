@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <algorithm>
+#include <cmath>
 #include <limits>
 #include <array>
 #include <optional>
@@ -2832,7 +2833,29 @@ Sampler::Sampler(TextureCacheRuntime& runtime, const Tegra::Texture::TSCEntry& t
         .addressModeU = wrap_u,
         .addressModeV = wrap_v,
         .addressModeW = wrap_p,
-        .mipLodBias = tsc.LodBias(),
+        .mipLodBias = [&] {
+            const f32 guest_bias = tsc.LodBias();
+            if (!Settings::values.moonwitch_reconstruction.GetValue() ||
+                tsc.depth_compare_enabled || tsc.mipmap_filter == TextureMipmapFilter::None) {
+                return guest_bias;
+            }
+
+            const auto& resolution = Settings::values.resolution_info;
+            const f32 render_scale = static_cast<f32>(resolution.up_scale) /
+                                     static_cast<f32>(1U << resolution.down_shift);
+            const f32 target_scale =
+                static_cast<f32>(Settings::values.moonwitch_reconstruction_target.GetValue()) /
+                100.0f;
+            if (render_scale <= 0.0f || target_scale <= render_scale) {
+                return guest_bias;
+            }
+
+            const f32 reconstruction_bias =
+                std::clamp(std::log2(render_scale / target_scale), -2.0f, 0.0f);
+            // Guest samplers are already valid for the physical device. Keep the extra negative
+            // bias inside a conservative Vulkan-safe range while preserving the guest intent.
+            return (std::max)(guest_bias + reconstruction_bias, -15.0f);
+        }(),
         .anisotropyEnable = static_cast<VkBool32>(max_anisotropy > 1.0f),
         .maxAnisotropy = max_anisotropy,
         .compareEnable = static_cast<VkBool32>(tsc.depth_compare_enabled),

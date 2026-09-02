@@ -210,6 +210,10 @@ class SettingsFragmentPresenter(
 
     private fun addMoonwitchPerformanceSettings(sl: ArrayList<SettingsItem>) {
         sl.apply {
+            add(HeaderSetting(R.string.mw_reconstruction_and_detail))
+            add(BooleanSetting.MOONWITCH_RECONSTRUCTION.key)
+            add(IntSetting.MOONWITCH_RECONSTRUCTION_TARGET.key)
+
             add(HeaderSetting(R.string.mw_pacing_and_latency))
             add(
                 SubmenuSetting(

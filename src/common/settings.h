@@ -372,6 +372,17 @@ struct Values {
                                                            Specialization::Percentage,
                                                        true,
                                                        true};
+    // Moonwitch Reconstruction stage 1: preserve source texture detail for a higher
+    // reconstruction target without increasing the guest render resolution. The temporal
+    // SGSR2 pass will consume this cleaner source in a later stage.
+    SwitchableSetting<bool> moonwitch_reconstruction{
+        linkage, false, "moonwitch_reconstruction", Category::Renderer,
+        Specialization::Paired, true, false};
+    SwitchableSetting<int, true> moonwitch_reconstruction_target{
+        linkage, 150, 100, 200, "moonwitch_reconstruction_target", Category::Renderer,
+        Specialization::Scalar | Specialization::Percentage, true, false,
+        &moonwitch_reconstruction};
+
     SwitchableSetting<AspectRatio, true> aspect_ratio{linkage,
                                                       AspectRatio::R16_9,
                                                       "aspect_ratio",

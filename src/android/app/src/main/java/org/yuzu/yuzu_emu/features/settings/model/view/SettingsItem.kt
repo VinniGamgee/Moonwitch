@@ -634,6 +634,23 @@ abstract class SettingsItem(
                 )
             )
             put(
+                SwitchSetting(
+                    BooleanSetting.MOONWITCH_RECONSTRUCTION,
+                    titleId = R.string.mw_reconstruction_stage1,
+                    descriptionId = R.string.mw_reconstruction_stage1_desc
+                )
+            )
+            put(
+                SliderSetting(
+                    IntSetting.MOONWITCH_RECONSTRUCTION_TARGET,
+                    titleId = R.string.mw_reconstruction_target,
+                    descriptionId = R.string.mw_reconstruction_target_desc,
+                    min = 100,
+                    max = 200,
+                    units = "%"
+                )
+            )
+            put(
                 SliderSetting(
                     IntSetting.FSR_SHARPENING_SLIDER,
                     titleId = R.string.fsr_sharpness,

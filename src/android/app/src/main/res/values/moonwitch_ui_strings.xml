@@ -67,6 +67,12 @@
     <string name="mw_lossless_scaling">Lossless Scaling</string>
     <string name="mw_lossless_scaling_desc">Instalar ou substituir a biblioteca exigida pelo Frame Generation</string>
 
+    <string name="mw_reconstruction_and_detail">RECONSTRUÇÃO E DETALHE</string>
+    <string name="mw_reconstruction_stage1">Reconstrução Moonwitch • preparação</string>
+    <string name="mw_reconstruction_stage1_desc">Preserva detalhe real de textura com compensação dinâmica de MIP/LOD sem aumentar a resolução interna. Requer reiniciar o jogo.</string>
+    <string name="mw_reconstruction_target">Alvo de qualidade da reconstrução</string>
+    <string name="mw_reconstruction_target_desc">Qualidade-alvo relativa ao 1×. Em 1×, 150% prepara mipmaps para uma reconstrução equivalente a 1,5× sem renderizar a cena em 1,5×.</string>
+
     <string name="mw_pacing_and_latency">PACING E LATÊNCIA</string>
     <string name="mw_telemetry_and_tuning">TELEMETRIA E AJUSTE</string>
     <string name="mw_performance_management">DRIVERS E COMPONENTES</string>
