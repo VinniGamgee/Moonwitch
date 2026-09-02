@@ -1,16 +1,16 @@
-name: Moonwitch Reconstruction Stage 1
+name: Moonwitch Reconstruction Stage 2
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - exp/moonwitch-reconstruction-stage1
+      - exp/moonwitch-reconstruction-stage2
 
 permissions:
   contents: write
 
 concurrency:
-  group: moonwitch-reconstruction-stage1-${{ github.ref }}
+  group: moonwitch-reconstruction-stage2-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -24,10 +24,10 @@ jobs:
           submodules: recursive
           fetch-depth: 1
 
-      - name: Apply Moonwitch Reconstruction Stage 1
+      - name: Apply Moonwitch Reconstruction Stage 2
         shell: bash
         run: |
-          python3 .github/scripts/apply_moonwitch_reconstruction_stage1.py
+          python3 .github/scripts/apply_moonwitch_reconstruction_stage2.py
 
       - name: Guard TOTK foliage workaround
         shell: bash
@@ -56,6 +56,18 @@ jobs:
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0" "ndk;28.2.13676358" "cmake;3.31.6"
 
+      - name: Validate Qualcomm SGSR2 compute shaders
+        shell: bash
+        run: |
+          for shader in \
+            src/video_core/host_shaders/sgsr2_convert.comp \
+            src/video_core/host_shaders/sgsr2_activate.comp \
+            src/video_core/host_shaders/sgsr2_upscale.comp; do
+            echo "Validating $shader"
+            glslangValidator -V --target-env spirv1.3 "$shader" -o "/tmp/$(basename "$shader").spv"
+            spirv-val --target-env spv1.3 "/tmp/$(basename "$shader").spv"
+          done
+
       - name: Build
         shell: bash
         env:
@@ -64,29 +76,29 @@ jobs:
           chmod +x .ci/android/build.sh src/android/gradlew
           .ci/android/build.sh -t standard -b Release
 
-      - name: Persist validated reconstruction sources
+      - name: Persist validated Stage 2 sources
         if: success()
         shell: bash
         run: |
           git config user.name "Moonwitch CI"
           git config user.email "actions@users.noreply.github.com"
           git add \
-            src/common/settings.h \
-            src/video_core/renderer_vulkan/vk_texture_cache.cpp \
-            src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/BooleanSetting.kt \
-            src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/IntSetting.kt \
-            src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/view/SettingsItem.kt \
-            src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/ui/SettingsFragmentPresenter.kt \
-            src/android/app/src/main/res/values/moonwitch_ui_strings.xml
+            src/video_core/CMakeLists.txt \
+            src/video_core/host_shaders/CMakeLists.txt \
+            src/video_core/host_shaders/sgsr2_convert.comp \
+            src/video_core/host_shaders/sgsr2_activate.comp \
+            src/video_core/host_shaders/sgsr2_upscale.comp \
+            src/video_core/renderer_vulkan/present/sgsr2_resources.cpp \
+            src/video_core/renderer_vulkan/present/sgsr2_resources.h
           if ! git diff --cached --quiet; then
-            git commit -m "[skip ci] feat(reconstruction): stage1 dynamic MIP LOD preservation"
-            git push origin HEAD:exp/moonwitch-reconstruction-stage1
+            git commit -m "[skip ci] feat(reconstruction): stage2 SGSR2 temporal resource backbone"
+            git push origin HEAD:exp/moonwitch-reconstruction-stage2
           fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-RECONSTRUCTION-STAGE1
+          name: MOONWITCH-RECONSTRUCTION-STAGE2
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7
