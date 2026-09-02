@@ -13,6 +13,7 @@ object Settings {
         SECTION_SYSTEM(R.string.preferences_system),
         SECTION_RENDERER(R.string.preferences_graphics),
         SECTION_MOONWITCH_PERFORMANCE(R.string.mw_performance_center),
+        SECTION_UPSCALING(R.string.mw_upscaling),
         SECTION_SAFS(R.string.mw_safs),
         SECTION_FRAME_PACING(R.string.mw_frame_pacing),
         SECTION_ADPF(R.string.mw_adpf_diagnostics),

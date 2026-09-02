@@ -137,6 +137,12 @@ class HomeSettingsFragment : Fragment() {
 
     private fun buildPerformanceOptions(): List<HomeSetting> = listOf(
         HomeSetting(
+            R.string.mw_upscaling,
+            R.string.mw_upscaling_desc,
+            R.drawable.ic_graphics,
+            onClick = { openSettings(Settings.MenuTag.SECTION_UPSCALING) }
+        ),
+        HomeSetting(
             R.string.mw_safs,
             R.string.mw_safs_desc,
             R.drawable.ic_mw_gauge,

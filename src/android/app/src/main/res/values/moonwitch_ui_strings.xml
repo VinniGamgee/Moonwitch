@@ -67,6 +67,23 @@
     <string name="mw_lossless_scaling">Lossless Scaling</string>
     <string name="mw_lossless_scaling_desc">Instalar ou substituir a biblioteca exigida pelo Frame Generation</string>
 
+    <string name="mw_upscaling">Super-resolução Moonwitch</string>
+    <string name="mw_upscaling_desc">Reconstruir 0,5× ou 0,75× com SGSR Vulkan real de uma passagem, otimizado para Adreno</string>
+    <string name="mw_rendering_and_image">RENDERIZAÇÃO E IMAGEM</string>
+    <string name="mw_upscaling_presets">PERFIS DE SUPER-RESOLUÇÃO</string>
+    <string name="mw_upscaling_quality">Qualidade • 0,75× + SGSR EdgeDir</string>
+    <string name="mw_upscaling_quality_desc">Recomendado para POCO F5 e TOTK. Reconstrói 0,75× com melhor preservação de bordas e custo pequeno.</string>
+    <string name="mw_upscaling_balanced">Equilibrado • 0,5× + SGSR EdgeDir</string>
+    <string name="mw_upscaling_balanced_desc">Prioriza FPS, mas mantém a variante com direção de bordas para recuperar mais detalhes.</string>
+    <string name="mw_upscaling_performance">Desempenho • 0,5× + SGSR</string>
+    <string name="mw_upscaling_performance_desc">Usa o SGSR padrão de uma passagem para reduzir ao mínimo o custo do pós-processamento.</string>
+    <string name="mw_upscaling_quality_applied">Perfil Qualidade aplicado: 0,75× + SGSR EdgeDir.</string>
+    <string name="mw_upscaling_balanced_applied">Perfil Equilibrado aplicado: 0,5× + SGSR EdgeDir.</string>
+    <string name="mw_upscaling_performance_applied">Perfil Desempenho aplicado: 0,5× + SGSR.</string>
+    <string name="mw_upscaling_manual">AJUSTE MANUAL</string>
+    <string name="mw_upscaling_cas_note">CAS continua independente</string>
+    <string name="mw_upscaling_cas_note_desc">O SGSR reconstrói a imagem e já inclui nitidez adaptativa. O CAS permanece como acabamento opcional depois do upscale; combinar os dois pode exagerar contornos.</string>
+
     <string name="mw_pacing_and_latency">PACING E LATÊNCIA</string>
     <string name="mw_telemetry_and_tuning">TELEMETRIA E AJUSTE</string>
     <string name="mw_performance_management">DRIVERS E COMPONENTES</string>

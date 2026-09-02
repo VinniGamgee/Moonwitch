@@ -182,7 +182,7 @@ object DeviceProfileManager {
                     IntSetting.CPU_BACKEND to 1, // NCE
                     IntSetting.CPU_ACCURACY to 0, // Auto
                     IntSetting.RENDERER_RESOLUTION to 2, // 0.75x
-                    IntSetting.RENDERER_SCALING_FILTER to 6, // FSR
+                    IntSetting.RENDERER_SCALING_FILTER to 14, // SGSR EdgeDir
                     IntSetting.FSR_SHARPENING_SLIDER to 25,
                     IntSetting.RENDERER_ANTI_ALIASING to 0, // None
                     IntSetting.RENDERER_VSYNC to 2, // FIFO

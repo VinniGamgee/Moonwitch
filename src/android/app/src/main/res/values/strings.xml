@@ -19,7 +19,7 @@
     <string name="device_profile_poco_f5_balanced">POCO F5 balanced</string>
     <string name="device_profile_poco_f5_totk">POCO F5 • TOTK stable</string>
     <string name="device_profile_changes_poco_f5_balanced">• Vulkan renderer, NCE and Fastmem\n• Handheld mode at 1× resolution\n• Low GPU accuracy and GPU ASTC/NVDEC\n• Asynchronous GPU/presentation and disk shader cache\n• Maximum GPU clocks; asynchronous shaders disabled</string>
-    <string name="device_profile_changes_poco_f5_totk">• Vulkan renderer, NCE and Fastmem\n• Handheld mode at 0.75× with FSR 25%\n• Low GPU accuracy with default DMA/fences\n• GPU ASTC/NVDEC and conservative VRAM\n• Asynchronous GPU/presentation; asynchronous shaders disabled\n• Maximum GPU clocks; frame generation disabled</string>
+    <string name="device_profile_changes_poco_f5_totk">• Vulkan renderer, NCE and Fastmem\n• Handheld mode at 0.75× with one-pass SGSR EdgeDir\n• Low GPU accuracy with default DMA/fences\n• GPU ASTC/NVDEC and conservative VRAM\n• Asynchronous GPU/presentation; asynchronous shaders disabled\n• Maximum GPU clocks; frame generation disabled</string>
     <string name="device_profile_driver_t30" translatable="false">MrPurple Turnip T30</string>
     <string name="device_profile_driver_installed">%1$s — installed and will be selected</string>
     <string name="device_profile_driver_missing">%1$s — not installed; the profile will not change the driver</string>

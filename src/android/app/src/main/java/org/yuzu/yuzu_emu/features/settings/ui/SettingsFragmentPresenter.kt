@@ -166,6 +166,7 @@ class SettingsFragmentPresenter(
             MenuTag.SECTION_SYSTEM -> addSystemSettings(sl)
             MenuTag.SECTION_RENDERER -> addGraphicsSettings(sl)
             MenuTag.SECTION_MOONWITCH_PERFORMANCE -> addMoonwitchPerformanceSettings(sl)
+            MenuTag.SECTION_UPSCALING -> addUpscalingSettings(sl)
             MenuTag.SECTION_SAFS -> addSafsSettings(sl)
             MenuTag.SECTION_FRAME_PACING -> addFramePacingSettings(sl)
             MenuTag.SECTION_ADPF -> addAdpfDiagnosticsSettings(sl)
@@ -210,6 +211,16 @@ class SettingsFragmentPresenter(
 
     private fun addMoonwitchPerformanceSettings(sl: ArrayList<SettingsItem>) {
         sl.apply {
+            add(HeaderSetting(R.string.mw_rendering_and_image))
+            add(
+                SubmenuSetting(
+                    titleId = R.string.mw_upscaling,
+                    descriptionId = R.string.mw_upscaling_desc,
+                    iconId = R.drawable.ic_graphics,
+                    menuKey = MenuTag.SECTION_UPSCALING
+                )
+            )
+
             add(HeaderSetting(R.string.mw_pacing_and_latency))
             add(
                 SubmenuSetting(
@@ -281,6 +292,86 @@ class SettingsFragmentPresenter(
                 }
             )
         }
+    }
+
+    private fun addUpscalingSettings(sl: ArrayList<SettingsItem>) {
+        sl.apply {
+            add(HeaderSetting(R.string.mw_upscaling_presets))
+            add(
+                RunnableSetting(
+                    titleId = R.string.mw_upscaling_quality,
+                    descriptionId = R.string.mw_upscaling_quality_desc,
+                    isRunnable = true,
+                    iconId = R.drawable.ic_graphics
+                ) {
+                    applyUpscalingPreset(
+                        resolution = RESOLUTION_THREE_QUARTER,
+                        filter = SCALING_FILTER_SGSR_EDGE,
+                        sharpness = UPSCALER_DEFAULT_SHARPNESS,
+                        confirmationId = R.string.mw_upscaling_quality_applied
+                    )
+                }
+            )
+            add(
+                RunnableSetting(
+                    titleId = R.string.mw_upscaling_balanced,
+                    descriptionId = R.string.mw_upscaling_balanced_desc,
+                    isRunnable = true,
+                    iconId = R.drawable.ic_graphics
+                ) {
+                    applyUpscalingPreset(
+                        resolution = RESOLUTION_HALF,
+                        filter = SCALING_FILTER_SGSR_EDGE,
+                        sharpness = UPSCALER_DEFAULT_SHARPNESS,
+                        confirmationId = R.string.mw_upscaling_balanced_applied
+                    )
+                }
+            )
+            add(
+                RunnableSetting(
+                    titleId = R.string.mw_upscaling_performance,
+                    descriptionId = R.string.mw_upscaling_performance_desc,
+                    isRunnable = true,
+                    iconId = R.drawable.ic_mw_gauge
+                ) {
+                    applyUpscalingPreset(
+                        resolution = RESOLUTION_HALF,
+                        filter = SCALING_FILTER_SGSR,
+                        sharpness = UPSCALER_DEFAULT_SHARPNESS,
+                        confirmationId = R.string.mw_upscaling_performance_applied
+                    )
+                }
+            )
+
+            add(HeaderSetting(R.string.mw_upscaling_manual))
+            add(IntSetting.RENDERER_RESOLUTION.key)
+            add(IntSetting.RENDERER_SCALING_FILTER.key)
+            if (isSharpnessScalingFilterSelected()) {
+                add(IntSetting.FSR_SHARPENING_SLIDER.key)
+            }
+            add(
+                RunnableSetting(
+                    titleId = R.string.mw_upscaling_cas_note,
+                    descriptionId = R.string.mw_upscaling_cas_note_desc,
+                    isRunnable = false,
+                    iconId = R.drawable.ic_info_outline
+                ) {}
+            )
+        }
+    }
+
+    private fun applyUpscalingPreset(
+        resolution: Int,
+        filter: Int,
+        sharpness: Int,
+        confirmationId: Int
+    ) {
+        IntSetting.RENDERER_BACKEND.setInt(RENDERER_BACKEND_VULKAN)
+        IntSetting.RENDERER_RESOLUTION.setInt(resolution)
+        IntSetting.RENDERER_SCALING_FILTER.setInt(filter)
+        IntSetting.FSR_SHARPENING_SLIDER.setInt(sharpness)
+        Toast.makeText(context, confirmationId, Toast.LENGTH_SHORT).show()
+        loadSettingsList(true)
     }
 
     private fun createSubscreenIntent(
@@ -1569,5 +1660,14 @@ class SettingsFragmentPresenter(
                 )
             )
         }
+    }
+
+    private companion object {
+        const val RENDERER_BACKEND_VULKAN = 1
+        const val RESOLUTION_HALF = 1
+        const val RESOLUTION_THREE_QUARTER = 2
+        const val SCALING_FILTER_SGSR = 13
+        const val SCALING_FILTER_SGSR_EDGE = 14
+        const val UPSCALER_DEFAULT_SHARPNESS = 25
     }
 }
