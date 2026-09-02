@@ -1,16 +1,16 @@
-name: Moonwitch Reconstruction Stage 2
+name: Moonwitch Reconstruction Stage 3
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - exp/moonwitch-reconstruction-stage2
+      - exp/moonwitch-reconstruction-stage3
 
 permissions:
   contents: read
 
 concurrency:
-  group: moonwitch-reconstruction-stage2-${{ github.ref }}
+  group: moonwitch-reconstruction-stage3-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -29,7 +29,12 @@ jobs:
         run: |
           python3 .github/scripts/apply_moonwitch_reconstruction_stage2.py
 
-      - name: Guard TOTK foliage workaround
+      - name: Apply Moonwitch Reconstruction Stage 3
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_moonwitch_reconstruction_stage3.py
+
+      - name: Guard temporal input integrity and TOTK foliage workaround
         shell: bash
         run: |
           if ! grep -q "TOTK_PROGRAM_ID" src/video_core/renderer_vulkan/vk_rasterizer.cpp; then
@@ -41,6 +46,9 @@ jobs:
             git diff -- src/video_core/renderer_vulkan/vk_rasterizer.cpp
             exit 1
           fi
+          grep -q "ReadyForTemporalDispatch" src/video_core/renderer_vulkan/present/sgsr2_runtime_inputs.h
+          grep -q "sgsr2_inputs.color_valid" src/video_core/renderer_vulkan/present/layer.cpp
+          grep -q "Depth and motion remain invalid" src/video_core/renderer_vulkan/present/layer.cpp
 
       - name: Java 17
         uses: actions/setup-java@v4
@@ -79,12 +87,12 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-RECONSTRUCTION-STAGE2
+          name: MOONWITCH-RECONSTRUCTION-STAGE3
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7
 
-      - name: Validate generated Stage 2 sources
+      - name: Validate generated Stage 3 sources
         shell: bash
         run: |
           git diff --check
@@ -93,6 +101,7 @@ jobs:
             src/video_core/host_shaders/sgsr2_activate.comp \
             src/video_core/host_shaders/sgsr2_upscale.comp \
             src/video_core/renderer_vulkan/present/sgsr2_resources.cpp \
-            src/video_core/renderer_vulkan/present/sgsr2_resources.h; do
+            src/video_core/renderer_vulkan/present/sgsr2_resources.h \
+            src/video_core/renderer_vulkan/present/sgsr2_runtime_inputs.h; do
             test -s "$file" || { echo "Missing generated file: $file"; exit 1; }
           done
