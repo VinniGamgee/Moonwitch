@@ -7,7 +7,7 @@ on:
       - exp/moonwitch-reconstruction-stage2
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: moonwitch-reconstruction-stage2-${{ github.ref }}
@@ -76,25 +76,6 @@ jobs:
           chmod +x .ci/android/build.sh src/android/gradlew
           .ci/android/build.sh -t standard -b Release
 
-      - name: Persist validated Stage 2 sources
-        if: success()
-        shell: bash
-        run: |
-          git config user.name "Moonwitch CI"
-          git config user.email "actions@users.noreply.github.com"
-          git add \
-            src/video_core/CMakeLists.txt \
-            src/video_core/host_shaders/CMakeLists.txt \
-            src/video_core/host_shaders/sgsr2_convert.comp \
-            src/video_core/host_shaders/sgsr2_activate.comp \
-            src/video_core/host_shaders/sgsr2_upscale.comp \
-            src/video_core/renderer_vulkan/present/sgsr2_resources.cpp \
-            src/video_core/renderer_vulkan/present/sgsr2_resources.h
-          if ! git diff --cached --quiet; then
-            git commit -m "[skip ci] feat(reconstruction): stage2 SGSR2 temporal resource backbone"
-            git push origin HEAD:exp/moonwitch-reconstruction-stage2
-          fi
-
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
@@ -102,3 +83,16 @@ jobs:
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7
+
+      - name: Validate generated Stage 2 sources
+        shell: bash
+        run: |
+          git diff --check
+          for file in \
+            src/video_core/host_shaders/sgsr2_convert.comp \
+            src/video_core/host_shaders/sgsr2_activate.comp \
+            src/video_core/host_shaders/sgsr2_upscale.comp \
+            src/video_core/renderer_vulkan/present/sgsr2_resources.cpp \
+            src/video_core/renderer_vulkan/present/sgsr2_resources.h; do
+            test -s "$file" || { echo "Missing generated file: $file"; exit 1; }
+          done
