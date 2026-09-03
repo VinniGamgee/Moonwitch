@@ -1,4 +1,4 @@
-name: Moonwitch Stage 9 + Classic UI
+name: Moonwitch Stage 10 + Classic UI
 
 on:
   workflow_dispatch:
@@ -8,12 +8,13 @@ on:
       - feat/stage9-frontend-ui
       - feat/stage9-ui-exact
       - feat/stage9-classic-ui
+      - exp/moonwitch-reconstruction-stage10-classic-ui
 
 permissions:
   contents: read
 
 concurrency:
-  group: moonwitch-stage9-classic-ui-${{ github.ref }}
+  group: moonwitch-stage10-classic-ui-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -59,7 +60,11 @@ jobs:
         shell: bash
         run: python3 .github/scripts/apply_moonwitch_reconstruction_stage9.py
 
-      - name: Guard motion-evidence integrity and TOTK foliage workaround
+      - name: Apply Moonwitch Reconstruction Stage 10
+        shell: bash
+        run: python3 .github/scripts/apply_moonwitch_reconstruction_stage10.py
+
+      - name: Guard Stage 10 integrity and TOTK foliage workaround
         shell: bash
         run: |
           if ! grep -q "TOTK_PROGRAM_ID" src/video_core/renderer_vulkan/vk_rasterizer.cpp; then
@@ -74,14 +79,16 @@ jobs:
           grep -q "SGSR2_SCENE_HISTORY_CAPACITY" src/video_core/renderer_vulkan/vk_texture_cache.h
           grep -q "SGSR2FindSceneHistory" src/video_core/renderer_vulkan/vk_texture_cache.cpp
           grep -q "SGSR2RecordImageLineage" src/video_core/renderer_vulkan/vk_texture_cache.cpp
-          grep -q "scene_history_correlated" src/video_core/renderer_vulkan/vk_rasterizer.h
-          grep -q "Moonwitch SGSR2 scene history match" src/video_core/renderer_vulkan/present/layer.cpp
+          grep -q "GPUVAddr gpu_addr" src/video_core/renderer_vulkan/vk_texture_cache.h
+          grep -q "guest_address_match" src/video_core/renderer_vulkan/vk_texture_cache.h
+          grep -q "guest_address_correlated" src/video_core/renderer_vulkan/vk_rasterizer.h
+          grep -q "depth_guest_address_correlated" src/video_core/renderer_vulkan/present/sgsr2_runtime_inputs.h
+          grep -q "guest_addr_match" src/video_core/renderer_vulkan/present/layer.cpp
           grep -q "motion_scene_history_evidence" src/video_core/renderer_vulkan/present/sgsr2_runtime_inputs.h
-          grep -q "Moonwitch SGSR2 motion scene-history evidence" src/video_core/renderer_vulkan/present/layer.cpp
           grep -q "Stage 9 intentionally keeps motion_valid false" src/video_core/renderer_vulkan/present/layer.cpp
           grep -q "ReadyForTemporalDispatch" src/video_core/renderer_vulkan/present/sgsr2_runtime_inputs.h
           if grep -Eq "sgsr2_inputs\.motion_valid[[:space:]]*=[[:space:]]*true" src/video_core/renderer_vulkan/present/layer.cpp; then
-            echo "Stage 9 attempted to promote unverified motion data; refusing to build."
+            echo "Stage 10 attempted to promote unverified motion data; refusing to build."
             exit 1
           fi
 
@@ -136,12 +143,12 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-STAGE9-CLASSIC-UI
+          name: MOONWITCH-STAGE10-CLASSIC-UI
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7
 
-      - name: Validate generated Stage 9 sources
+      - name: Validate generated Stage 10 sources
         shell: bash
         run: |
           git diff --check
