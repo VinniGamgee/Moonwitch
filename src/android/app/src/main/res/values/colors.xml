@@ -1,13 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#050814</color>
-    <color name="moonwitch_panel">#E60A0F1D</color>
-    <color name="moonwitch_panel_soft">#CC10182A</color>
-    <color name="moonwitch_panel_high">#FF121B2E</color>
-    <color name="moonwitch_red">#FF3B55</color>
-    <color name="moonwitch_cyan">#35D8FF</color>
-    <color name="moonwitch_text">#F7F9FF</color>
-    <color name="moonwitch_text_muted">#9AA8C2</color>
-    <color name="moonwitch_border">#334963</color>
-    <color name="moonwitch_border_soft">#263449</color>
+    <!-- Legacy Moonwitch color names are intentionally retained because many existing
+         screens already reference them. Their values now follow the approved frontend
+         language, so old functional screens inherit the new identity without rewiring. -->
+    <color name="ic_launcher_background">#07070F</color>
+    <color name="moonwitch_panel">#F210101A</color>
+    <color name="moonwitch_panel_soft">#E612121E</color>
+    <color name="moonwitch_panel_high">#FF171725</color>
+    <color name="moonwitch_red">#B768FF</color>
+    <color name="moonwitch_cyan">#9B4DFF</color>
+    <color name="moonwitch_text">#F7F4FF</color>
+    <color name="moonwitch_text_muted">#AAA4B5</color>
+    <color name="moonwitch_border">#4B3569</color>
+    <color name="moonwitch_border_soft">#34264B</color>
 </resources>
