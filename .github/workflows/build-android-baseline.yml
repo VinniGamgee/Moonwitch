@@ -1,4 +1,4 @@
-name: Moonwitch Stage 9 + Frontend UI
+name: Moonwitch Stage 9 + Exact UI
 
 on:
   workflow_dispatch:
@@ -6,12 +6,13 @@ on:
     branches:
       - exp/moonwitch-reconstruction-stage9
       - feat/stage9-frontend-ui
+      - feat/stage9-ui-exact
 
 permissions:
   contents: read
 
 concurrency:
-  group: moonwitch-stage9-frontend-${{ github.ref }}
+  group: moonwitch-stage9-exact-ui-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -27,43 +28,39 @@ jobs:
 
       - name: Apply Moonwitch Reconstruction Stage 2
         shell: bash
-        run: |
-          python3 .github/scripts/apply_moonwitch_reconstruction_stage2.py
+        run: python3 .github/scripts/apply_moonwitch_reconstruction_stage2.py
 
       - name: Apply Moonwitch Reconstruction Stage 3
         shell: bash
-        run: |
-          python3 .github/scripts/apply_moonwitch_reconstruction_stage3.py
+        run: python3 .github/scripts/apply_moonwitch_reconstruction_stage3.py
 
       - name: Apply Moonwitch Reconstruction Stage 4
         shell: bash
-        run: |
-          python3 .github/scripts/apply_moonwitch_reconstruction_stage4.py
+        run: python3 .github/scripts/apply_moonwitch_reconstruction_stage4.py
 
       - name: Apply Moonwitch Reconstruction Stage 5
         shell: bash
-        run: |
-          python3 .github/scripts/apply_moonwitch_reconstruction_stage5.py
+        run: python3 .github/scripts/apply_moonwitch_reconstruction_stage5.py
 
       - name: Apply Moonwitch Reconstruction Stage 6
         shell: bash
-        run: |
-          python3 .github/scripts/apply_moonwitch_reconstruction_stage6.py
+        run: python3 .github/scripts/apply_moonwitch_reconstruction_stage6.py
 
       - name: Apply Moonwitch Reconstruction Stage 7
         shell: bash
-        run: |
-          python3 .github/scripts/apply_moonwitch_reconstruction_stage7.py
+        run: python3 .github/scripts/apply_moonwitch_reconstruction_stage7.py
 
       - name: Apply Moonwitch Reconstruction Stage 8
         shell: bash
-        run: |
-          python3 .github/scripts/apply_moonwitch_reconstruction_stage8_runner.py
+        run: python3 .github/scripts/apply_moonwitch_reconstruction_stage8_runner.py
 
       - name: Apply Moonwitch Reconstruction Stage 9
         shell: bash
-        run: |
-          python3 .github/scripts/apply_moonwitch_reconstruction_stage9.py
+        run: python3 .github/scripts/apply_moonwitch_reconstruction_stage9.py
+
+      - name: Apply exact Moonwitch frontend wiring
+        shell: bash
+        run: python3 .github/scripts/apply_moonwitch_exact_ui.py
 
       - name: Guard motion-evidence integrity and TOTK foliage workaround
         shell: bash
@@ -117,6 +114,14 @@ jobs:
             spirv-val --target-env spv1.3 "/tmp/$(basename "$shader").spv"
           done
 
+      - name: Validate exact UI generated sources
+        shell: bash
+        run: |
+          grep -q "setupExactFrontend" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/GamePropertiesFragment.kt
+          grep -q "heroGameImage" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/GamePropertiesFragment.kt
+          grep -q "MoonwitchFrontendPage" src/android/app/src/main/java/org/yuzu/yuzu_emu/ui/GamesFragment.kt
+          git diff --check
+
       - name: Build
         shell: bash
         env:
@@ -128,7 +133,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-STAGE9-FRONTEND
+          name: MOONWITCH-STAGE9-EXACT-UI
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7
