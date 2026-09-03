@@ -6,6 +6,7 @@ package org.yuzu.yuzu_emu.ui
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -15,6 +16,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.PopupMenu
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -56,10 +58,16 @@ class GamesFragment : Fragment() {
     private var pendingPostReloadListSettleGeneration = 0
     private var gameListSubmitGeneration = 0
     private var committedGameListSubmitGeneration = 0
+    private var frontendPage = 0
+    private var frontendFilter = 0
 
     companion object {
         private const val SEARCH_TEXT = "SearchText"
         private const val PREF_SORT_TYPE = "GamesSortType"
+        private const val PREF_FRONTEND_PAGE = "MoonwitchFrontendPage"
+        private const val MENU_ADD_FOLDER = 7001
+        private const val MENU_MANAGE_FOLDERS = 7002
+        private const val MENU_VIEW = 7003
     }
 
     private val gamesViewModel: GamesViewModel by activityViewModels()
@@ -100,16 +108,15 @@ class GamesFragment : Fragment() {
         if (savedInstanceState != null) binding.searchText.setText(savedInstanceState.getString(SEARCH_TEXT))
 
         gameAdapter = GameAdapter(requireActivity() as AppCompatActivity)
-
         applyGridGamesBinding()
 
         binding.swipeRefresh.apply {
             (this as? SwipeRefreshLayout)?.setOnRefreshListener { gamesViewModel.reloadGames(false) }
             (this as? SwipeRefreshLayout)?.setProgressBackgroundColorSchemeColor(
-                com.google.android.material.color.MaterialColors.getColor(this, com.google.android.material.R.attr.colorPrimary)
+                ContextCompat.getColor(requireContext(), R.color.mw_ui_surface)
             )
             (this as? SwipeRefreshLayout)?.setColorSchemeColors(
-                com.google.android.material.color.MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnPrimary)
+                ContextCompat.getColor(requireContext(), R.color.mw_ui_accent)
             )
             post {
                 if (_binding != null) (binding.swipeRefresh as? SwipeRefreshLayout)?.isRefreshing = gamesViewModel.isReloading.value
@@ -125,9 +132,7 @@ class GamesFragment : Fragment() {
             setAdapter(it)
         }
         gamesViewModel.shouldSwapData.collect(viewLifecycleOwner, resetState = { gamesViewModel.setShouldSwapData(false) }) {
-            if (it) {
-                setAdapter(gamesViewModel.games.value)
-            }
+            if (it) setAdapter(gamesViewModel.games.value)
         }
         gamesViewModel.shouldScrollToTop.collect(viewLifecycleOwner, resetState = { gamesViewModel.setShouldScrollToTop(false) }) {
             if (it) scrollToTop()
@@ -142,15 +147,8 @@ class GamesFragment : Fragment() {
         }
 
         setupTopView()
-
-        binding.addDirectory.setOnClickListener {
-            getGamesDirectory.launch(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).data)
-        }
-        binding.exploreDirectory?.setOnClickListener {
-            val action = HomeNavigationDirections.actionGlobalSettingsSubscreenActivity(SettingsSubscreen.GAME_FOLDERS, null)
-            findNavController().navigate(action)
-        }
-
+        setupFrontendNavigation()
+        setFrontendPage(preferences.getInt(PREF_FRONTEND_PAGE, 0), persist = false)
         setInsets()
     }
 
@@ -165,10 +163,11 @@ class GamesFragment : Fragment() {
             currentFilter = normalizeStoredFilter(preferences.getInt(PREF_SORT_TYPE, View.NO_ID))
             preferences.edit { putInt(PREF_SORT_TYPE, currentFilter) }
             layoutManager = when (savedViewType) {
-                GameAdapter.VIEW_TYPE_GRID, GameAdapter.VIEW_TYPE_GRID_COMPACT -> GridLayoutManager(context, resources.getInteger(R.integer.game_columns_grid))
-                GameAdapter.VIEW_TYPE_LIST -> GridLayoutManager(context, resources.getInteger(R.integer.game_columns_list))
+                GameAdapter.VIEW_TYPE_GRID -> GridLayoutManager(context, if (isLandscape) 5 else 3)
+                GameAdapter.VIEW_TYPE_GRID_COMPACT -> GridLayoutManager(context, if (isLandscape) 6 else 3)
+                GameAdapter.VIEW_TYPE_LIST -> LinearLayoutManager(context)
                 GameAdapter.VIEW_TYPE_CAROUSEL -> LinearLayoutManager(context, RecyclerView.HORIZONTAL, false)
-                else -> GridLayoutManager(context, resources.getInteger(R.integer.game_columns_grid))
+                else -> GridLayoutManager(context, if (isLandscape) 5 else 3)
             }
             if (savedViewType == GameAdapter.VIEW_TYPE_CAROUSEL) {
                 (this as? CarouselRecyclerView)?.let { carousel ->
@@ -198,6 +197,8 @@ class GamesFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         if (_binding != null) {
+            val requestedPage = preferences.getInt(PREF_FRONTEND_PAGE, frontendPage)
+            if (requestedPage != frontendPage) setFrontendPage(requestedPage, persist = false)
             if (getCurrentViewType() == GameAdapter.VIEW_TYPE_CAROUSEL) {
                 (binding.gridGames as? CarouselRecyclerView)?.setupCarousel(true)
                 (binding.gridGames as? CarouselRecyclerView)?.restoreScrollState(gamesViewModel.lastScrollPosition)
@@ -217,7 +218,7 @@ class GamesFragment : Fragment() {
     }
 
     private fun updateLibraryCount(count: Int) {
-        binding.libraryCount?.text = if (count == 1) "1 jogo" else "$count jogos"
+        binding.tabAllText.text = "${getString(R.string.mw_ui_all)}  $count"
     }
 
     private fun schedulePostReloadListSettle() {
@@ -242,15 +243,114 @@ class GamesFragment : Fragment() {
         binding.searchBackground.setOnClickListener { focusSearch() }
         binding.viewButton.setOnClickListener { showViewMenu(it) }
         binding.filterButton.setOnClickListener { showFilterMenu(it) }
-        binding.filterButton.setOnLongClickListener {
-            showViewMenu(it)
-            true
+        binding.headerSearchButton.setOnClickListener {
+            if (frontendPage == 1) {
+                binding.tabsContainer.visibility = View.GONE
+                binding.searchTools.visibility = View.VISIBLE
+            }
+            focusSearch()
         }
-        binding.settingsButton.setOnClickListener { navigateToSettings() }
+        binding.headerMoreButton.setOnClickListener { showFrontendMenu(it) }
+    }
+
+    private fun setupFrontendNavigation() {
+        binding.navHome.setOnClickListener { setFrontendPage(0) }
+        binding.navGames.setOnClickListener { setFrontendPage(1) }
+        binding.navSettings.setOnClickListener { navigateToSettings() }
+        binding.tabAll.setOnClickListener { setFrontendFilter(0) }
+        binding.tabRecent.setOnClickListener { setFrontendFilter(1) }
+        binding.tabFavorites.setOnClickListener { setFrontendFilter(2) }
+    }
+
+    private fun setFrontendPage(page: Int, persist: Boolean = true) {
+        frontendPage = if (page == 1) 1 else 0
+        if (persist) preferences.edit { putInt(PREF_FRONTEND_PAGE, frontendPage) }
+        frontendFilter = 0
+        binding.searchText.setText("")
+        if (frontendPage == 0) {
+            binding.screenTitle.setText(R.string.mw_ui_library)
+            binding.searchTools.visibility = View.VISIBLE
+            binding.tabsContainer.visibility = View.GONE
+            setCurrentViewType(GameAdapter.VIEW_TYPE_GRID)
+        } else {
+            binding.screenTitle.setText(R.string.mw_ui_games)
+            binding.searchTools.visibility = View.GONE
+            binding.tabsContainer.visibility = View.VISIBLE
+            setCurrentViewType(GameAdapter.VIEW_TYPE_LIST)
+        }
+        updateNavState()
+        updateTabState()
+        applyGridGamesBinding()
+        filterAndSearch()
+        scrollToTop()
+    }
+
+    private fun setFrontendFilter(filter: Int) {
+        frontendFilter = filter.coerceIn(0, 2)
+        binding.searchTools.visibility = View.GONE
+        binding.tabsContainer.visibility = View.VISIBLE
+        updateTabState()
+        filterAndSearch()
+        scrollToTop()
+    }
+
+    private fun updateNavState() {
+        val active = ContextCompat.getColor(requireContext(), R.color.mw_ui_accent)
+        val activeText = ContextCompat.getColor(requireContext(), R.color.mw_ui_accent_hi)
+        val muted = ContextCompat.getColor(requireContext(), R.color.mw_ui_text_2)
+        val activeBg = ContextCompat.getColor(requireContext(), R.color.mw_ui_accent_soft)
+        val clear = ContextCompat.getColor(requireContext(), android.R.color.transparent)
+
+        val homeActive = frontendPage == 0
+        binding.navHomeShell.setCardBackgroundColor(if (homeActive) activeBg else clear)
+        binding.navGamesShell.setCardBackgroundColor(if (!homeActive) activeBg else clear)
+        binding.navSettingsShell.setCardBackgroundColor(clear)
+        binding.navHomeIcon.imageTintList = ColorStateList.valueOf(if (homeActive) active else muted)
+        binding.navGamesIcon.imageTintList = ColorStateList.valueOf(if (!homeActive) active else muted)
+        binding.navSettingsIcon.imageTintList = ColorStateList.valueOf(muted)
+        binding.navHomeText.setTextColor(if (homeActive) activeText else muted)
+        binding.navGamesText.setTextColor(if (!homeActive) activeText else muted)
+        binding.navSettingsText.setTextColor(muted)
+    }
+
+    private fun updateTabState() {
+        val accent = ContextCompat.getColor(requireContext(), R.color.mw_ui_accent)
+        val activeBg = ContextCompat.getColor(requireContext(), R.color.mw_ui_accent_soft)
+        val idleBg = ContextCompat.getColor(requireContext(), R.color.mw_ui_surface)
+        val activeText = ContextCompat.getColor(requireContext(), R.color.mw_ui_accent_hi)
+        val idleText = ContextCompat.getColor(requireContext(), R.color.mw_ui_text_2)
+        val tabs = listOf(binding.tabAll, binding.tabRecent, binding.tabFavorites)
+        val labels = listOf(binding.tabAllText, binding.tabRecentText, binding.tabFavoritesText)
+        tabs.forEachIndexed { index, card ->
+            val selected = index == frontendFilter
+            card.setCardBackgroundColor(if (selected) activeBg else idleBg)
+            card.strokeWidth = if (selected) resources.getDimensionPixelSize(R.dimen.mtrl_card_checked_icon_margin) / 8 + 1 else 0
+            card.strokeColor = accent
+            labels[index].setTextColor(if (selected) activeText else idleText)
+        }
     }
 
     private fun navigateToSettings() {
         findNavController().navigate(R.id.action_gamesFragment_to_homeSettingsFragment)
+    }
+
+    private fun showFrontendMenu(anchor: View) {
+        val popup = PopupMenu(requireContext(), anchor)
+        popup.menu.add(0, MENU_ADD_FOLDER, 0, "Adicionar pasta de jogos")
+        popup.menu.add(0, MENU_MANAGE_FOLDERS, 1, "Gerenciar pastas")
+        popup.menu.add(0, MENU_VIEW, 2, "Visualização")
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                MENU_ADD_FOLDER -> getGamesDirectory.launch(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).data)
+                MENU_MANAGE_FOLDERS -> {
+                    val action = HomeNavigationDirections.actionGlobalSettingsSubscreenActivity(SettingsSubscreen.GAME_FOLDERS, null)
+                    findNavController().navigate(action)
+                }
+                MENU_VIEW -> showViewMenu(anchor)
+            }
+            true
+        }
+        popup.show()
     }
 
     private fun showViewMenu(anchor: View) {
@@ -275,6 +375,7 @@ class GamesFragment : Fragment() {
             if (getCurrentViewType() == GameAdapter.VIEW_TYPE_CAROUSEL) onPause()
             setCurrentViewType(next)
             applyGridGamesBinding()
+            filterAndSearch()
             item.isChecked = true
             if (next == GameAdapter.VIEW_TYPE_CAROUSEL) onResume()
             true
@@ -301,12 +402,22 @@ class GamesFragment : Fragment() {
     private var currentFilter = preferences.getInt(PREF_SORT_TYPE, View.NO_ID)
 
     private fun filterAndSearch(baseList: List<Game> = gamesViewModel.games.value) {
-        val filteredList: List<Game> = when (currentFilter) {
-            R.id.alphabetical -> baseList.sortedBy { it.title }
+        var filteredList: List<Game> = when (currentFilter) {
+            R.id.alphabetical -> baseList.sortedBy { it.title.lowercase(Locale.getDefault()) }
             R.id.filter_recently_added -> baseList
                 .filter { preferences.getLong(it.keyAddedToLibraryTime, 0L) > 0L }
                 .sortedByDescending { preferences.getLong(it.keyAddedToLibraryTime, 0L) }
             else -> baseList
+        }
+
+        if (frontendPage == 1) {
+            filteredList = when (frontendFilter) {
+                1 -> filteredList
+                    .filter { preferences.getLong(it.keyLastPlayedTime, 0L) > 0L }
+                    .sortedByDescending { preferences.getLong(it.keyLastPlayedTime, 0L) }
+                2 -> filteredList.filter { preferences.getBoolean(it.keyFavorite, false) }
+                else -> filteredList
+            }
         }
 
         val searchTerm = binding.searchText.text.toString().trim().lowercase(Locale.getDefault())
@@ -340,7 +451,7 @@ class GamesFragment : Fragment() {
     private fun scrollToTop() {
         if (_binding == null) return
         (binding.gridGames as? RecyclerView)?.let { gamesView ->
-            if (gamesView.adapter?.itemCount != 0) gamesView.smoothScrollToPosition(0)
+            if (gamesView.adapter?.itemCount != 0) gamesView.scrollToPosition(0)
         }
     }
 
