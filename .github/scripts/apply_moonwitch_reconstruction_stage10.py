@@ -29,6 +29,7 @@ def insert_once(path: Path, anchor: str, addition: str) -> None:
 # the displayed image. A rescaled/aliased guest image can change host VkImage while the
 # guest GPU address stays stable. Record that address and use an exact guest-address
 # match as a second, stronger scene-identity path. No temporal dispatch is enabled here.
+# This branch is based directly on successful BUILD 140 and preserves its classic UI.
 
 texture_h = ROOT / "src/video_core/renderer_vulkan/vk_texture_cache.h"
 insert_once(
