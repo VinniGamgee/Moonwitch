@@ -58,6 +58,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
         <activity
             android:name="org.yuzu.yuzu_emu.ui.main.MainActivity"
             android:exported="true"
+            android:screenOrientation="portrait"
             android:theme="@style/Theme.Yuzu.Splash.Main">
             <intent-filter>
                 <action android:name="com.miui.gamecenter.GAME_BOOSTER_LAUNCH"/>
@@ -71,17 +72,20 @@ SPDX-License-Identifier: GPL-3.0-or-later
         <activity
             android:name="org.yuzu.yuzu_emu.features.settings.ui.SettingsActivity"
             android:theme="@style/Theme.Yuzu.Main"
+            android:screenOrientation="portrait"
             android:label="@string/preferences_settings"/>
 
         <activity
             android:name="org.yuzu.yuzu_emu.features.settings.ui.SettingsSubscreenActivity"
             android:theme="@style/Theme.Yuzu.Main"
+            android:screenOrientation="portrait"
             android:label="@string/preferences_settings"/>
 
         <activity
             android:name="org.yuzu.yuzu_emu.activities.EmulationActivity"
             android:theme="@style/Theme.Yuzu.Main"
             android:launchMode="singleTop"
+            android:screenOrientation="portrait"
             android:supportsPictureInPicture="true"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|uiMode"
             android:exported="true">
