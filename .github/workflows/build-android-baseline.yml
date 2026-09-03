@@ -11,7 +11,8 @@ on:
       - exp/moonwitch-reconstruction-stage10-classic-ui
 
 permissions:
-  contents: read
+  actions: read
+  contents: write
 
 concurrency:
   group: moonwitch-stage10-classic-ui-${{ github.ref }}
@@ -26,7 +27,32 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
-          fetch-depth: 1
+          fetch-depth: 2
+
+      - name: Capture V2 build 162 failure and self-clean
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          curl -fsSL -L \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/jobs/100845628178/logs" \
+            -o /tmp/v2-job.log
+          {
+            echo "Moonwitch V2 build #162 diagnostic"
+            echo
+            grep -Ei -C 5 'error:|e: |FAILURE:|AAPT|resource .* not found|unresolved reference|type mismatch|cannot find symbol|does not contain a declaration|Execution failed for task' /tmp/v2-job.log | tail -n 260 || true
+          } > .github/v2-build-error.txt
+          git config user.name "Moonwitch CI"
+          git config user.email "actions@users.noreply.github.com"
+          git show HEAD^:.github/workflows/build-android-baseline.yml > .github/workflows/build-android-baseline.yml
+          git rm -f .github/workflows/moonwitch-v2-log-dump.yml || true
+          git add .github/v2-build-error.txt .github/workflows/build-android-baseline.yml
+          git commit -m "ci: capture V2 build failure diagnostic"
+          git push origin HEAD:exp/moonwitch-reconstruction-stage10-classic-ui
+          exit 0
 
       - name: Apply Moonwitch Reconstruction Stage 2
         shell: bash
