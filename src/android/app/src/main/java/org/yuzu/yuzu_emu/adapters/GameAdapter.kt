@@ -4,12 +4,14 @@
 package org.yuzu.yuzu_emu.adapters
 
 import android.content.DialogInterface
+import android.content.res.ColorStateList
 import android.text.Html
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
@@ -48,6 +50,7 @@ class GameAdapter(private val activity: AppCompatActivity) :
         const val VIEW_TYPE_CAROUSEL = 3
     }
 
+    private val preferences = PreferenceManager.getDefaultSharedPreferences(YuzuApplication.appContext)
     private var viewType = VIEW_TYPE_GRID
 
     fun setViewType(type: Int) {
@@ -127,17 +130,39 @@ class GameAdapter(private val activity: AppCompatActivity) :
             }
         }
 
+        private fun metadata(model: Game): String {
+            val developer = model.developer.ifBlank { activity.getString(R.string.app_name) }
+            return if (model.version.isBlank()) developer else "$developer • ${model.version}"
+        }
+
         private fun bindListView(model: Game) {
             val b = binding as CardGameListBinding
-            b.imageGameScreen.scaleType = ImageView.ScaleType.CENTER_CROP
+            b.imageGameScreen.scaleType = ImageView.ScaleType.FIT_CENTER
             GameIconUtils.loadGameIcon(model, b.imageGameScreen)
             b.textGameTitle.text = model.title.replace("[\\t\\n\\r]+".toRegex(), " ")
-            b.textGameDeveloper.text = model.developer
-            b.textGameTitle.marquee()
-            b.cardGameList.setOnClickListener { onClick(model) }
+            b.textGameDeveloper.text = metadata(model)
+            b.cardGameList.setOnClickListener { openDetails(model) }
             b.cardGameList.setOnLongClickListener { onLongClick(model) }
+            b.moreButton.setOnClickListener { openDetails(model) }
+            updateFavoriteButton(b.favoriteButton, model)
+            b.favoriteButton.setOnClickListener {
+                val next = !preferences.getBoolean(model.keyFavorite, false)
+                preferences.edit { putBoolean(model.keyFavorite, next) }
+                updateFavoriteButton(b.favoriteButton, model)
+                ViewModelProvider(activity)[GamesViewModel::class.java].setShouldSwapData(true)
+            }
             b.root.layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT
             b.root.layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+        }
+
+        private fun updateFavoriteButton(button: android.widget.ImageButton, model: Game) {
+            val favorite = preferences.getBoolean(model.keyFavorite, false)
+            button.setImageResource(if (favorite) R.drawable.ic_mw_star_filled else R.drawable.ic_mw_star)
+            val tint = ContextCompat.getColor(
+                button.context,
+                if (favorite) R.color.mw_ui_accent_hi else R.color.mw_ui_text_2
+            )
+            button.imageTintList = ColorStateList.valueOf(tint)
         }
 
         private fun bindGridView(model: Game) {
@@ -145,10 +170,10 @@ class GameAdapter(private val activity: AppCompatActivity) :
             b.imageGameScreen.scaleType = ImageView.ScaleType.FIT_CENTER
             GameIconUtils.loadGameIcon(model, b.imageGameScreen)
             b.textGameTitle.text = model.title.replace("[\\t\\n\\r]+".toRegex(), " ")
-            b.cardGameGrid.setOnClickListener { onClick(model) }
+            b.textGameDeveloper.text = metadata(model)
+            b.cardGameGrid.setOnClickListener { openDetails(model) }
             b.cardGameGrid.setOnLongClickListener { onLongClick(model) }
-            b.moreButton.setOnClickListener { onLongClick(model) }
-
+            b.moreButton.setOnClickListener { openDetails(model) }
             b.root.layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT
             b.root.layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
         }
@@ -159,7 +184,7 @@ class GameAdapter(private val activity: AppCompatActivity) :
             GameIconUtils.loadGameIcon(model, b.imageGameScreenCompact)
             b.textGameTitleCompact.text = model.title.replace("[\\t\\n\\r]+".toRegex(), " ")
             b.textGameTitleCompact.marquee()
-            b.cardGameGridCompact.setOnClickListener { onClick(model) }
+            b.cardGameGridCompact.setOnClickListener { openDetails(model) }
             b.cardGameGridCompact.setOnLongClickListener { onLongClick(model) }
             b.root.layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT
             b.root.layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
@@ -171,10 +196,15 @@ class GameAdapter(private val activity: AppCompatActivity) :
             GameIconUtils.loadGameIcon(model, b.imageGameScreen)
             b.textGameTitle.text = model.title.replace("[\\t\\n\\r]+".toRegex(), " ")
             b.textGameTitle.marquee()
-            b.cardGameCarousel.setOnClickListener { onClick(model) }
+            b.cardGameCarousel.setOnClickListener { openDetails(model) }
             b.cardGameCarousel.setOnLongClickListener { onLongClick(model) }
             b.imageGameScreen.contentDescription = binding.root.context.getString(R.string.game_image_desc, model.title)
             b.root.layoutParams.width = cardSize
+        }
+
+        private fun openDetails(game: Game) {
+            val action = HomeNavigationDirections.actionGlobalPerGamePropertiesFragment(game)
+            binding.root.findNavController().navigate(action)
         }
 
         fun onClick(game: Game) {
@@ -186,7 +216,6 @@ class GameAdapter(private val activity: AppCompatActivity) :
             }
 
             val launch: () -> Unit = {
-                val preferences = PreferenceManager.getDefaultSharedPreferences(YuzuApplication.appContext)
                 preferences.edit { putLong(game.keyLastPlayedTime, System.currentTimeMillis()) }
                 activity.lifecycleScope.launch {
                     withContext(Dispatchers.IO) {
@@ -215,8 +244,7 @@ class GameAdapter(private val activity: AppCompatActivity) :
         }
 
         fun onLongClick(game: Game): Boolean {
-            val action = HomeNavigationDirections.actionGlobalPerGamePropertiesFragment(game)
-            binding.root.findNavController().navigate(action)
+            openDetails(game)
             return true
         }
     }
