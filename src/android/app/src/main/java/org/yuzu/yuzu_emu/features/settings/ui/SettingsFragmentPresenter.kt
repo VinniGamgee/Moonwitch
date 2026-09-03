@@ -210,10 +210,6 @@ class SettingsFragmentPresenter(
 
     private fun addMoonwitchPerformanceSettings(sl: ArrayList<SettingsItem>) {
         sl.apply {
-            add(HeaderSetting(R.string.mw_reconstruction_and_detail))
-            add(BooleanSetting.MOONWITCH_RECONSTRUCTION.key)
-            add(IntSetting.MOONWITCH_RECONSTRUCTION_TARGET.key)
-
             add(HeaderSetting(R.string.mw_pacing_and_latency))
             add(
                 SubmenuSetting(
@@ -339,7 +335,6 @@ class SettingsFragmentPresenter(
             add(HeaderSetting(R.string.mw_diagnostic_tools))
             add(BooleanSetting.SHOW_MOONWITCH_PERFORMANCE_LAB.key)
             add(BooleanSetting.ENABLE_PIPELINE_WORKER_AUTOTUNER.key)
-            add(BooleanSetting.SHOW_PERFORMANCE_OVERLAY.key)
         }
     }
 
@@ -378,15 +373,6 @@ class SettingsFragmentPresenter(
                 )
             )
             if (!NativeConfig.isPerGameConfigLoaded()) {
-                add(
-                    SubmenuSetting(
-                        titleId = R.string.stats_overlay_options,
-                        descriptionId = R.string.stats_overlay_options_description,
-                        iconId = R.drawable.ic_frames,
-                        menuKey = MenuTag.SECTION_PERFORMANCE_STATS
-                    )
-                )
-
                 add(
                     SubmenuSetting(
                         titleId = R.string.soc_overlay_options,
@@ -451,16 +437,11 @@ class SettingsFragmentPresenter(
 
     private fun addSystemSettings(sl: ArrayList<SettingsItem>) {
         sl.apply {
-            add(StringSetting.DEVICE_NAME.key)
             add(BooleanSetting.RENDERER_USE_SPEED_LIMIT.key)
             add(ShortSetting.RENDERER_SPEED_LIMIT.key)
             add(ShortSetting.RENDERER_TURBO_SPEED_LIMIT.key)
             add(ShortSetting.RENDERER_SLOW_SPEED_LIMIT.key)
             add(BooleanSetting.USE_DOCKED_MODE.key)
-            add(IntSetting.REGION_INDEX.key)
-            add(IntSetting.LANGUAGE_INDEX.key)
-            add(BooleanSetting.USE_CUSTOM_RTC.key)
-            add(LongSetting.CUSTOM_RTC.key)
 
             add(HeaderSetting(R.string.clocks))
             add(IntSetting.FAST_CPU_TIME.key)
@@ -489,6 +470,10 @@ class SettingsFragmentPresenter(
                 add(IntSetting.FSR_SHARPENING_SLIDER.key)
             }
             add(IntSetting.RENDERER_ANTI_ALIASING.key)
+
+            add(HeaderSetting(R.string.mw_reconstruction_and_detail))
+            add(BooleanSetting.MOONWITCH_RECONSTRUCTION.key)
+            add(IntSetting.MOONWITCH_RECONSTRUCTION_TARGET.key)
 
             add(
                 SwitchSetting(
@@ -532,10 +517,7 @@ class SettingsFragmentPresenter(
             add(BooleanSetting.FIX_BLOOM_EFFECTS.key)
             add(BooleanSetting.EMULATE_BGR565.key)
             add(BooleanSetting.RENDERER_ASYNCHRONOUS_SHADERS.key)
-            add(IntSetting.ANDROID_PIPELINE_WORKERS.key)
             add(BooleanSetting.RENDERER_ASYNCHRONOUS_GPU_EMULATION.key)
-            add(BooleanSetting.RENDERER_ASYNC_PRESENTATION.key)
-            add(BooleanSetting.SMART_ADAPTIVE_FRAME_SKIP.key)
             add(SettingsItem.GPU_UNSWIZZLE_COMBINED)
 
             add(HeaderSetting(R.string.extensions))
@@ -546,7 +528,6 @@ class SettingsFragmentPresenter(
 
             add(HeaderSetting(R.string.display))
 
-            add(IntSetting.RENDERER_SCREEN_LAYOUT.key)
             add(IntSetting.RENDERER_ASPECT_RATIO.key)
             add(IntSetting.VERTICAL_ALIGNMENT.key)
             add(BooleanSetting.PICTURE_IN_PICTURE.key)
@@ -555,10 +536,6 @@ class SettingsFragmentPresenter(
 
     private fun addPerformanceOverlaySettings(sl: ArrayList<SettingsItem>) {
         sl.apply {
-            add(HeaderSetting(R.string.moonwitch_performance_lab))
-            add(BooleanSetting.SHOW_MOONWITCH_PERFORMANCE_LAB.key)
-            add(BooleanSetting.ENABLE_PIPELINE_WORKER_AUTOTUNER.key)
-
             add(HeaderSetting(R.string.stats_overlay_customization))
             add(BooleanSetting.SHOW_PERFORMANCE_OVERLAY.key)
             add(BooleanSetting.PERF_OVERLAY_BACKGROUND.key)
