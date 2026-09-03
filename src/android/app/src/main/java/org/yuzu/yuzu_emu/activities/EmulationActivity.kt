@@ -15,6 +15,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.Rect
 import android.graphics.drawable.Icon
@@ -117,6 +118,11 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener, InputManager
 
     override fun attachBaseContext(base: Context) {
         super.attachBaseContext(YuzuApplication.applyLanguage(base))
+    }
+
+    @SuppressLint("SourceLockedOrientationActivity")
+    override fun setRequestedOrientation(requestedOrientation: Int) {
+        super.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -641,7 +647,7 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener, InputManager
                 getString(R.string.unmute),
                 unmutePendingIntent
             )
-            pictureInPictureActions.add(unmuteRemoteAction)
+            pictureInPictureActions.add(unmuteAction)
         } else {
             val muteIcon = Icon.createWithResource(this@EmulationActivity, R.drawable.ic_pip_mute)
             val mutePendingIntent = PendingIntent.getBroadcast(
@@ -650,13 +656,13 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener, InputManager
                 Intent(actionMute),
                 pendingFlags
             )
-            val muteRemoteAction = RemoteAction(
+            val muteAction = RemoteAction(
                 muteIcon,
                 getString(R.string.mute),
                 getString(R.string.mute),
                 mutePendingIntent
             )
-            pictureInPictureActions.add(muteRemoteAction)
+            pictureInPictureActions.add(muteAction)
         }
 
         return this.apply { setActions(pictureInPictureActions) }
