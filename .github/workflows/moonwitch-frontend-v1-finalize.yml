@@ -1,0 +1,64 @@
+name: Moonwitch Frontend V1 Finalize
+
+on:
+  push:
+    branches:
+      - exp/moonwitch-reconstruction-stage10-classic-ui
+    paths:
+      - .github/workflows/moonwitch-frontend-v1-finalize.yml
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Moonwitch
+        uses: actions/checkout@v4
+        with:
+          ref: exp/moonwitch-reconstruction-stage10-classic-ui
+          fetch-depth: 0
+
+      - name: Apply portrait Frontend V1
+        run: |
+          python3 .github/scripts/apply_frontend_v1.py
+          python3 - <<'PY'
+          from pathlib import Path
+
+          kt = Path('src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/GamePropertiesFragment.kt')
+          s = kt.read_text()
+          s = s.replace(
+              'barInsets.bottom + resources.getDimensionPixelSize(R.dimen.spacing_large)',
+              'barInsets.bottom + (24 * resources.displayMetrics.density).toInt()'
+          )
+          kt.write_text(s)
+
+          layout = Path('src/android/app/src/main/res/layout/fragment_game_properties.xml')
+          x = layout.read_text()
+          x = x.replace('android:contentDescription="@string/back"', 'android:contentDescription="@null"')
+          x = x.replace('android:contentDescription="@string/add_to_home_screen"', 'android:contentDescription="@null"')
+          layout.write_text(x)
+
+          wide = Path('src/android/app/src/main/res/layout-w600dp/fragment_game_properties.xml')
+          wide.write_text(x)
+          PY
+
+      - name: Validate Frontend V1 wiring
+        run: |
+          grep -q 'actionGlobalPerGamePropertiesFragment(game)' src/android/app/src/main/java/org/yuzu/yuzu_emu/adapters/GameAdapter.kt
+          grep -q 'SECTION_MOONWITCH_PERFORMANCE' src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/GamePropertiesFragment.kt
+          grep -q 'SECTION_DRIVERS_COMPONENTS' src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/GamePropertiesFragment.kt
+          grep -q 'mw_gamehub_statistics' src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/GamePropertiesFragment.kt
+          grep -q 'image_game_backdrop' src/android/app/src/main/res/layout/fragment_game_properties.xml
+          grep -q 'CardMoonwitchGamePropertyBinding' src/android/app/src/main/java/org/yuzu/yuzu_emu/adapters/GamePropertiesAdapter.kt
+
+      - name: Commit Frontend V1 and remove one-shot helpers
+        run: |
+          rm -f .github/scripts/apply_frontend_v1.py .github/workflows/moonwitch-frontend-v1-finalize.yml
+          git config user.name "Moonwitch CI"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git diff --check --cached
+          git commit -m "Moonwitch: introduce portrait Frontend V1 Game Hub"
+          git push origin HEAD:exp/moonwitch-reconstruction-stage10-classic-ui
