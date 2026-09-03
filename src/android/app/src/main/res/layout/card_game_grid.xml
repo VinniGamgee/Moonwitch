@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="5dp">
+    android:padding="3dp">
 
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/card_game_grid"
@@ -13,101 +13,86 @@
         android:clickable="true"
         android:focusable="true"
         android:transitionName="card_game"
-        app:cardBackgroundColor="@color/moonwitch_frontend_surface"
-        app:cardCornerRadius="18dp"
+        app:cardBackgroundColor="@color/mw_ui_surface"
+        app:cardCornerRadius="15dp"
         app:cardElevation="0dp"
-        app:rippleColor="@color/game_card_ripple"
-        app:strokeColor="@color/moonwitch_frontend_outline"
+        app:rippleColor="#209147FF"
+        app:strokeColor="@color/mw_ui_border"
         app:strokeWidth="1dp">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:duplicateParentState="true"
-            android:padding="6dp">
+            android:orientation="vertical"
+            android:padding="5dp">
 
             <com.google.android.material.card.MaterialCardView
-                android:id="@+id/game_cover_frame"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:duplicateParentState="true"
-                app:cardBackgroundColor="@color/moonwitch_frontend_background"
-                app:cardCornerRadius="13dp"
-                app:cardElevation="0dp"
-                app:layout_constraintDimensionRatio="2:3"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:strokeColor="@color/moonwitch_frontend_outline"
-                app:strokeWidth="1dp">
-
+                android:layout_weight="1"
+                android:minHeight="162dp"
+                app:cardBackgroundColor="@color/mw_ui_bg"
+                app:cardCornerRadius="11dp"
+                app:cardElevation="0dp">
                 <com.google.android.material.imageview.ShapeableImageView
                     android:id="@+id/image_game_screen"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:background="@color/moonwitch_frontend_background"
+                    android:adjustViewBounds="true"
                     android:contentDescription="@string/game_image_desc"
                     android:scaleType="fitCenter"
-                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Medium"
                     tools:src="@drawable/default_icon" />
             </com.google.android.material.card.MaterialCardView>
 
-            <View
-                android:id="@+id/game_accent"
-                android:layout_width="3dp"
-                android:layout_height="38dp"
-                android:layout_marginStart="6dp"
-                android:layout_marginTop="10dp"
-                android:layout_marginBottom="8dp"
-                android:background="@color/moonwitch_frontend_accent"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/game_cover_frame" />
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="70dp"
+                android:paddingStart="2dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="1dp"
+                android:paddingBottom="5dp">
 
-            <com.google.android.material.textview.MaterialTextView
-                android:id="@+id/text_game_title"
-                style="@style/TextAppearance.Material3.TitleSmall"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
-                android:layout_marginEnd="8dp"
-                android:ellipsize="end"
-                android:gravity="start|center_vertical"
-                android:maxLines="2"
-                android:textColor="@color/moonwitch_frontend_text"
-                android:textSize="13sp"
-                android:textStyle="bold"
-                app:layout_constraintBottom_toBottomOf="@id/game_accent"
-                app:layout_constraintEnd_toStartOf="@id/more_button"
-                app:layout_constraintStart_toEndOf="@id/game_accent"
-                app:layout_constraintTop_toTopOf="@id/game_accent"
-                tools:text="The Legend of Zelda: Tears of the Kingdom" />
+                <TextView
+                    android:id="@+id/text_game_title"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:fontFamily="sans-serif-medium"
+                    android:maxLines="2"
+                    android:textColor="@color/mw_ui_text"
+                    android:textSize="12sp"
+                    app:layout_constraintEnd_toStartOf="@id/more_button"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    tools:text="The Legend of Zelda: Tears of the Kingdom" />
 
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/more_button"
-                android:layout_width="30dp"
-                android:layout_height="30dp"
-                android:layout_marginEnd="4dp"
-                android:clickable="true"
-                android:focusable="true"
-                app:cardBackgroundColor="@color/moonwitch_frontend_surface_high"
-                app:cardCornerRadius="10dp"
-                app:cardElevation="0dp"
-                app:layout_constraintBottom_toBottomOf="@id/game_accent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="@id/game_accent"
-                app:rippleColor="#309B4DFF"
-                app:strokeColor="@color/moonwitch_frontend_outline"
-                app:strokeWidth="1dp">
+                <TextView
+                    android:id="@+id/text_game_developer"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:textColor="@color/mw_ui_text_2"
+                    android:textSize="10.5sp"
+                    app:layout_constraintEnd_toStartOf="@id/more_button"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/text_game_title"
+                    tools:text="Nintendo • 16.0.0" />
 
-                <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:layout_gravity="center"
-                    android:contentDescription="@null"
-                    android:src="@drawable/ic_mw_more"
-                    app:tint="@color/moonwitch_frontend_text_secondary" />
-            </com.google.android.material.card.MaterialCardView>
-        </androidx.constraintlayout.widget.ConstraintLayout>
+                <ImageButton
+                    android:id="@+id/more_button"
+                    android:layout_width="30dp"
+                    android:layout_height="38dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/mw_ui_more"
+                    android:padding="6dp"
+                    android:src="@drawable/ic_more_vert"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:tint="@color/mw_ui_text_2" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 </FrameLayout>
