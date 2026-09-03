@@ -1,12 +1,99 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" xmlns:tools="http://schemas.android.com/tools" android:id="@+id/option_card" android:layout_width="match_parent" android:layout_height="90dp" android:layout_margin="4dp" android:clickable="true" android:focusable="true" app:cardBackgroundColor="@color/moonwitch_panel_soft" app:cardCornerRadius="16dp" app:cardElevation="0dp" app:rippleColor="#3035D8FF" app:strokeColor="@color/moonwitch_border_soft" app:strokeWidth="1dp">
-    <androidx.constraintlayout.widget.ConstraintLayout android:id="@+id/option_layout" android:layout_width="match_parent" android:layout_height="match_parent" android:padding="12dp">
-        <ImageView android:id="@+id/option_icon" android:layout_width="28dp" android:layout_height="28dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" app:tint="@color/moonwitch_cyan" tools:src="@drawable/ic_settings" />
-        <LinearLayout android:id="@+id/option_text" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:layout_marginEnd="5dp" android:orientation="vertical" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@id/option_chevron" app:layout_constraintStart_toEndOf="@id/option_icon" app:layout_constraintTop_toTopOf="parent">
-            <TextView android:id="@+id/option_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:fontFamily="sans-serif-medium" android:maxLines="1" android:textColor="@color/moonwitch_text" android:textSize="12sp" tools:text="Gráficos" />
-            <TextView android:id="@+id/option_description" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:ellipsize="end" android:maxLines="2" android:textColor="@color/moonwitch_text_muted" android:textSize="9.5sp" tools:text="Resolução, renderização, shaders e efeitos" />
-            <TextView android:id="@+id/option_detail" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:ellipsize="end" android:maxLines="1" android:textColor="@color/moonwitch_cyan" android:textSize="9sp" android:visibility="gone" />
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/option_card"
+    android:layout_width="match_parent"
+    android:layout_height="88dp"
+    android:layout_marginStart="2dp"
+    android:layout_marginTop="4dp"
+    android:layout_marginEnd="2dp"
+    android:layout_marginBottom="4dp"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardBackgroundColor="@color/mw_ui_surface"
+    app:cardCornerRadius="18dp"
+    app:cardElevation="0dp"
+    app:rippleColor="#249147FF"
+    app:strokeColor="@color/mw_ui_border"
+    app:strokeWidth="1dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/option_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp">
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/icon_shell"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            app:cardBackgroundColor="@color/mw_ui_accent_soft"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="0dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+            <ImageView
+                android:id="@+id/option_icon"
+                android:layout_width="29dp"
+                android:layout_height="29dp"
+                android:layout_gravity="center"
+                app:tint="@color/mw_ui_accent"
+                tools:src="@drawable/ic_settings" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <LinearLayout
+            android:id="@+id/option_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="14dp"
+            android:layout_marginEnd="10dp"
+            android:orientation="vertical"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/option_chevron"
+            app:layout_constraintStart_toEndOf="@id/icon_shell"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <TextView
+                android:id="@+id/option_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:fontFamily="sans-serif-medium"
+                android:maxLines="1"
+                android:textColor="@color/mw_ui_text"
+                android:textSize="18sp"
+                tools:text="Desempenho" />
+
+            <TextView
+                android:id="@+id/option_description"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@color/mw_ui_text_2"
+                android:textSize="13sp"
+                tools:text="Ajustes de performance e otimização" />
+
+            <TextView
+                android:id="@+id/option_detail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
         </LinearLayout>
-        <TextView android:id="@+id/option_chevron" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›" android:textColor="@color/moonwitch_text_muted" android:textSize="22sp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/option_chevron"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="›"
+            android:textColor="@color/mw_ui_text_2"
+            android:textSize="32sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>
