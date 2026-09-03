@@ -1,0 +1,43 @@
+name: Moonwitch Game Hub V2 Finalize
+
+on:
+  push:
+    branches:
+      - exp/moonwitch-reconstruction-stage10-classic-ui
+    paths:
+      - tools/apply_moonwitch_gamehub_v2.py
+      - .github/workflows/moonwitch-gamehub-v2-finalize.yml
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Moonwitch
+        uses: actions/checkout@v4
+        with:
+          ref: exp/moonwitch-reconstruction-stage10-classic-ui
+          fetch-depth: 0
+
+      - name: Apply Game Hub V2
+        run: python3 tools/apply_moonwitch_gamehub_v2.py
+
+      - name: Validate V2 wiring
+        run: |
+          grep -q 'action_favorite' src/android/app/src/main/res/layout/fragment_game_properties.xml
+          grep -q 'game_description' src/android/app/src/main/res/layout/fragment_game_properties.xml
+          grep -q 'refreshOverview' src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/GamePropertiesFragment.kt
+          grep -q 'putLong(game.keyLastPlayedTime' src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/LaunchGameDialogFragment.kt
+          grep -q 'mw_gamehub_v2_description_fallback' src/android/app/src/main/res/values/moonwitch_gamehub_v2.xml
+
+      - name: Commit Game Hub V2 and remove one-shot helpers
+        run: |
+          rm -f tools/apply_moonwitch_gamehub_v2.py
+          rm -f .github/workflows/moonwitch-gamehub-v2-finalize.yml
+          git config user.name 'Moonwitch CI'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -A
+          git commit -m 'Moonwitch: redesign Game Hub V2 frontend'
+          git push origin HEAD:exp/moonwitch-reconstruction-stage10-classic-ui
