@@ -5,19 +5,16 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginStart="12dp"
-    android:layout_marginTop="4dp"
-    android:layout_marginEnd="12dp"
-    android:layout_marginBottom="4dp"
-    android:background="@drawable/moonwitch_setting_item_selector"
+    android:layout_marginStart="20dp"
+    android:layout_marginEnd="20dp"
+    android:layout_marginTop="5dp"
+    android:layout_marginBottom="5dp"
+    android:background="@drawable/moonwitch_setting_card"
     android:clickable="true"
     android:focusable="true"
     android:gravity="center_vertical"
-    android:minHeight="68dp"
-    android:paddingStart="14dp"
-    android:paddingTop="12dp"
-    android:paddingEnd="14dp"
-    android:paddingBottom="12dp">
+    android:minHeight="82dp"
+    android:padding="18dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -27,68 +24,63 @@
 
         <ImageView
             android:id="@+id/icon"
-            android:layout_width="23dp"
-            android:layout_height="23dp"
-            android:layout_gravity="center_vertical"
-            android:layout_marginStart="4dp"
-            android:layout_marginEnd="17dp"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:layout_marginEnd="18dp"
             android:visibility="gone"
-            app:tint="@color/moonwitch_cyan" />
+            app:tint="@color/moonwitch_frontend_accent"
+            tools:src="@drawable/ic_graphics"
+            tools:visibility="visible" />
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:orientation="vertical">
 
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/text_setting_name"
+                style="@style/TextAppearance.Material3.TitleMedium"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-medium"
                 android:textAlignment="viewStart"
-                android:textColor="@color/moonwitch_text"
-                android:textSize="15sp"
-                app:lineHeight="20dp"
-                tools:text="Setting Name" />
+                android:textColor="@color/moonwitch_frontend_text"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                app:lineHeight="22dp"
+                tools:text="Gráficos" />
 
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/text_setting_description"
+                style="@style/TextAppearance.Material3.BodySmall"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:fontFamily="sans-serif"
                 android:textAlignment="viewStart"
-                android:textColor="@color/moonwitch_text_muted"
-                android:textSize="12sp"
-                tools:text="@string/app_disclaimer" />
+                android:textColor="@color/moonwitch_frontend_text_secondary"
+                tools:text="Resolução, qualidade e efeitos visuais" />
 
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/text_setting_value"
+                style="@style/TextAppearance.Material3.LabelMedium"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="5dp"
-                android:fontFamily="sans-serif-medium"
-                android:letterSpacing="0.04"
+                android:layout_marginTop="6dp"
                 android:textAlignment="viewStart"
-                android:textColor="@color/moonwitch_cyan"
-                android:textSize="12sp"
+                android:textColor="@color/moonwitch_frontend_accent"
+                android:textSize="13sp"
                 android:textStyle="bold"
-                tools:text="1x" />
+                tools:text="1.0x (720p)" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/button_clear"
                 style="@style/Widget.Material3.Button.TonalButton"
                 android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:layout_marginTop="10dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
                 android:text="@string/use_global_setting"
-                android:textSize="11sp"
                 android:visibility="gone"
-                app:cornerRadius="13dp"
                 tools:visibility="visible" />
-
         </LinearLayout>
-
     </LinearLayout>
-
 </RelativeLayout>
