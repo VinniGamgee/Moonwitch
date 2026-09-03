@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="mw_ui_bg">#05050C</color>
+    <color name="mw_ui_bg_soft">#080812</color>
+    <color name="mw_ui_surface">#10101A</color>
+    <color name="mw_ui_surface_2">#141420</color>
+    <color name="mw_ui_surface_3">#191326</color>
+    <color name="mw_ui_border">#282333</color>
+    <color name="mw_ui_border_accent">#6530A1</color>
+    <color name="mw_ui_accent">#9147FF</color>
+    <color name="mw_ui_accent_hi">#B06BFF</color>
+    <color name="mw_ui_accent_soft">#28133F</color>
+    <color name="mw_ui_text">#F7F5FB</color>
+    <color name="mw_ui_text_2">#A7A2AF</color>
+    <color name="mw_ui_text_3">#777281</color>
+    <color name="mw_ui_divider">#23202D</color>
+
+    <dimen name="mw_ui_page_hpad">18dp</dimen>
+    <dimen name="mw_ui_card_radius">18dp</dimen>
+    <dimen name="mw_ui_nav_height">82dp</dimen>
+
+    <string name="mw_ui_switch_emulator">SWITCH EMULATOR</string>
+    <string name="mw_ui_library">Biblioteca</string>
+    <string name="mw_ui_games">Jogos</string>
+    <string name="mw_ui_home">Início</string>
+    <string name="mw_ui_settings">Configurações</string>
+    <string name="mw_ui_all">Todos</string>
+    <string name="mw_ui_recent">Recentes</string>
+    <string name="mw_ui_favorites">Favoritos</string>
+    <string name="mw_ui_performance">Desempenho</string>
+    <string name="mw_ui_graphics">Gráficos</string>
+    <string name="mw_ui_controls">Controles</string>
+    <string name="mw_ui_audio">Áudio</string>
+    <string name="mw_ui_interface">Interface</string>
+    <string name="mw_ui_folders_games">Pastas e Jogos</string>
+    <string name="mw_ui_drivers">Drivers</string>
+    <string name="mw_ui_advanced">Avançado</string>
+    <string name="mw_ui_perf_desc">Ajustes de performance e otimização</string>
+    <string name="mw_ui_graphics_desc">Resolução, qualidade e efeitos visuais</string>
+    <string name="mw_ui_controls_desc">Mapeamento, vibração e dispositivos</string>
+    <string name="mw_ui_audio_desc">Som do sistema, jogo e emulação</string>
+    <string name="mw_ui_interface_desc">Tema, layout e preferências visuais</string>
+    <string name="mw_ui_folders_desc">Biblioteca, escaneamento e organização</string>
+    <string name="mw_ui_drivers_desc">Drivers de GPU, Vulkan e compatibilidade</string>
+    <string name="mw_ui_advanced_desc">Opções experimentais e de desenvolvedor</string>
+    <string name="mw_ui_tip">Dica</string>
+    <string name="mw_ui_settings_tip">Altere as configurações de acordo com o seu dispositivo para obter a melhor experiência.</string>
+    <string name="mw_ui_play">Jogar</string>
+    <string name="mw_ui_favorite">Favorito</string>
+    <string name="mw_ui_more">Mais</string>
+    <string name="mw_ui_description">Descrição</string>
+    <string name="mw_ui_last_played">Última vez jogado</string>
+    <string name="mw_ui_size">Tamanho</string>
+    <string name="mw_ui_installed">Instalado</string>
+</resources>
