@@ -141,4 +141,14 @@ replace_once(
     "            append(readablePlayTime)\n",
 )
 
+games = ROOT / "src/android/app/src/main/java/org/yuzu/yuzu_emu/ui/GamesFragment.kt"
+games_text = games.read_text(encoding="utf-8")
+# In Jogos mode the hidden search row must keep its measured height so the tabs and
+# list never overlap. INVISIBLE keeps layout space while remaining visually absent.
+games_text = games_text.replace(
+    "binding.searchTools.visibility = View.GONE",
+    "binding.searchTools.visibility = View.INVISIBLE",
+)
+games.write_text(games_text, encoding="utf-8")
+
 print("Moonwitch exact UI runtime wiring applied")
