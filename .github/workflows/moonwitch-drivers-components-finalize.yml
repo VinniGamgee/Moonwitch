@@ -19,31 +19,14 @@ jobs:
         with:
           ref: exp/moonwitch-reconstruction-stage10-classic-ui
           fetch-depth: 0
-          path: target
-      - name: Checkout finalizer script
-        uses: actions/checkout@v4
-        with:
-          ref: automation/drivers-components-finalize2
-          path: automation
       - name: Apply organization
-        working-directory: target
-        run: python3 ../automation/.github/scripts/finalize_drivers_components.py
-      - name: Commit final change and remove one-shot workflow
-        working-directory: target
+        run: python3 .github/scripts/finalize_drivers_components.py
+      - name: Commit final change and remove one-shot helpers
         run: |
-          rm -f .github/workflows/moonwitch-drivers-components-finalize.yml
+          rm -f .github/workflows/moonwitch-drivers-components-finalize.yml .github/scripts/finalize_drivers_components.py
           git config user.name "Moonwitch CI"
           git config user.email "actions@users.noreply.github.com"
-          git add src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/Settings.kt src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/ui/SettingsFragmentPresenter.kt src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/HomeSettingsFragment.kt src/android/app/src/main/res/values/strings.xml src/android/app/src/main/res/values-pt-rBR/strings.xml .github/workflows/moonwitch-drivers-components-finalize.yml
-          git diff --check
+          git add -A
+          git diff --check --cached
           git commit -m "Moonwitch: add dedicated Drivers and Components section"
           git push origin HEAD:exp/moonwitch-reconstruction-stage10-classic-ui
-      - name: Cleanup automation branches
-        if: always()
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          for b in automation/drivers-components-finalize automation/drivers-components-finalize2; do
-            ref="${b//\//%2F}"
-            curl -L -X DELETE -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" -H "X-GitHub-Api-Version: 2022-11-28" "https://api.github.com/repos/${{ github.repository }}/git/refs/heads/$ref" || true
-          done
