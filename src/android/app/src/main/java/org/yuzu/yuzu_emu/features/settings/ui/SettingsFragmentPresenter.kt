@@ -166,6 +166,7 @@ class SettingsFragmentPresenter(
             MenuTag.SECTION_SYSTEM -> addSystemSettings(sl)
             MenuTag.SECTION_RENDERER -> addGraphicsSettings(sl)
             MenuTag.SECTION_MOONWITCH_PERFORMANCE -> addMoonwitchPerformanceSettings(sl)
+            MenuTag.SECTION_DRIVERS_COMPONENTS -> addDriversComponentsSettings(sl)
             MenuTag.SECTION_SAFS -> addSafsSettings(sl)
             MenuTag.SECTION_FRAME_PACING -> addFramePacingSettings(sl)
             MenuTag.SECTION_ADPF -> addAdpfDiagnosticsSettings(sl)
@@ -273,31 +274,20 @@ class SettingsFragmentPresenter(
                 )
             )
 
-            add(HeaderSetting(R.string.mw_performance_management))
-            add(
-                LaunchableSetting(
-                    titleId = R.string.mw_gpu_drivers,
-                    descriptionId = R.string.mw_gpu_drivers_desc
-                ) { launchContext ->
-                    createSubscreenIntent(launchContext, SettingsSubscreen.DRIVER_MANAGER)
-                }
-            )
-            add(
-                LaunchableSetting(
-                    titleId = R.string.mw_freedreno,
-                    descriptionId = R.string.mw_freedreno_desc
-                ) { launchContext ->
-                    createSubscreenIntent(launchContext, SettingsSubscreen.FREEDRENO_SETTINGS)
-                }
-            )
-            add(
-                LaunchableSetting(
-                    titleId = R.string.mw_lossless_scaling,
-                    descriptionId = R.string.mw_lossless_scaling_desc
-                ) { launchContext ->
-                    createSubscreenIntent(launchContext, SettingsSubscreen.LOSSLESS_MANAGER)
-                }
-            )
+        }
+    }
+
+    private fun addDriversComponentsSettings(sl: ArrayList<SettingsItem>) {
+        sl.apply {
+            add(LaunchableSetting(titleId = R.string.mw_gpu_drivers, descriptionId = R.string.mw_gpu_drivers_desc) { launchContext ->
+                createSubscreenIntent(launchContext, SettingsSubscreen.DRIVER_MANAGER)
+            })
+            add(LaunchableSetting(titleId = R.string.mw_freedreno, descriptionId = R.string.mw_freedreno_desc) { launchContext ->
+                createSubscreenIntent(launchContext, SettingsSubscreen.FREEDRENO_SETTINGS)
+            })
+            add(LaunchableSetting(titleId = R.string.mw_lossless_scaling, descriptionId = R.string.mw_lossless_scaling_desc) { launchContext ->
+                createSubscreenIntent(launchContext, SettingsSubscreen.LOSSLESS_MANAGER)
+            })
         }
     }
 
@@ -390,6 +380,14 @@ class SettingsFragmentPresenter(
                     menuKey = MenuTag.SECTION_MOONWITCH_PERFORMANCE
                 )
             )
+            if (NativeConfig.isPerGameConfigLoaded()) {
+                add(SubmenuSetting(
+                    titleId = R.string.mw_drivers_components,
+                    descriptionId = R.string.mw_drivers_components_desc,
+                    iconId = R.drawable.ic_build,
+                    menuKey = MenuTag.SECTION_DRIVERS_COMPONENTS
+                ))
+            }
             if (!NativeConfig.isPerGameConfigLoaded()) {
                 add(
                     SubmenuSetting(

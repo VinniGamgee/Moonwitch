@@ -37,14 +37,11 @@ import org.yuzu.yuzu_emu.features.DocumentProvider
 import org.yuzu.yuzu_emu.features.fetcher.SpacingItemDecoration
 import org.yuzu.yuzu_emu.features.settings.model.Settings
 import org.yuzu.yuzu_emu.features.settings.ui.SettingsSubscreen
-import org.yuzu.yuzu_emu.model.DriverViewModel
 import org.yuzu.yuzu_emu.model.HomeSetting
 import org.yuzu.yuzu_emu.model.HomeViewModel
 import org.yuzu.yuzu_emu.ui.main.MainActivity
 import org.yuzu.yuzu_emu.utils.FileUtil
-import org.yuzu.yuzu_emu.utils.GpuDriverHelper
 import org.yuzu.yuzu_emu.utils.Log
-import org.yuzu.yuzu_emu.utils.LosslessScalingHelper
 import org.yuzu.yuzu_emu.utils.ViewUtils.updateMargins
 
 class HomeSettingsFragment : Fragment() {
@@ -54,7 +51,6 @@ class HomeSettingsFragment : Fragment() {
     private lateinit var mainActivity: MainActivity
 
     private val homeViewModel: HomeViewModel by activityViewModels()
-    private val driverViewModel: DriverViewModel by activityViewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -180,55 +176,16 @@ class HomeSettingsFragment : Fragment() {
             )
             add(
                 HomeSetting(
-                    R.string.gpu_driver_manager,
-                    R.string.install_gpu_driver_description,
+                    R.string.mw_drivers_components,
+                    R.string.mw_drivers_components_desc,
                     R.drawable.ic_build,
                     {
-                        val action = HomeNavigationDirections.actionGlobalSettingsSubscreenActivity(
-                            SettingsSubscreen.DRIVER_MANAGER,
-                            null
+                        val action = HomeNavigationDirections.actionGlobalSettingsActivity(
+                            null,
+                            Settings.MenuTag.SECTION_DRIVERS_COMPONENTS
                         )
                         binding.root.findNavController().navigate(action)
-                    },
-                    { true },
-                    R.string.custom_driver_not_supported,
-                    R.string.custom_driver_not_supported_description,
-                    driverViewModel.selectedDriverTitle
-                )
-            )
-            if (GpuDriverHelper.isAdrenoGpu()) {
-                add(
-                    HomeSetting(
-                        R.string.freedreno_settings_title,
-                        R.string.gpu_driver_settings,
-                        R.drawable.ic_graphics,
-                        {
-                            val action =
-                                HomeNavigationDirections.actionGlobalSettingsSubscreenActivity(
-                                    SettingsSubscreen.FREEDRENO_SETTINGS,
-                                    null
-                                )
-                            binding.root.findNavController().navigate(action)
-                        }
-                    )
-                )
-            }
-            add(
-                HomeSetting(
-                    R.string.lossless_scaling,
-                    R.string.lossless_scaling_description,
-                    R.drawable.ic_duck,
-                    {
-                        val action = HomeNavigationDirections.actionGlobalSettingsSubscreenActivity(
-                            SettingsSubscreen.LOSSLESS_MANAGER,
-                            null
-                        )
-                        binding.root.findNavController().navigate(action)
-                    },
-                    { true },
-                    0,
-                    0,
-                    LosslessScalingHelper.statusText
+                    }
                 )
             )
             add(
@@ -393,12 +350,6 @@ class HomeSettingsFragment : Fragment() {
     override fun onStart() {
         super.onStart()
         exitTransition = null
-    }
-
-    override fun onResume() {
-        super.onResume()
-        driverViewModel.updateDriverNameForGame(null)
-        LosslessScalingHelper.refreshStatus()
     }
 
     override fun onDestroyView() {

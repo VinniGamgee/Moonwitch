@@ -7,6 +7,8 @@
     <string name="moonwitch_select_game">SELECT A GAME</string>
     <string name="moonwitch_build_badge" translatable="false">V1.1 • DEVICE PROFILES</string>
     <string name="moonwitch_system_menu">System menu</string>
+    <string name="mw_drivers_components">Drivers and Components</string>
+    <string name="mw_drivers_components_desc">GPU drivers, Freedreno/Turnip and Lossless Scaling</string>
     <string name="moonwitch_manage_library">Library</string>
     <string name="device_profile_title">Recommended device profile</string>
     <string name="device_profile_description">Detect this device and create an auditable configuration only for this game.</string>

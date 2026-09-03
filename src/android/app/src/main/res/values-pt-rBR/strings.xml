@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="mw_drivers_components">Drivers e componentes</string>
+    <string name="mw_drivers_components_desc">Drivers de GPU, Freedreno/Turnip e Lossless Scaling</string>
+
 
     <string name="app_disclaimer">Este programa serve para rodar jogos do Nintendo Switch. Nenhum jogo ou chaves do sistema são inclusos<br /><br />Antes de começar, localize o seu <![CDATA[<b> prod.keys </b>]]> salvo no seu sistema.<br /><br /><![CDATA[<a href=\"https://yuzu-mirror.github.io/help/quickstart\">Saiba mais</a>]]></string>
     <string name="notice_notification_channel_name">Notificações e erros</string>
