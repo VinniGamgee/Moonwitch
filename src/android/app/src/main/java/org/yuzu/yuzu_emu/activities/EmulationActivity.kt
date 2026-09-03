@@ -647,7 +647,7 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener, InputManager
                 getString(R.string.unmute),
                 unmutePendingIntent
             )
-            pictureInPictureActions.add(unmuteAction)
+            pictureInPictureActions.add(unmuteRemoteAction)
         } else {
             val muteIcon = Icon.createWithResource(this@EmulationActivity, R.drawable.ic_pip_mute)
             val mutePendingIntent = PendingIntent.getBroadcast(
@@ -656,13 +656,13 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener, InputManager
                 Intent(actionMute),
                 pendingFlags
             )
-            val muteAction = RemoteAction(
+            val muteRemoteAction = RemoteAction(
                 muteIcon,
                 getString(R.string.mute),
                 getString(R.string.mute),
                 mutePendingIntent
             )
-            pictureInPictureActions.add(muteAction)
+            pictureInPictureActions.add(muteRemoteAction)
         }
 
         return this.apply { setActions(pictureInPictureActions) }
