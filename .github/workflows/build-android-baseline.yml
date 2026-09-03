@@ -1,16 +1,16 @@
-name: Moonwitch Reconstruction Stage 8
+name: Moonwitch Reconstruction Stage 9
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - exp/moonwitch-reconstruction-stage8
+      - exp/moonwitch-reconstruction-stage9
 
 permissions:
   contents: read
 
 concurrency:
-  group: moonwitch-reconstruction-stage8-${{ github.ref }}
+  group: moonwitch-reconstruction-stage9-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -59,7 +59,12 @@ jobs:
         run: |
           python3 .github/scripts/apply_moonwitch_reconstruction_stage8_runner.py
 
-      - name: Guard scene-history integrity and TOTK foliage workaround
+      - name: Apply Moonwitch Reconstruction Stage 9
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_moonwitch_reconstruction_stage9.py
+
+      - name: Guard motion-evidence integrity and TOTK foliage workaround
         shell: bash
         run: |
           if ! grep -q "TOTK_PROGRAM_ID" src/video_core/renderer_vulkan/vk_rasterizer.cpp; then
@@ -76,9 +81,12 @@ jobs:
           grep -q "SGSR2RecordImageLineage" src/video_core/renderer_vulkan/vk_texture_cache.cpp
           grep -q "scene_history_correlated" src/video_core/renderer_vulkan/vk_rasterizer.h
           grep -q "Moonwitch SGSR2 scene history match" src/video_core/renderer_vulkan/present/layer.cpp
+          grep -q "motion_scene_history_evidence" src/video_core/renderer_vulkan/present/sgsr2_runtime_inputs.h
+          grep -q "Moonwitch SGSR2 motion scene-history evidence" src/video_core/renderer_vulkan/present/layer.cpp
+          grep -q "Stage 9 intentionally keeps motion_valid false" src/video_core/renderer_vulkan/present/layer.cpp
           grep -q "ReadyForTemporalDispatch" src/video_core/renderer_vulkan/present/sgsr2_runtime_inputs.h
           if grep -Eq "sgsr2_inputs\.motion_valid[[:space:]]*=[[:space:]]*true" src/video_core/renderer_vulkan/present/layer.cpp; then
-            echo "Stage 8 attempted to promote unverified motion data; refusing to build."
+            echo "Stage 9 attempted to promote unverified motion data; refusing to build."
             exit 1
           fi
 
@@ -119,12 +127,12 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-RECONSTRUCTION-STAGE8
+          name: MOONWITCH-RECONSTRUCTION-STAGE9
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7
 
-      - name: Validate generated Stage 8 sources
+      - name: Validate generated Stage 9 sources
         shell: bash
         run: |
           git diff --check
