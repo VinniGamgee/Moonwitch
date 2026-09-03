@@ -18,6 +18,7 @@
     <dimen name="mw_ui_page_hpad">18dp</dimen>
     <dimen name="mw_ui_card_radius">18dp</dimen>
     <dimen name="mw_ui_nav_height">82dp</dimen>
+    <dimen name="mtrl_card_checked_icon_margin">8dp</dimen>
 
     <string name="mw_ui_switch_emulator">SWITCH EMULATOR</string>
     <string name="mw_ui_library">Biblioteca</string>
