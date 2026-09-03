@@ -4,259 +4,306 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/moonwitch_background">
-
-    <ImageView
-        android:layout_width="300dp"
-        android:layout_height="300dp"
-        android:alpha="0.024"
-        android:contentDescription="@null"
-        android:src="@drawable/ic_moonwitch_mark"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+    android:background="@color/mw_ui_bg">
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/list_all"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
         android:clipToPadding="false"
-        android:defaultFocusHighlightEnabled="false"
-        android:fadeScrollbars="false"
         android:fillViewport="true"
         android:overScrollMode="never"
-        android:scrollbars="vertical">
+        app:layout_constraintBottom_toTopOf="@id/bottom_nav"
+        app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
             android:id="@+id/layout_all"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
             android:orientation="vertical">
 
-            <androidx.constraintlayout.widget.ConstraintLayout
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="72dp"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="4dp"
-                android:layout_marginEnd="16dp">
+                android:layout_height="300dp">
+
+                <ImageView
+                    android:id="@+id/hero_game_image"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:alpha="0.72"
+                    android:scaleType="centerCrop"
+                    tools:src="@drawable/default_icon" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/mw_game_hero_scrim" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/button_back"
                     style="@style/Widget.Material3.Button.IconButton.Filled"
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
-                    android:backgroundTint="@color/moonwitch_panel_high"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_gravity="top|start"
+                    android:layout_marginStart="18dp"
+                    android:layout_marginTop="18dp"
+                    android:backgroundTint="#B3181822"
                     android:contentDescription="@string/back"
                     app:icon="@drawable/ic_back"
-                    app:iconSize="20dp"
-                    app:iconTint="@color/moonwitch_cyan"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:strokeColor="@color/moonwitch_border"
-                    app:strokeWidth="1dp" />
+                    app:iconSize="24dp"
+                    app:iconTint="@color/mw_ui_text" />
 
-                <ImageView
-                    android:id="@+id/game_brand_mark"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_marginStart="10dp"
-                    android:contentDescription="@null"
-                    android:src="@drawable/ic_moonwitch_mark"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toEndOf="@id/button_back"
-                    app:layout_constraintTop_toTopOf="parent" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/hero_more_button"
+                    style="@style/Widget.Material3.Button.IconButton.Filled"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="18dp"
+                    android:layout_marginEnd="18dp"
+                    android:backgroundTint="#B3181822"
+                    android:contentDescription="@string/mw_ui_more"
+                    app:icon="@drawable/ic_more_vert"
+                    app:iconSize="24dp"
+                    app:iconTint="@color/mw_ui_text" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="18dp"
+                android:layout_marginTop="-50dp"
+                android:layout_marginEnd="18dp"
+                android:gravity="bottom"
+                android:orientation="horizontal">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="112dp"
+                    android:layout_height="144dp"
+                    app:cardBackgroundColor="@color/mw_ui_surface"
+                    app:cardCornerRadius="15dp"
+                    app:cardElevation="4dp"
+                    app:strokeColor="@color/mw_ui_border_accent"
+                    app:strokeWidth="1dp">
+                    <ImageView
+                        android:id="@+id/image_game_screen"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:padding="3dp"
+                        android:scaleType="fitCenter"
+                        tools:src="@drawable/default_icon" />
+                </com.google.android.material.card.MaterialCardView>
 
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="10dp"
-                    android:layout_marginEnd="8dp"
+                    android:layout_marginStart="16dp"
+                    android:layout_weight="1"
                     android:orientation="vertical"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toStartOf="@id/button_shortcut"
-                    app:layout_constraintStart_toEndOf="@id/game_brand_mark"
-                    app:layout_constraintTop_toTopOf="parent">
-
+                    android:paddingBottom="6dp">
                     <TextView
-                        android:layout_width="wrap_content"
+                        android:id="@+id/title"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:fontFamily="sans-serif-medium"
-                        android:letterSpacing="0.10"
-                        android:maxLines="1"
-                        android:text="@string/app_name"
-                        android:textAllCaps="true"
-                        android:textColor="@color/moonwitch_text"
-                        android:textSize="20sp" />
-
+                        android:maxLines="3"
+                        android:textColor="@color/mw_ui_text"
+                        android:textSize="23sp"
+                        android:textStyle="bold"
+                        tools:text="The Legend of Zelda: Tears of the Kingdom" />
                     <TextView
-                        android:layout_width="wrap_content"
+                        android:id="@+id/game_metadata"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="1dp"
-                        android:fontFamily="sans-serif-medium"
-                        android:letterSpacing="0.18"
-                        android:maxLines="1"
-                        android:text="@string/preferences_settings"
-                        android:textAllCaps="true"
-                        android:textColor="@color/moonwitch_cyan"
-                        android:textSize="8.5sp" />
+                        android:layout_marginTop="7dp"
+                        android:textColor="@color/mw_ui_text_2"
+                        android:textSize="13sp"
+                        tools:text="Nintendo • 16.0.0" />
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="wrap_content"
+                        android:layout_height="30dp"
+                        android:layout_marginTop="8dp"
+                        app:cardBackgroundColor="@color/mw_ui_accent_soft"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="0dp"
+                        app:strokeColor="@color/mw_ui_border_accent"
+                        app:strokeWidth="1dp">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:gravity="center"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp"
+                            android:text="@string/mw_ui_installed"
+                            android:textColor="@color/mw_ui_accent_hi"
+                            android:textSize="12sp" />
+                    </com.google.android.material.card.MaterialCardView>
+                </LinearLayout>
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/button_start"
+                android:layout_width="match_parent"
+                android:layout_height="58dp"
+                android:layout_marginStart="18dp"
+                android:layout_marginTop="22dp"
+                android:layout_marginEnd="18dp"
+                android:backgroundTint="@color/mw_ui_accent"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/mw_ui_play"
+                android:textAllCaps="false"
+                android:textColor="@color/mw_ui_text"
+                android:textSize="18sp"
+                app:cornerRadius="16dp"
+                app:icon="@drawable/ic_play"
+                app:iconGravity="textStart"
+                app:iconSize="22dp"
+                app:iconTint="@color/mw_ui_text" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="84dp"
+                android:layout_marginStart="14dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginEnd="14dp"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <LinearLayout android:id="@+id/button_favorite" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:clickable="true" android:focusable="true" android:gravity="center" android:orientation="vertical">
+                    <ImageView android:id="@+id/favorite_icon" android:layout_width="27dp" android:layout_height="27dp" android:contentDescription="@null" android:src="@drawable/ic_mw_star" app:tint="@color/mw_ui_text" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="@string/mw_ui_favorite" android:textColor="@color/mw_ui_text_2" android:textSize="12sp" />
                 </LinearLayout>
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/button_shortcut"
-                    style="@style/Widget.Material3.Button.IconButton.Filled"
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
-                    android:backgroundTint="@color/moonwitch_panel_high"
-                    android:contentDescription="@string/app_name"
-                    app:icon="@drawable/ic_shortcut"
-                    app:iconSize="20dp"
-                    app:iconTint="@color/moonwitch_red"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:strokeColor="@color/moonwitch_border"
-                    app:strokeWidth="1dp" />
-            </androidx.constraintlayout.widget.ConstraintLayout>
+                <LinearLayout android:id="@+id/button_game_settings" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:clickable="true" android:focusable="true" android:gravity="center" android:orientation="vertical">
+                    <ImageView android:layout_width="27dp" android:layout_height="27dp" android:contentDescription="@null" android:src="@drawable/ic_settings" app:tint="@color/mw_ui_text" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="@string/mw_ui_settings" android:textColor="@color/mw_ui_text_2" android:textSize="12sp" />
+                </LinearLayout>
+
+                <LinearLayout android:id="@+id/button_cheats" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:clickable="true" android:focusable="true" android:gravity="center" android:orientation="vertical">
+                    <ImageView android:layout_width="27dp" android:layout_height="27dp" android:contentDescription="@null" android:src="@drawable/ic_controller" app:tint="@color/mw_ui_text" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="Cheats" android:textColor="@color/mw_ui_text_2" android:textSize="12sp" />
+                </LinearLayout>
+
+                <LinearLayout android:id="@+id/button_more" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:clickable="true" android:focusable="true" android:gravity="center" android:orientation="vertical">
+                    <ImageView android:layout_width="27dp" android:layout_height="27dp" android:contentDescription="@null" android:src="@drawable/ic_more_vert" app:tint="@color/mw_ui_text" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="@string/mw_ui_more" android:textColor="@color/mw_ui_text_2" android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
 
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/details_card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="16dp"
-                android:layout_marginTop="4dp"
-                app:cardBackgroundColor="@color/moonwitch_panel_high"
-                app:cardCornerRadius="20dp"
+                android:layout_marginStart="18dp"
+                android:layout_marginTop="2dp"
+                android:layout_marginEnd="18dp"
+                app:cardBackgroundColor="@color/mw_ui_surface"
+                app:cardCornerRadius="18dp"
                 app:cardElevation="0dp"
-                app:strokeColor="@color/moonwitch_border"
+                app:strokeColor="@color/mw_ui_border"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="14dp">
-
-                    <com.google.android.material.card.MaterialCardView
-                        android:layout_width="108dp"
-                        android:layout_height="108dp"
-                        app:cardBackgroundColor="@color/moonwitch_panel_soft"
-                        app:cardCornerRadius="14dp"
-                        app:cardElevation="0dp"
-                        app:strokeColor="@color/moonwitch_border_soft"
-                        app:strokeWidth="1dp">
-
-                        <ImageView
-                            android:id="@+id/image_game_screen"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:padding="3dp"
-                            android:scaleType="fitCenter"
-                            tools:src="@drawable/default_icon" />
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="sans-serif-medium" android:text="@string/mw_ui_description" android:textColor="@color/mw_ui_text" android:textSize="17sp" />
+                    <TextView
+                        android:id="@+id/game_description"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_marginTop="8dp"
+                        android:text="Informações e ajustes do jogo instalados no Moonwitch."
+                        android:textColor="@color/mw_ui_text_2"
+                        android:textSize="13sp" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
-                            android:letterSpacing="0.13"
-                            android:text="PER-GAME"
-                            android:textColor="@color/moonwitch_red"
-                            android:textSize="8.5sp" />
-
-                        <TextView
-                            android:id="@+id/title"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="5dp"
-                            android:fontFamily="sans-serif-medium"
-                            android:maxLines="3"
-                            android:textColor="@color/moonwitch_text"
-                            android:textSize="16sp"
-                            tools:text="The Legend of Zelda: Tears of the Kingdom" />
-
-                        <TextView
-                            android:id="@+id/playtime"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="7dp"
-                            android:maxLines="1"
-                            android:textColor="@color/moonwitch_cyan"
-                            android:textSize="10.5sp"
-                            tools:text="Tempo de jogo: 40min 55seg" />
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginTop="14dp" android:background="@color/mw_ui_divider" />
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="48dp" android:gravity="center_vertical" android:orientation="horizontal">
+                        <ImageView android:layout_width="21dp" android:layout_height="21dp" android:contentDescription="@null" android:src="@drawable/ic_mw_clock" app:tint="@color/mw_ui_text" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:layout_weight="1" android:text="@string/playtime" android:textColor="@color/mw_ui_text" android:textSize="13sp" />
+                        <TextView android:id="@+id/playtime" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/mw_ui_text_2" android:textSize="13sp" tools:text="125h 30m" />
+                    </LinearLayout>
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/mw_ui_divider" />
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="48dp" android:gravity="center_vertical" android:orientation="horizontal">
+                        <ImageView android:layout_width="21dp" android:layout_height="21dp" android:contentDescription="@null" android:src="@drawable/ic_mw_clock" app:tint="@color/mw_ui_text" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:layout_weight="1" android:text="@string/mw_ui_last_played" android:textColor="@color/mw_ui_text" android:textSize="13sp" />
+                        <TextView android:id="@+id/last_played" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/mw_ui_text_2" android:textSize="13sp" tools:text="Hoje" />
+                    </LinearLayout>
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/mw_ui_divider" />
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="48dp" android:gravity="center_vertical" android:orientation="horizontal">
+                        <ImageView android:layout_width="21dp" android:layout_height="21dp" android:contentDescription="@null" android:src="@drawable/ic_info_outline" app:tint="@color/mw_ui_text" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:layout_weight="1" android:text="@string/mw_ui_size" android:textColor="@color/mw_ui_text" android:textSize="13sp" />
+                        <TextView android:id="@+id/file_size" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/mw_ui_text_2" android:textSize="13sp" tools:text="16.2 GB" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <LinearLayout
-                android:layout_width="match_parent"
+            <TextView
+                android:id="@+id/more_options_label"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="22dp"
-                android:layout_marginTop="18dp"
-                android:layout_marginEnd="22dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <ImageView
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:contentDescription="@null"
-                    android:src="@drawable/ic_settings"
-                    app:tint="@color/moonwitch_cyan" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="9dp"
-                    android:fontFamily="sans-serif-medium"
-                    android:letterSpacing="0.14"
-                    android:text="@string/preferences_settings"
-                    android:textAllCaps="true"
-                    android:textColor="@color/moonwitch_text_muted"
-                    android:textSize="9.5sp" />
-            </LinearLayout>
+                android:layout_marginTop="20dp"
+                android:text="Mais opções"
+                android:textColor="@color/mw_ui_accent_hi"
+                android:textSize="14sp" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/list_properties"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="7dp"
+                android:layout_marginTop="8dp"
                 android:clipToPadding="false"
-                android:defaultFocusHighlightEnabled="false"
                 android:nestedScrollingEnabled="false"
+                android:paddingBottom="16dp"
                 tools:listitem="@layout/card_moonwitch_game_property" />
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/button_shortcut"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginStart="18dp"
+                android:layout_marginEnd="18dp"
+                android:layout_marginBottom="18dp"
+                android:text="Criar atalho na tela inicial"
+                android:textAllCaps="false"
+                app:cornerRadius="14dp" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/button_start"
-        style="@style/Widget.Material3.Button"
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/bottom_nav"
         android:layout_width="0dp"
-        android:layout_height="56dp"
+        android:layout_height="82dp"
         android:layout_marginStart="18dp"
         android:layout_marginEnd="18dp"
-        android:layout_marginBottom="14dp"
-        android:backgroundTint="@color/moonwitch_red"
-        android:fontFamily="sans-serif-medium"
-        android:text="@string/start"
-        android:textAllCaps="false"
-        android:textColor="@android:color/white"
-        android:textSize="14sp"
-        app:cornerRadius="18dp"
-        app:icon="@drawable/ic_play"
-        app:iconGravity="textStart"
-        app:iconSize="20dp"
-        app:iconTint="@android:color/white"
+        android:layout_marginBottom="8dp"
+        app:cardBackgroundColor="@color/mw_ui_surface"
+        app:cardCornerRadius="36dp"
+        app:cardElevation="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:strokeColor="@color/mw_ui_border"
+        app:strokeWidth="1dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:orientation="horizontal" android:padding="6dp">
+            <LinearLayout android:id="@+id/nav_home" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:clickable="true" android:focusable="true" android:gravity="center" android:orientation="vertical">
+                <ImageView android:layout_width="27dp" android:layout_height="27dp" android:contentDescription="@null" android:src="@drawable/ic_home" app:tint="@color/mw_ui_text_2" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:text="@string/mw_ui_home" android:textColor="@color/mw_ui_text_2" android:textSize="12sp" />
+            </LinearLayout>
+            <com.google.android.material.card.MaterialCardView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" app:cardBackgroundColor="@color/mw_ui_accent_soft" app:cardCornerRadius="28dp" app:cardElevation="0dp">
+                <LinearLayout android:id="@+id/nav_games" android:layout_width="match_parent" android:layout_height="match_parent" android:clickable="true" android:focusable="true" android:gravity="center" android:orientation="vertical">
+                    <ImageView android:layout_width="28dp" android:layout_height="28dp" android:contentDescription="@null" android:src="@drawable/ic_controller" app:tint="@color/mw_ui_accent" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="@string/mw_ui_games" android:textColor="@color/mw_ui_accent_hi" android:textSize="12sp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+            <LinearLayout android:id="@+id/nav_settings" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:clickable="true" android:focusable="true" android:gravity="center" android:orientation="vertical">
+                <ImageView android:layout_width="28dp" android:layout_height="28dp" android:contentDescription="@null" android:src="@drawable/ic_settings" app:tint="@color/mw_ui_text_2" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="@string/mw_ui_settings" android:textColor="@color/mw_ui_text_2" android:textSize="12sp" />
+            </LinearLayout>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
