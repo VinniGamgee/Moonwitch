@@ -983,4 +983,21 @@
     <string name="moonwitch_tuner_status_winner_restart">TUNE | vencedor W%1$d • reinicie</string>
     <string name="moonwitch_tuner_status_winner_active">TUNE | vencedor W%1$d • ativo</string>
     <string name="moonwitch_tuner_status_error">TUNE | falha ao salvar • mantenha pressionado para reiniciar</string>
+
+    <string name="mw_gamehub_kicker">Central do jogo Moonwitch</string>
+    <string name="mw_gamehub_play">Jogar</string>
+    <string name="mw_gamehub_panel">Painel do jogo</string>
+    <string name="mw_gamehub_unknown_developer">Título de Nintendo Switch</string>
+    <string name="mw_gamehub_playtime_value">Tempo jogado • %1$s</string>
+    <string name="mw_gamehub_performance_desc">SAFS, frame pacing, geração de quadros, clocks e ajustes de desempenho</string>
+    <string name="mw_gamehub_graphics_desc">Resolução, reconstrução, filtros e qualidade de imagem</string>
+    <string name="mw_gamehub_content">Conteúdo</string>
+    <string name="mw_gamehub_content_desc">Mods, updates e DLC instalados para este jogo</string>
+    <string name="mw_gamehub_statistics">Estatísticas</string>
+    <string name="mw_gamehub_statistics_desc">Tempo de jogo registrado e atividade do título</string>
+    <string name="mw_gamehub_advanced">Configurações avançadas</string>
+    <string name="mw_gamehub_advanced_desc">Sistema, áudio, controles e outros ajustes específicos do jogo</string>
+    <string name="mw_gamehub_info">Informações do jogo</string>
+    <string name="mw_gamehub_info_desc">Title ID, versão e informações técnicas</string>
+
 </resources>

@@ -1908,4 +1908,21 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <string name="add_folders">Add Folder</string>
     <string name="percent">%1$d%%</string>
 
+
+    <string name="mw_gamehub_kicker">Moonwitch Game Hub</string>
+    <string name="mw_gamehub_play">Play</string>
+    <string name="mw_gamehub_panel">Game panel</string>
+    <string name="mw_gamehub_unknown_developer">Nintendo Switch title</string>
+    <string name="mw_gamehub_playtime_value">Play time • %1$s</string>
+    <string name="mw_gamehub_performance_desc">SAFS, frame pacing, frame generation, clocks and performance tuning</string>
+    <string name="mw_gamehub_graphics_desc">Resolution, reconstruction, filtering and image quality</string>
+    <string name="mw_gamehub_content">Content</string>
+    <string name="mw_gamehub_content_desc">Mods, updates and DLC installed for this game</string>
+    <string name="mw_gamehub_statistics">Statistics</string>
+    <string name="mw_gamehub_statistics_desc">Registered play time and game activity</string>
+    <string name="mw_gamehub_advanced">Advanced settings</string>
+    <string name="mw_gamehub_advanced_desc">System, audio, controls and additional per-game overrides</string>
+    <string name="mw_gamehub_info">Game information</string>
+    <string name="mw_gamehub_info_desc">Title ID, version and technical information</string>
+
 </resources>

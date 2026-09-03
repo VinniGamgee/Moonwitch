@@ -38,7 +38,9 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Medium"
-                android:scaleType="centerCrop"
+                android:scaleType="fitCenter"
+                android:background="@color/moonwitch_panel_high"
+                android:padding="2dp"
                 tools:src="@drawable/default_icon" />
 
             <com.google.android.material.textview.MaterialTextView

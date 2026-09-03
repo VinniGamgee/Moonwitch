@@ -243,52 +243,8 @@ class GameAdapter(private val activity: AppCompatActivity) :
                 return
             }
 
-            val launch: () -> Unit = {
-                val preferences =
-                    PreferenceManager.getDefaultSharedPreferences(YuzuApplication.appContext)
-                preferences.edit {
-                    putLong(
-                        game.keyLastPlayedTime,
-                        System.currentTimeMillis()
-                    )
-                }
-
-                activity.lifecycleScope.launch {
-                    withContext(Dispatchers.IO) {
-                        val shortcut =
-                            ShortcutInfoCompat.Builder(YuzuApplication.appContext, game.path)
-                                .setShortLabel(game.title)
-                                .setIcon(GameIconUtils.getShortcutIcon(activity, game))
-                                .setIntent(game.launchIntent)
-                                .build()
-                        ShortcutManagerCompat.pushDynamicShortcut(
-                            YuzuApplication.appContext,
-                            shortcut
-                        )
-                    }
-                }
-
-                val action = HomeNavigationDirections.actionGlobalEmulationActivity(game, true)
-                binding.root.findNavController().navigate(action)
-            }
-
-            if (NativeLibrary.gameRequiresFirmware(game.programId) && !NativeLibrary.isFirmwareAvailable()) {
-                MaterialAlertDialogBuilder(activity)
-                    .setTitle(R.string.loader_requires_firmware)
-                    .setMessage(
-                        Html.fromHtml(
-                            activity.getString(R.string.loader_requires_firmware_description),
-                            Html.FROM_HTML_MODE_LEGACY
-                        )
-                    )
-                    .setPositiveButton(android.R.string.ok) { _: DialogInterface?, _: Int ->
-                        launch()
-                    }
-                    .setNegativeButton(android.R.string.cancel) { _, _ -> }
-                    .show()
-            } else {
-                launch()
-            }
+            val action = HomeNavigationDirections.actionGlobalPerGamePropertiesFragment(game)
+            binding.root.findNavController().navigate(action)
         }
 
         fun onLongClick(game: Game): Boolean {

@@ -24,7 +24,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.preference.PreferenceManager
-import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.transition.MaterialSharedAxis
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -39,7 +39,6 @@ import org.yuzu.yuzu_emu.features.DocumentProvider
 import org.yuzu.yuzu_emu.features.settings.model.Settings
 import org.yuzu.yuzu_emu.features.settings.ui.SettingsSubscreen
 import org.yuzu.yuzu_emu.model.AddonViewModel
-import org.yuzu.yuzu_emu.model.DriverViewModel
 import org.yuzu.yuzu_emu.model.GameProperty
 import org.yuzu.yuzu_emu.model.GamesViewModel
 import org.yuzu.yuzu_emu.model.HomeViewModel
@@ -52,10 +51,8 @@ import org.yuzu.yuzu_emu.utils.DirectoryInitialization
 import org.yuzu.yuzu_emu.utils.FileUtil
 import org.yuzu.yuzu_emu.utils.GameHelper
 import org.yuzu.yuzu_emu.utils.GameIconUtils
-import org.yuzu.yuzu_emu.utils.GpuDriverHelper
 import org.yuzu.yuzu_emu.utils.MemoryUtil
 import org.yuzu.yuzu_emu.utils.ViewUtils.marquee
-import org.yuzu.yuzu_emu.utils.ViewUtils.updateMargins
 import org.yuzu.yuzu_emu.utils.collect
 import java.io.BufferedOutputStream
 import java.io.File
@@ -67,7 +64,6 @@ class GamePropertiesFragment : Fragment() {
     private val homeViewModel: HomeViewModel by activityViewModels()
     private val gamesViewModel: GamesViewModel by activityViewModels()
     private val addonViewModel: AddonViewModel by activityViewModels()
-    private val driverViewModel: DriverViewModel by activityViewModels()
 
     private val args by navArgs<GamePropertiesFragmentArgs>()
 
@@ -114,8 +110,12 @@ class GamePropertiesFragment : Fragment() {
         }
 
         GameIconUtils.loadGameIcon(args.game, binding.imageGameScreen)
+        GameIconUtils.loadGameIcon(args.game, binding.imageGameBackdrop)
         binding.title.text = args.game.title
         binding.title.marquee()
+        binding.developer.text = args.game.developer.ifBlank {
+            getString(R.string.mw_gamehub_unknown_developer)
+        }
 
         getPlayTime()
 
@@ -236,26 +236,22 @@ class GamePropertiesFragment : Fragment() {
         }
     }
 
-    private fun getPlayTime() {
-        binding.playtime.text = buildString {
-            val playTimeSeconds = NativeLibrary.playTimeManagerGetPlayTime(args.game.programId)
+    private fun readablePlayTime(): String {
+        val playTimeSeconds = NativeLibrary.playTimeManagerGetPlayTime(args.game.programId)
+        val hours = playTimeSeconds / 3600
+        val minutes = (playTimeSeconds % 3600) / 60
+        val seconds = playTimeSeconds % 60
 
-            val hours = playTimeSeconds / 3600
-            val minutes = (playTimeSeconds % 3600) / 60
-            val seconds = playTimeSeconds % 60
-
-            val readablePlayTime = when {
+        return when {
             hours > 0 -> "$hours${getString(R.string.hours_abbr)} $minutes${getString(R.string.minutes_abbr)} $seconds${getString(R.string.seconds_abbr)}"
             minutes > 0 -> "$minutes${getString(R.string.minutes_abbr)} $seconds${getString(R.string.seconds_abbr)}"
             else -> "$seconds${getString(R.string.seconds_abbr)}"
-}
-
-            append(getString(R.string.playtime) + " " + readablePlayTime)
         }
+    }
 
-        binding.playtime.setOnClickListener {
-            showEditPlaytimeDialog()
-        }
+    private fun getPlayTime() {
+        binding.playtime.text = getString(R.string.mw_gamehub_playtime_value, readablePlayTime())
+        binding.playtime.setOnClickListener { showEditPlaytimeDialog() }
     }
 
     private fun showEditPlaytimeDialog() {
@@ -342,8 +338,142 @@ class GamePropertiesFragment : Fragment() {
     private fun reloadList() {
         _binding ?: return
 
-        driverViewModel.updateDriverNameForGame(args.game)
         val properties = mutableListOf<GameProperty>().apply {
+            add(
+                SubmenuProperty(
+                    R.string.mw_ui_performance,
+                    R.string.mw_gamehub_performance_desc,
+                    R.drawable.ic_mw_gauge,
+                    action = {
+                        val action = HomeNavigationDirections.actionGlobalSettingsActivity(
+                            args.game,
+                            Settings.MenuTag.SECTION_MOONWITCH_PERFORMANCE
+                        )
+                        binding.root.findNavController().navigate(action)
+                    }
+                )
+            )
+            add(
+                SubmenuProperty(
+                    R.string.mw_ui_graphics,
+                    R.string.mw_gamehub_graphics_desc,
+                    R.drawable.ic_graphics,
+                    action = {
+                        val action = HomeNavigationDirections.actionGlobalSettingsActivity(
+                            args.game,
+                            Settings.MenuTag.SECTION_RENDERER
+                        )
+                        binding.root.findNavController().navigate(action)
+                    }
+                )
+            )
+            add(
+                SubmenuProperty(
+                    R.string.mw_drivers_components,
+                    R.string.mw_drivers_components_desc,
+                    R.drawable.ic_build,
+                    action = {
+                        val action = HomeNavigationDirections.actionGlobalSettingsActivity(
+                            args.game,
+                            Settings.MenuTag.SECTION_DRIVERS_COMPONENTS
+                        )
+                        binding.root.findNavController().navigate(action)
+                    }
+                )
+            )
+            if (!args.game.isHomebrew) {
+                add(
+                    SubmenuProperty(
+                        R.string.mw_gamehub_content,
+                        R.string.mw_gamehub_content_desc,
+                        R.drawable.ic_edit,
+                        action = {
+                            val action = HomeNavigationDirections.actionGlobalSettingsSubscreenActivity(
+                                SettingsSubscreen.ADDONS,
+                                args.game
+                            )
+                            binding.root.findNavController().navigate(action)
+                        }
+                    )
+                )
+            }
+            add(
+                SubmenuProperty(
+                    R.string.mw_gamehub_statistics,
+                    R.string.mw_gamehub_statistics_desc,
+                    R.drawable.ic_info_outline,
+                    details = { readablePlayTime() },
+                    action = { showEditPlaytimeDialog() }
+                )
+            )
+            add(
+                SubmenuProperty(
+                    R.string.device_profile_title,
+                    R.string.device_profile_description,
+                    R.drawable.ic_graphics,
+                    details = { DeviceProfileManager.cardDetails(requireContext(), args.game) },
+                    action = { showDeviceProfileDialog() }
+                )
+            )
+            add(
+                SubmenuProperty(
+                    R.string.mw_gamehub_advanced,
+                    R.string.mw_gamehub_advanced_desc,
+                    R.drawable.ic_settings,
+                    action = {
+                        val action = HomeNavigationDirections.actionGlobalSettingsActivity(
+                            args.game,
+                            Settings.MenuTag.SECTION_ROOT
+                        )
+                        binding.root.findNavController().navigate(action)
+                    },
+                    secondaryActions = buildList {
+                        val configExists = File(
+                            DirectoryInitialization.userDirectory +
+                                "/config/custom/" + args.game.settingsName + ".ini"
+                        ).exists()
+
+                        add(SubMenuPropertySecondaryAction(
+                            isShown = configExists,
+                            descriptionId = R.string.import_config,
+                            iconId = R.drawable.ic_import,
+                            action = { importConfig.launch(arrayOf("text/ini", "application/octet-stream")) }
+                        ))
+                        add(SubMenuPropertySecondaryAction(
+                            isShown = configExists,
+                            descriptionId = R.string.export_config,
+                            iconId = R.drawable.ic_export,
+                            action = { exportConfig.launch(args.game.settingsName + ".ini") }
+                        ))
+                        add(SubMenuPropertySecondaryAction(
+                            isShown = configExists,
+                            descriptionId = R.string.share_game_settings,
+                            iconId = R.drawable.ic_share,
+                            action = {
+                                val configFile = File(
+                                    DirectoryInitialization.userDirectory +
+                                        "/config/custom/" + args.game.settingsName + ".ini"
+                                )
+                                if (configFile.exists()) shareConfigFile(configFile)
+                            }
+                        ))
+                    }
+                )
+            )
+            add(
+                SubmenuProperty(
+                    R.string.mw_gamehub_info,
+                    R.string.mw_gamehub_info_desc,
+                    R.drawable.ic_info_outline,
+                    action = {
+                        val action = HomeNavigationDirections.actionGlobalSettingsSubscreenActivity(
+                            SettingsSubscreen.GAME_INFO,
+                            args.game
+                        )
+                        binding.root.findNavController().navigate(action)
+                    }
+                )
+            )
             val favorite = isFavorite()
             add(
                 SubmenuProperty(
@@ -359,154 +489,6 @@ class GamePropertiesFragment : Fragment() {
                     action = { toggleFavorite() }
                 )
             )
-            add(
-                SubmenuProperty(
-                    R.string.info,
-                    R.string.info_description,
-                    R.drawable.ic_info_outline,
-                    action = {
-                        val action = HomeNavigationDirections.actionGlobalSettingsSubscreenActivity(
-                            SettingsSubscreen.GAME_INFO,
-                            args.game
-                        )
-                        binding.root.findNavController().navigate(action)
-                    }
-                )
-            )
-            add(
-                SubmenuProperty(
-                    R.string.preferences_settings,
-                    R.string.per_game_settings_description,
-                    R.drawable.ic_settings,
-                    action = {
-                        val action = HomeNavigationDirections.actionGlobalSettingsActivity(
-                            args.game,
-                            Settings.MenuTag.SECTION_ROOT
-                        )
-                        binding.root.findNavController().navigate(action)
-                    },
-                    secondaryActions = buildList {
-                        val configExists = File(
-                            DirectoryInitialization.userDirectory +
-                                    "/config/custom/" + args.game.settingsName + ".ini"
-                        ).exists()
-
-                        add(SubMenuPropertySecondaryAction(
-                            isShown = configExists,
-                            descriptionId = R.string.import_config,
-                            iconId = R.drawable.ic_import,
-                            action = {
-                                importConfig.launch(arrayOf("text/ini", "application/octet-stream"))
-                            }
-                        ))
-
-                        add(SubMenuPropertySecondaryAction(
-                            isShown = configExists,
-                            descriptionId = R.string.export_config,
-                            iconId = R.drawable.ic_export,
-                            action = {
-                                exportConfig.launch(args.game.settingsName + ".ini")
-                            }
-                        ))
-
-                        add(SubMenuPropertySecondaryAction(
-                            isShown = configExists,
-                            descriptionId = R.string.share_game_settings,
-                            iconId = R.drawable.ic_share,
-                            action = {
-                                val configFile = File(
-                                    DirectoryInitialization.userDirectory +
-                                            "/config/custom/" + args.game.settingsName + ".ini"
-                                )
-                                if (configFile.exists()) {
-                                    shareConfigFile(configFile)
-                                }
-                            }
-                        ))
-                    }
-                )
-            )
-
-            add(
-                SubmenuProperty(
-                    R.string.device_profile_title,
-                    R.string.device_profile_description,
-                    R.drawable.ic_graphics,
-                    details = {
-                        DeviceProfileManager.cardDetails(requireContext(), args.game)
-                    },
-                    action = { showDeviceProfileDialog() }
-                )
-            )
-
-            if (!args.game.isHomebrew) {
-                add(
-                    SubmenuProperty(
-                        R.string.add_ons,
-                        R.string.add_ons_description,
-                        R.drawable.ic_edit,
-                        action = {
-                            val action =
-                                HomeNavigationDirections.actionGlobalSettingsSubscreenActivity(
-                                    SettingsSubscreen.ADDONS,
-                                    args.game
-                                )
-                            binding.root.findNavController().navigate(action)
-                        }
-                    )
-                )
-            }
-
-            if (GpuDriverHelper.supportsCustomDriverLoading()) {
-                add(
-                    SubmenuProperty(
-                        R.string.gpu_driver_manager,
-                        R.string.install_gpu_driver_description,
-                        R.drawable.ic_build,
-                        detailsFlow = driverViewModel.selectedDriverTitle,
-                        action = {
-                            val action =
-                                HomeNavigationDirections.actionGlobalSettingsSubscreenActivity(
-                                    SettingsSubscreen.DRIVER_MANAGER,
-                                    args.game
-                                )
-                            binding.root.findNavController().navigate(action)
-                        }
-                    )
-                )
-            }
-            add(
-                SubmenuProperty(
-                    R.string.frame_gen,
-                    R.string.frame_gen_per_game_description,
-                    R.drawable.ic_duck,
-                    action = {
-                        val action = HomeNavigationDirections.actionGlobalSettingsActivity(
-                            args.game,
-                            Settings.MenuTag.SECTION_FRAME_GEN
-                        )
-                        binding.root.findNavController().navigate(action)
-                    }
-                )
-            )
-
-            if (GpuDriverHelper.isAdrenoGpu()) {
-                add(
-                    SubmenuProperty(
-                        R.string.freedreno_per_game_title,
-                        R.string.freedreno_per_game_description,
-                        R.drawable.ic_graphics,
-                        action = {
-                            val action =
-                                HomeNavigationDirections.actionGlobalSettingsSubscreenActivity(
-                                    SettingsSubscreen.FREEDRENO_SETTINGS,
-                                    args.game
-                                )
-                            binding.root.findNavController().navigate(action)
-                        }
-                    )
-                )
-            }
 
             if (!args.game.isHomebrew) {
                 add(
@@ -626,15 +608,9 @@ class GamePropertiesFragment : Fragment() {
             }
         }
         binding.listProperties.apply {
-            val spanCount = resources.getInteger(R.integer.grid_columns)
-            val staggered = StaggeredGridLayoutManager(
-                spanCount,
-                StaggeredGridLayoutManager.VERTICAL
-            ).apply {
-                gapStrategy = StaggeredGridLayoutManager.GAP_HANDLING_MOVE_ITEMS_BETWEEN_SPANS
-            }
-            layoutManager = staggered
+            layoutManager = LinearLayoutManager(requireContext())
             adapter = GamePropertiesAdapter(viewLifecycleOwner, properties)
+            isNestedScrollingEnabled = false
         }
     }
 
@@ -653,49 +629,20 @@ class GamePropertiesFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        driverViewModel.updateDriverNameForGame(args.game)
         getPlayTime()
         reloadList()
     }
 
     private fun setInsets() =
-        ViewCompat.setOnApplyWindowInsetsListener(
-            binding.root
-        ) { _: View, windowInsets: WindowInsetsCompat ->
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _: View, windowInsets: WindowInsetsCompat ->
             val barInsets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
             val cutoutInsets = windowInsets.getInsets(WindowInsetsCompat.Type.displayCutout())
-
-            val leftInsets = barInsets.left + cutoutInsets.left
-            val rightInsets = barInsets.right + cutoutInsets.right
-
-            val smallLayout = resources.getBoolean(R.bool.small_layout)
-            if (smallLayout) {
-                binding.listAll.updateMargins(left = leftInsets, right = rightInsets)
-            } else {
-                if (ViewCompat.getLayoutDirection(binding.root) ==
-                    ViewCompat.LAYOUT_DIRECTION_LTR
-                ) {
-                    binding.listAll.updateMargins(right = rightInsets)
-                    binding.iconLayout!!.updateMargins(top = barInsets.top, left = leftInsets)
-                } else {
-                    binding.listAll.updateMargins(left = leftInsets)
-                    binding.iconLayout!!.updateMargins(top = barInsets.top, right = rightInsets)
-                }
-            }
-
-            val fabSpacing = resources.getDimensionPixelSize(R.dimen.spacing_fab)
-            binding.buttonStart.updateMargins(
-                left = leftInsets + fabSpacing,
-                right = rightInsets + fabSpacing,
-                bottom = barInsets.bottom + fabSpacing
-            )
-
             binding.layoutAll.updatePadding(
+                left = barInsets.left + cutoutInsets.left,
                 top = barInsets.top,
-                bottom = barInsets.bottom +
-                    resources.getDimensionPixelSize(R.dimen.spacing_bottom_list_fab)
+                right = barInsets.right + cutoutInsets.right,
+                bottom = barInsets.bottom + (24 * resources.displayMetrics.density).toInt()
             )
-
             windowInsets
         }
 

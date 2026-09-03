@@ -1,118 +1,205 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface">
+    android:background="@color/ic_launcher_background">
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/list_all"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:scrollbars="vertical"
-        android:fadeScrollbars="false"
         android:clipToPadding="false"
-        android:defaultFocusHighlightEnabled="false">
+        android:fillViewport="true"
+        android:scrollbars="none">
 
         <LinearLayout
             android:id="@+id/layout_all"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center_horizontal">
+            android:orientation="vertical">
 
-            <androidx.constraintlayout.widget.ConstraintLayout
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="8dp"
-                android:orientation="horizontal">
-
-                <Button
-                    android:id="@+id/button_back"
-                    style="?attr/materialIconButtonStyle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:backgroundTint="@android:color/transparent"
-                    app:icon="@drawable/ic_back"
-                    app:iconSize="24dp"
-                    app:iconTint="?attr/colorOnSurface"
-                    app:strokeColor="?attr/colorOutline"
-                    app:strokeWidth="1dp"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
-
-                <Button
-                    android:id="@+id/button_shortcut"
-                    style="?attr/materialIconButtonStyle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:backgroundTint="@android:color/transparent"
-                    app:icon="@drawable/ic_shortcut"
-                    app:iconSize="24dp"
-                    app:iconTint="?attr/colorOnSurface"
-                    app:strokeColor="?attr/colorOutline"
-                    app:strokeWidth="1dp"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
-
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-            <com.google.android.material.card.MaterialCardView
-                style="?attr/materialCardViewElevatedStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                app:cardCornerRadius="4dp"
-                app:cardElevation="4dp">
+                android:layout_height="350dp">
 
                 <ImageView
-                    android:id="@+id/image_game_screen"
-                    android:layout_width="175dp"
-                    android:layout_height="175dp"
+                    android:id="@+id/image_game_backdrop"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:alpha="0.30"
+                    android:contentDescription="@null"
+                    android:scaleType="centerCrop"
                     tools:src="@drawable/default_icon" />
 
-            </com.google.android.material.card.MaterialCardView>
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/mw_game_hub_hero_scrim" />
 
-            <com.google.android.material.textview.MaterialTextView
-                android:id="@+id/title"
-                style="@style/TextAppearance.Material3.TitleMedium"
-                android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="top"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="14dp"
+                    android:paddingTop="8dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/button_back"
+                        style="?attr/materialIconButtonStyle"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:backgroundTint="@color/moonwitch_panel_soft"
+                        android:contentDescription="@null"
+                        app:icon="@drawable/ic_back"
+                        app:iconSize="22dp"
+                        app:iconTint="@color/moonwitch_text"
+                        app:strokeColor="@color/moonwitch_border_soft"
+                        app:strokeWidth="1dp" />
+
+                    <Space
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/button_shortcut"
+                        style="?attr/materialIconButtonStyle"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:backgroundTint="@color/moonwitch_panel_soft"
+                        android:contentDescription="@null"
+                        app:icon="@drawable/ic_shortcut"
+                        app:iconSize="22dp"
+                        app:iconTint="@color/moonwitch_cyan"
+                        app:strokeColor="@color/moonwitch_border_soft"
+                        app:strokeWidth="1dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom"
+                    android:gravity="bottom"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="18dp"
+                    android:paddingBottom="22dp">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="108dp"
+                        android:layout_height="108dp"
+                        app:cardBackgroundColor="@color/moonwitch_panel_high"
+                        app:cardCornerRadius="22dp"
+                        app:cardElevation="0dp"
+                        app:strokeColor="@color/moonwitch_cyan"
+                        app:strokeWidth="1dp">
+
+                        <com.google.android.material.imageview.ShapeableImageView
+                            android:id="@+id/image_game_screen"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:padding="2dp"
+                            android:scaleType="fitCenter"
+                            app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Medium"
+                            tools:src="@drawable/default_icon" />
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:letterSpacing="0.12"
+                            android:text="@string/mw_gamehub_kicker"
+                            android:textAllCaps="true"
+                            android:textColor="@color/moonwitch_cyan"
+                            android:textSize="9sp" />
+
+                        <TextView
+                            android:id="@+id/title"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="5dp"
+                            android:ellipsize="end"
+                            android:fontFamily="sans-serif-medium"
+                            android:maxLines="2"
+                            android:textColor="@color/moonwitch_text"
+                            android:textSize="22sp"
+                            tools:text="The Legend of Zelda: Tears of the Kingdom" />
+
+                        <TextView
+                            android:id="@+id/developer"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:textColor="@color/moonwitch_text_muted"
+                            android:textSize="11sp"
+                            tools:text="Nintendo" />
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:id="@+id/playtime"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/mw_game_hub_stat_pill"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:paddingHorizontal="10dp"
+                            android:paddingVertical="5dp"
+                            android:textColor="@color/moonwitch_text"
+                            android:textSize="10sp"
+                            tools:text="Tempo jogado • 82h 14m" />
+                    </LinearLayout>
+                </LinearLayout>
+            </FrameLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/button_start"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginHorizontal="18dp"
+                android:layout_marginTop="2dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/mw_gamehub_play"
+                android:textColor="@color/ic_launcher_background"
+                android:textSize="14sp"
+                app:backgroundTint="@color/moonwitch_cyan"
+                app:cornerRadius="18dp"
+                app:icon="@drawable/ic_play"
+                app:iconGravity="textStart"
+                app:iconTint="@color/ic_launcher_background" />
+
+            <TextView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:layout_marginBottom="2dp"
-                android:layout_marginHorizontal="16dp"
-                android:requiresFadingEdge="horizontal"
-                android:textAlignment="center"
-                tools:text="deko_basic" />
-
-            <com.google.android.material.textview.MaterialTextView
-                android:id="@+id/playtime"
-                style="?attr/textAppearanceBodyMedium"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:textAlignment="center"
-                tools:text="Game Playtime" />
-
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="6dp"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.10"
+                android:text="@string/mw_gamehub_panel"
+                android:textAllCaps="true"
+                android:textColor="@color/moonwitch_text_muted"
+                android:textSize="10sp" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/list_properties"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:defaultFocusHighlightEnabled="false" />
-
+                android:layout_height="wrap_content"
+                android:clipToPadding="false"
+                android:nestedScrollingEnabled="false"
+                android:paddingBottom="20dp" />
         </LinearLayout>
-
     </androidx.core.widget.NestedScrollView>
-
-    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-        android:id="@+id/button_start"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/start"
-        app:icon="@drawable/ic_play"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+</FrameLayout>

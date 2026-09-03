@@ -13,7 +13,7 @@ import androidx.lifecycle.LifecycleOwner
 import com.google.android.material.button.MaterialButton
 import org.yuzu.yuzu_emu.R
 import org.yuzu.yuzu_emu.databinding.CardInstallableIconBinding
-import org.yuzu.yuzu_emu.databinding.CardSimpleOutlinedBinding
+import org.yuzu.yuzu_emu.databinding.CardMoonwitchGamePropertyBinding
 import org.yuzu.yuzu_emu.model.GameProperty
 import org.yuzu.yuzu_emu.model.InstallableProperty
 import org.yuzu.yuzu_emu.model.SubmenuProperty
@@ -34,7 +34,7 @@ class GamePropertiesAdapter(
         return when (viewType) {
             PropertyType.Submenu.ordinal -> {
                 SubmenuPropertyViewHolder(
-                    CardSimpleOutlinedBinding.inflate(
+                    CardMoonwitchGamePropertyBinding.inflate(
                         inflater,
                         parent,
                         false
@@ -59,7 +59,7 @@ class GamePropertiesAdapter(
         }
     }
 
-    inner class SubmenuPropertyViewHolder(val binding: CardSimpleOutlinedBinding) :
+    inner class SubmenuPropertyViewHolder(val binding: CardMoonwitchGamePropertyBinding) :
         AbstractViewHolder<GameProperty>(binding) {
         override fun bind(model: GameProperty) {
             val submenuProperty = model as SubmenuProperty
