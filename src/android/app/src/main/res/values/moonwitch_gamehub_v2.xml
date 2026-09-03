@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="mw_gamehub_v2_play">#7C35E8</color>
+    <color name="mw_gamehub_v2_accent">#B98CFF</color>
+    <color name="mw_gamehub_v2_panel">#E80B101C</color>
+    <color name="mw_gamehub_v2_circle">#B01A2230</color>
+    <string name="mw_gamehub_v2_play">Play</string>
+    <string name="mw_gamehub_v2_library_chip">IN LIBRARY</string>
+    <string name="mw_gamehub_v2_favorite">Favorite</string>
+    <string name="mw_gamehub_v2_settings">Settings</string>
+    <string name="mw_gamehub_v2_content">Content</string>
+    <string name="mw_gamehub_v2_more">More</string>
+    <string name="mw_gamehub_v2_description">Description</string>
+    <string name="mw_gamehub_v2_playtime">Play time</string>
+    <string name="mw_gamehub_v2_last_played">Last played</string>
+    <string name="mw_gamehub_v2_size">Base file size</string>
+    <string name="mw_gamehub_v2_technical">Technical information</string>
+    <string name="mw_gamehub_v2_version">Version</string>
+    <string name="mw_gamehub_v2_title_id">Title ID</string>
+    <string name="mw_gamehub_v2_game_settings">Per-game controls</string>
+    <string name="mw_gamehub_v2_meta">%1$s • %2$s</string>
+    <string name="mw_gamehub_v2_description_fallback">%1$s is a Nintendo Switch title published by %2$s. Moonwitch does not have an external synopsis for this title yet; real activity and technical metadata are shown below.</string>
+    <string name="mw_gamehub_v2_never">Never</string>
+    <string name="mw_gamehub_v2_unknown_value">—</string>
+    <string name="mw_gamehub_v2_base_version">Base</string>
+    <string name="mw_gamehub_v2_create_shortcut">Create home screen shortcut</string>
+    <string name="mw_gamehub_v2_edit_playtime">Edit play time</string>
+</resources>

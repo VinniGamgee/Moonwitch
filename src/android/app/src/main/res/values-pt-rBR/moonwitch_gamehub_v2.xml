@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mw_gamehub_v2_play">Jogar</string>
+    <string name="mw_gamehub_v2_library_chip">NA BIBLIOTECA</string>
+    <string name="mw_gamehub_v2_favorite">Favorito</string>
+    <string name="mw_gamehub_v2_settings">Configurações</string>
+    <string name="mw_gamehub_v2_content">Conteúdo</string>
+    <string name="mw_gamehub_v2_more">Mais</string>
+    <string name="mw_gamehub_v2_description">Descrição</string>
+    <string name="mw_gamehub_v2_playtime">Tempo de jogo</string>
+    <string name="mw_gamehub_v2_last_played">Última vez jogado</string>
+    <string name="mw_gamehub_v2_size">Tamanho do arquivo base</string>
+    <string name="mw_gamehub_v2_technical">Informações técnicas</string>
+    <string name="mw_gamehub_v2_version">Versão</string>
+    <string name="mw_gamehub_v2_title_id">Title ID</string>
+    <string name="mw_gamehub_v2_game_settings">Ajustes por jogo</string>
+    <string name="mw_gamehub_v2_meta">%1$s • %2$s</string>
+    <string name="mw_gamehub_v2_description_fallback">%1$s é um título de Nintendo Switch publicado por %2$s. O Moonwitch ainda não possui uma sinopse externa para este título; abaixo ficam atividade real e metadados técnicos do jogo.</string>
+    <string name="mw_gamehub_v2_never">Nunca</string>
+    <string name="mw_gamehub_v2_unknown_value">—</string>
+    <string name="mw_gamehub_v2_base_version">Base</string>
+    <string name="mw_gamehub_v2_create_shortcut">Criar atalho na tela inicial</string>
+    <string name="mw_gamehub_v2_edit_playtime">Editar tempo de jogo</string>
+</resources>

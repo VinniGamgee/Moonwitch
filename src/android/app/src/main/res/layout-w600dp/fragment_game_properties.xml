@@ -22,13 +22,13 @@
 
             <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="350dp">
+                android:layout_height="430dp">
 
                 <ImageView
                     android:id="@+id/image_game_backdrop"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:alpha="0.30"
+                    android:alpha="0.58"
                     android:contentDescription="@null"
                     android:scaleType="centerCrop"
                     tools:src="@drawable/default_icon" />
@@ -44,21 +44,20 @@
                     android:layout_gravity="top"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:paddingHorizontal="14dp"
-                    android:paddingTop="8dp">
+                    android:paddingHorizontal="16dp"
+                    android:paddingTop="10dp">
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/button_back"
                         style="?attr/materialIconButtonStyle"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:backgroundTint="@color/moonwitch_panel_soft"
+                        android:layout_width="50dp"
+                        android:layout_height="50dp"
+                        android:backgroundTint="@color/mw_gamehub_v2_circle"
                         android:contentDescription="@null"
+                        app:cornerRadius="25dp"
                         app:icon="@drawable/ic_back"
-                        app:iconSize="22dp"
-                        app:iconTint="@color/moonwitch_text"
-                        app:strokeColor="@color/moonwitch_border_soft"
-                        app:strokeWidth="1dp" />
+                        app:iconSize="23dp"
+                        app:iconTint="@color/moonwitch_text" />
 
                     <Space
                         android:layout_width="0dp"
@@ -68,15 +67,14 @@
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/button_shortcut"
                         style="?attr/materialIconButtonStyle"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:backgroundTint="@color/moonwitch_panel_soft"
-                        android:contentDescription="@null"
-                        app:icon="@drawable/ic_shortcut"
-                        app:iconSize="22dp"
-                        app:iconTint="@color/moonwitch_cyan"
-                        app:strokeColor="@color/moonwitch_border_soft"
-                        app:strokeWidth="1dp" />
+                        android:layout_width="50dp"
+                        android:layout_height="50dp"
+                        android:backgroundTint="@color/mw_gamehub_v2_circle"
+                        android:contentDescription="@string/mw_gamehub_v2_more"
+                        app:cornerRadius="25dp"
+                        app:icon="@drawable/mw_gamehub_v2_more"
+                        app:iconSize="23dp"
+                        app:iconTint="@color/moonwitch_text" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -85,23 +83,23 @@
                     android:layout_gravity="bottom"
                     android:gravity="bottom"
                     android:orientation="horizontal"
-                    android:paddingHorizontal="18dp"
-                    android:paddingBottom="22dp">
+                    android:paddingHorizontal="20dp"
+                    android:paddingBottom="28dp">
 
                     <com.google.android.material.card.MaterialCardView
-                        android:layout_width="108dp"
-                        android:layout_height="108dp"
+                        android:layout_width="118dp"
+                        android:layout_height="164dp"
                         app:cardBackgroundColor="@color/moonwitch_panel_high"
-                        app:cardCornerRadius="22dp"
+                        app:cardCornerRadius="18dp"
                         app:cardElevation="0dp"
-                        app:strokeColor="@color/moonwitch_cyan"
+                        app:strokeColor="@color/mw_gamehub_v2_accent"
                         app:strokeWidth="1dp">
 
                         <com.google.android.material.imageview.ShapeableImageView
                             android:id="@+id/image_game_screen"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:padding="2dp"
+                            android:padding="3dp"
                             android:scaleType="fitCenter"
                             app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Medium"
                             tools:src="@drawable/default_icon" />
@@ -112,54 +110,53 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="16dp"
                         android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
-                            android:letterSpacing="0.12"
-                            android:text="@string/mw_gamehub_kicker"
-                            android:textAllCaps="true"
-                            android:textColor="@color/moonwitch_cyan"
-                            android:textSize="9sp" />
+                        android:orientation="vertical"
+                        android:paddingBottom="4dp">
 
                         <TextView
                             android:id="@+id/title"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="5dp"
                             android:ellipsize="end"
                             android:fontFamily="sans-serif-medium"
-                            android:maxLines="2"
+                            android:maxLines="3"
                             android:textColor="@color/moonwitch_text"
-                            android:textSize="22sp"
+                            android:textSize="23sp"
                             tools:text="The Legend of Zelda: Tears of the Kingdom" />
 
                         <TextView
                             android:id="@+id/developer"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="3dp"
+                            android:layout_marginTop="6dp"
                             android:ellipsize="end"
                             android:maxLines="1"
                             android:textColor="@color/moonwitch_text_muted"
                             android:textSize="11sp"
                             tools:text="Nintendo" />
 
-                        <com.google.android.material.textview.MaterialTextView
-                            android:id="@+id/playtime"
+                        <TextView
+                            android:id="@+id/game_meta"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:textColor="@color/moonwitch_text_muted"
+                            android:textSize="10sp"
+                            tools:text="Nintendo • 1.4.3" />
+
+                        <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
+                            android:layout_marginTop="12dp"
                             android:background="@drawable/mw_game_hub_stat_pill"
-                            android:clickable="true"
-                            android:focusable="true"
+                            android:fontFamily="sans-serif-medium"
                             android:paddingHorizontal="10dp"
                             android:paddingVertical="5dp"
-                            android:textColor="@color/moonwitch_text"
-                            android:textSize="10sp"
-                            tools:text="Tempo jogado • 82h 14m" />
+                            android:text="@string/mw_gamehub_v2_library_chip"
+                            android:textColor="@color/mw_gamehub_v2_accent"
+                            android:textSize="9sp" />
                     </LinearLayout>
                 </LinearLayout>
             </FrameLayout>
@@ -167,28 +164,240 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/button_start"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginHorizontal="18dp"
-                android:layout_marginTop="2dp"
+                android:layout_height="60dp"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="8dp"
                 android:fontFamily="sans-serif-medium"
-                android:text="@string/mw_gamehub_play"
-                android:textColor="@color/ic_launcher_background"
-                android:textSize="14sp"
-                app:backgroundTint="@color/moonwitch_cyan"
+                android:text="@string/mw_gamehub_v2_play"
+                android:textColor="@color/moonwitch_text"
+                android:textSize="15sp"
+                app:backgroundTint="@color/mw_gamehub_v2_play"
                 app:cornerRadius="18dp"
                 app:icon="@drawable/ic_play"
                 app:iconGravity="textStart"
-                app:iconTint="@color/ic_launcher_background" />
+                app:iconTint="@color/moonwitch_text" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="12dp"
+                app:cardBackgroundColor="@color/mw_gamehub_v2_panel"
+                app:cardCornerRadius="22dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/moonwitch_border_soft"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="96dp"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:id="@+id/action_favorite"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="8dp">
+                        <ImageView
+                            android:id="@+id/action_favorite_icon"
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_mw_star"
+                            app:tint="@color/moonwitch_text" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="@string/mw_gamehub_v2_favorite"
+                            android:textColor="@color/moonwitch_text_muted"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/action_settings"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="8dp">
+                        <ImageView
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_settings"
+                            app:tint="@color/moonwitch_text" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="@string/mw_gamehub_v2_settings"
+                            android:textColor="@color/moonwitch_text_muted"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/action_content"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="8dp">
+                        <ImageView
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_edit"
+                            app:tint="@color/moonwitch_text" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="@string/mw_gamehub_v2_content"
+                            android:textColor="@color/moonwitch_text_muted"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/action_more"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="8dp">
+                        <ImageView
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/mw_gamehub_v2_more"
+                            app:tint="@color/moonwitch_text" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="@string/mw_gamehub_v2_more"
+                            android:textColor="@color/moonwitch_text_muted"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="16dp"
+                app:cardBackgroundColor="@color/mw_gamehub_v2_panel"
+                app:cardCornerRadius="22dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/moonwitch_border_soft"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="@string/mw_gamehub_v2_description"
+                        android:textColor="@color/moonwitch_text"
+                        android:textSize="15sp" />
+
+                    <TextView
+                        android:id="@+id/game_description"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:lineSpacingExtra="3dp"
+                        android:textColor="@color/moonwitch_text_muted"
+                        android:textSize="12sp"
+                        tools:text="Explore Hyrule and manage this title with Moonwitch." />
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginTop="18dp" android:background="@color/moonwitch_border_soft" />
+
+                    <LinearLayout
+                        android:id="@+id/stat_playtime_row"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+                        <ImageView android:layout_width="22dp" android:layout_height="22dp" android:contentDescription="@null" android:src="@drawable/mw_gamehub_v2_clock" app:tint="@color/moonwitch_text" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:layout_weight="1" android:text="@string/mw_gamehub_v2_playtime" android:textColor="@color/moonwitch_text" android:textSize="12sp" />
+                        <TextView android:id="@+id/stat_playtime_value" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/moonwitch_text_muted" android:textSize="12sp" tools:text="125h 30m" />
+                    </LinearLayout>
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/moonwitch_border_soft" />
+
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="56dp" android:gravity="center_vertical" android:orientation="horizontal">
+                        <ImageView android:layout_width="22dp" android:layout_height="22dp" android:contentDescription="@null" android:src="@drawable/mw_gamehub_v2_history" app:tint="@color/moonwitch_text" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:layout_weight="1" android:text="@string/mw_gamehub_v2_last_played" android:textColor="@color/moonwitch_text" android:textSize="12sp" />
+                        <TextView android:id="@+id/stat_last_played_value" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/moonwitch_text_muted" android:textSize="12sp" tools:text="Hoje" />
+                    </LinearLayout>
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/moonwitch_border_soft" />
+
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="56dp" android:gravity="center_vertical" android:orientation="horizontal">
+                        <ImageView android:layout_width="22dp" android:layout_height="22dp" android:contentDescription="@null" android:src="@drawable/mw_gamehub_v2_storage" app:tint="@color/moonwitch_text" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:layout_weight="1" android:text="@string/mw_gamehub_v2_size" android:textColor="@color/moonwitch_text" android:textSize="12sp" />
+                        <TextView android:id="@+id/stat_size_value" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/moonwitch_text_muted" android:textSize="12sp" tools:text="16.2 GB" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="14dp"
+                app:cardBackgroundColor="@color/mw_gamehub_v2_panel"
+                app:cardCornerRadius="22dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/moonwitch_border_soft"
+                app:strokeWidth="1dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="18dp">
+                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:fontFamily="sans-serif-medium" android:text="@string/mw_gamehub_v2_technical" android:textColor="@color/moonwitch_text" android:textSize="15sp" />
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="48dp" android:layout_marginTop="6dp" android:gravity="center_vertical" android:orientation="horizontal">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/mw_gamehub_v2_version" android:textColor="@color/moonwitch_text_muted" android:textSize="11sp" />
+                        <TextView android:id="@+id/stat_version_value" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/moonwitch_text" android:textSize="11sp" tools:text="1.4.3" />
+                    </LinearLayout>
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/moonwitch_border_soft" />
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="48dp" android:gravity="center_vertical" android:orientation="horizontal">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/mw_gamehub_v2_title_id" android:textColor="@color/moonwitch_text_muted" android:textSize="11sp" />
+                        <TextView android:id="@+id/stat_title_id_value" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="monospace" android:textColor="@color/moonwitch_text" android:textSize="10sp" tools:text="0100F2C0115B6000" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="20dp"
-                android:layout_marginTop="24dp"
-                android:layout_marginBottom="6dp"
+                android:layout_marginHorizontal="22dp"
+                android:layout_marginTop="22dp"
+                android:layout_marginBottom="7dp"
                 android:fontFamily="sans-serif-medium"
-                android:letterSpacing="0.10"
-                android:text="@string/mw_gamehub_panel"
+                android:letterSpacing="0.08"
+                android:text="@string/mw_gamehub_v2_game_settings"
                 android:textAllCaps="true"
                 android:textColor="@color/moonwitch_text_muted"
                 android:textSize="10sp" />
@@ -199,7 +408,7 @@
                 android:layout_height="wrap_content"
                 android:clipToPadding="false"
                 android:nestedScrollingEnabled="false"
-                android:paddingBottom="20dp" />
+                android:paddingBottom="24dp" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 </FrameLayout>

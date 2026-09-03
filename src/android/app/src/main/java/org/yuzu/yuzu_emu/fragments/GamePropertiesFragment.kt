@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
 import android.os.Bundle
+import android.text.format.DateUtils
 import android.provider.DocumentsContract
 import android.view.LayoutInflater
 import android.view.View
@@ -91,23 +92,7 @@ class GamePropertiesFragment : Fragment() {
             view.findNavController().popBackStack()
         }
 
-        val shortcutManager = requireActivity().getSystemService(ShortcutManager::class.java)
-        binding.buttonShortcut.isEnabled = shortcutManager.isRequestPinShortcutSupported
-        binding.buttonShortcut.setOnClickListener {
-            viewLifecycleOwner.lifecycleScope.launch {
-                withContext(Dispatchers.IO) {
-                    val shortcut = ShortcutInfo.Builder(requireContext(), args.game.title)
-                        .setShortLabel(args.game.title)
-                        .setIcon(
-                            GameIconUtils.getShortcutIcon(requireActivity(), args.game)
-                                .toIcon(requireContext())
-                        )
-                        .setIntent(args.game.launchIntent)
-                        .build()
-                    shortcutManager.requestPinShortcut(shortcut, null)
-                }
-            }
-        }
+        binding.buttonShortcut.setOnClickListener { showMoreActions() }
 
         GameIconUtils.loadGameIcon(args.game, binding.imageGameScreen)
         GameIconUtils.loadGameIcon(args.game, binding.imageGameBackdrop)
@@ -116,8 +101,8 @@ class GamePropertiesFragment : Fragment() {
         binding.developer.text = args.game.developer.ifBlank {
             getString(R.string.mw_gamehub_unknown_developer)
         }
-
-        getPlayTime()
+        setupQuickActions()
+        refreshOverview()
 
         binding.buttonStart.setOnClickListener {
             LaunchGameDialogFragment.newInstance(args.game)
@@ -250,8 +235,146 @@ class GamePropertiesFragment : Fragment() {
     }
 
     private fun getPlayTime() {
-        binding.playtime.text = getString(R.string.mw_gamehub_playtime_value, readablePlayTime())
-        binding.playtime.setOnClickListener { showEditPlaytimeDialog() }
+        binding.statPlaytimeValue.text = readablePlayTime()
+    }
+
+    private fun buildGameMeta(): String {
+        val developer = args.game.developer.ifBlank {
+            getString(R.string.mw_gamehub_unknown_developer)
+        }
+        return if (args.game.version.isBlank()) developer
+        else getString(R.string.mw_gamehub_v2_meta, developer, args.game.version)
+    }
+
+    private fun gameDescription(): String {
+        val metadataFile = File(
+            DirectoryInitialization.userDirectory +
+                "/moonwitch/metadata/" + args.game.settingsName + ".txt"
+        )
+        val customDescription = runCatching {
+            if (metadataFile.isFile) metadataFile.readText().trim() else ""
+        }.getOrDefault("")
+        if (customDescription.isNotBlank()) return customDescription
+
+        val developer = args.game.developer.ifBlank {
+            getString(R.string.mw_gamehub_unknown_developer)
+        }
+        return getString(
+            R.string.mw_gamehub_v2_description_fallback,
+            args.game.title,
+            developer
+        )
+    }
+
+    private fun readableLastPlayed(): String {
+        val value = PreferenceManager.getDefaultSharedPreferences(requireContext())
+            .getLong(args.game.keyLastPlayedTime, 0L)
+        if (value <= 0L) return getString(R.string.mw_gamehub_v2_never)
+
+        return DateUtils.getRelativeTimeSpanString(
+            value,
+            System.currentTimeMillis(),
+            DateUtils.MINUTE_IN_MILLIS,
+            DateUtils.FORMAT_ABBREV_RELATIVE
+        ).toString()
+    }
+
+    private fun readableGameSize(): String {
+        val bytes = DocumentFile.fromSingleUri(
+            requireContext(),
+            android.net.Uri.parse(args.game.path)
+        )?.length() ?: 0L
+        return if (bytes > 0L) MemoryUtil.bytesToSizeUnit(bytes.toFloat())
+        else getString(R.string.mw_gamehub_v2_unknown_value)
+    }
+
+    private fun refreshOverview() {
+        binding.gameMeta.text = buildGameMeta()
+        binding.gameDescription.text = gameDescription()
+        getPlayTime()
+        binding.statLastPlayedValue.text = readableLastPlayed()
+        binding.statSizeValue.text = readableGameSize()
+        binding.statVersionValue.text = args.game.version.ifBlank {
+            getString(R.string.mw_gamehub_v2_base_version)
+        }
+        binding.statTitleIdValue.text = args.game.programIdHex
+    }
+
+    private fun setupQuickActions() {
+        binding.actionFavorite.setOnClickListener { toggleFavorite() }
+        binding.actionSettings.setOnClickListener { openRootSettings() }
+        binding.actionContent.setOnClickListener { openContent() }
+        binding.actionMore.setOnClickListener { showMoreActions() }
+        binding.statPlaytimeRow.setOnClickListener { showEditPlaytimeDialog() }
+        binding.actionContent.visibility = if (args.game.isHomebrew) View.GONE else View.VISIBLE
+        refreshFavoriteAction()
+    }
+
+    private fun refreshFavoriteAction() {
+        binding.actionFavoriteIcon.setImageResource(
+            if (isFavorite()) R.drawable.ic_mw_star_filled else R.drawable.ic_mw_star
+        )
+    }
+
+    private fun openRootSettings() {
+        val action = HomeNavigationDirections.actionGlobalSettingsActivity(
+            args.game,
+            Settings.MenuTag.SECTION_ROOT
+        )
+        binding.root.findNavController().navigate(action)
+    }
+
+    private fun openContent() {
+        if (args.game.isHomebrew) return
+        val action = HomeNavigationDirections.actionGlobalSettingsSubscreenActivity(
+            SettingsSubscreen.ADDONS,
+            args.game
+        )
+        binding.root.findNavController().navigate(action)
+    }
+
+    private fun requestPinnedShortcut() {
+        val shortcutManager = requireActivity().getSystemService(ShortcutManager::class.java)
+        if (!shortcutManager.isRequestPinShortcutSupported) return
+        viewLifecycleOwner.lifecycleScope.launch {
+            withContext(Dispatchers.IO) {
+                val shortcut = ShortcutInfo.Builder(requireContext(), args.game.title)
+                    .setShortLabel(args.game.title)
+                    .setIcon(
+                        GameIconUtils.getShortcutIcon(requireActivity(), args.game)
+                            .toIcon(requireContext())
+                    )
+                    .setIntent(args.game.launchIntent)
+                    .build()
+                shortcutManager.requestPinShortcut(shortcut, null)
+            }
+        }
+    }
+
+    private fun showMoreActions() {
+        val actions = mutableListOf<Pair<String, () -> Unit>>()
+        actions += getString(R.string.device_profile_title) to { showDeviceProfileDialog() }
+        actions += getString(R.string.mw_gamehub_info) to {
+            val action = HomeNavigationDirections.actionGlobalSettingsSubscreenActivity(
+                SettingsSubscreen.GAME_INFO,
+                args.game
+            )
+            binding.root.findNavController().navigate(action)
+        }
+        val shortcutManager = requireActivity().getSystemService(ShortcutManager::class.java)
+        if (shortcutManager.isRequestPinShortcutSupported) {
+            actions += getString(R.string.mw_gamehub_v2_create_shortcut) to { requestPinnedShortcut() }
+        }
+        actions += getString(R.string.mw_gamehub_v2_edit_playtime) to { showEditPlaytimeDialog() }
+        actions += getString(R.string.mw_gamehub_advanced) to { openRootSettings() }
+
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+            .setTitle(args.game.title)
+            .setItems(actions.map { it.first }.toTypedArray()) { _, which ->
+                actions[which].second.invoke()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     private fun showEditPlaytimeDialog() {
@@ -381,31 +504,6 @@ class GamePropertiesFragment : Fragment() {
                     }
                 )
             )
-            if (!args.game.isHomebrew) {
-                add(
-                    SubmenuProperty(
-                        R.string.mw_gamehub_content,
-                        R.string.mw_gamehub_content_desc,
-                        R.drawable.ic_edit,
-                        action = {
-                            val action = HomeNavigationDirections.actionGlobalSettingsSubscreenActivity(
-                                SettingsSubscreen.ADDONS,
-                                args.game
-                            )
-                            binding.root.findNavController().navigate(action)
-                        }
-                    )
-                )
-            }
-            add(
-                SubmenuProperty(
-                    R.string.mw_gamehub_statistics,
-                    R.string.mw_gamehub_statistics_desc,
-                    R.drawable.ic_info_outline,
-                    details = { readablePlayTime() },
-                    action = { showEditPlaytimeDialog() }
-                )
-            )
             add(
                 SubmenuProperty(
                     R.string.device_profile_title,
@@ -460,36 +558,6 @@ class GamePropertiesFragment : Fragment() {
                     }
                 )
             )
-            add(
-                SubmenuProperty(
-                    R.string.mw_gamehub_info,
-                    R.string.mw_gamehub_info_desc,
-                    R.drawable.ic_info_outline,
-                    action = {
-                        val action = HomeNavigationDirections.actionGlobalSettingsSubscreenActivity(
-                            SettingsSubscreen.GAME_INFO,
-                            args.game
-                        )
-                        binding.root.findNavController().navigate(action)
-                    }
-                )
-            )
-            val favorite = isFavorite()
-            add(
-                SubmenuProperty(
-                    R.string.mw_ui_favorite,
-                    R.string.mw_favorite_game_desc,
-                    if (favorite) R.drawable.ic_mw_star_filled else R.drawable.ic_mw_star,
-                    details = {
-                        getString(
-                            if (isFavorite()) R.string.mw_favorite_enabled
-                            else R.string.mw_favorite_disabled
-                        )
-                    },
-                    action = { toggleFavorite() }
-                )
-            )
-
             if (!args.game.isHomebrew) {
                 add(
                     InstallableProperty(
@@ -624,12 +692,13 @@ class GamePropertiesFragment : Fragment() {
             putBoolean(args.game.keyFavorite, !preferences.getBoolean(args.game.keyFavorite, false))
         }
         gamesViewModel.setShouldSwapData(true)
-        reloadList()
+        refreshFavoriteAction()
     }
 
     override fun onResume() {
         super.onResume()
-        getPlayTime()
+        refreshOverview()
+        refreshFavoriteAction()
         reloadList()
     }
 

@@ -6,7 +6,9 @@ package org.yuzu.yuzu_emu.fragments
 import android.app.Dialog
 import android.content.DialogInterface
 import android.os.Bundle
+import androidx.core.content.edit
 import androidx.fragment.app.DialogFragment
+import androidx.preference.PreferenceManager
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import org.yuzu.yuzu_emu.HomeNavigationDirections
@@ -28,6 +30,9 @@ class LaunchGameDialogFragment : DialogFragment() {
         return MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.launch_options)
             .setPositiveButton(android.R.string.ok) { _: DialogInterface, _: Int ->
+                PreferenceManager.getDefaultSharedPreferences(requireContext()).edit {
+                    putLong(game.keyLastPlayedTime, System.currentTimeMillis())
+                }
                 val action = HomeNavigationDirections
                     .actionGlobalEmulationActivity(game, selectedItem != 0)
                 requireParentFragment().findNavController().navigate(action)
