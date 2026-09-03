@@ -78,7 +78,7 @@
                 android:layout_width="22dp"
                 android:layout_height="22dp"
                 android:layout_gravity="center"
-                android:contentDescription="@string/search"
+                android:contentDescription="@string/home_search"
                 android:src="@drawable/ic_search"
                 app:tint="@color/mw_ui_text" />
         </com.google.android.material.card.MaterialCardView>
