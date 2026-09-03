@@ -1,0 +1,45 @@
+name: Moonwitch V2 Build Error Extractor
+
+on:
+  push:
+    branches:
+      - exp/moonwitch-reconstruction-stage10-classic-ui
+    paths:
+      - .github/workflows/moonwitch-v2-log-dump.yml
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: exp/moonwitch-reconstruction-stage10-classic-ui
+          fetch-depth: 1
+      - name: Download failed job log and extract errors
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          curl -fsSL -L \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/jobs/100845628178/logs" \
+            -o /tmp/v2-job.log
+          {
+            echo "Moonwitch V2 build #162 diagnostic"
+            echo
+            grep -Ei -C 4 '(^|[[:space:]])(error:|e: |FAILURE:|failed|AAPT|resource .* not found|unresolved reference|type mismatch|does not contain a declaration|cannot find symbol)' /tmp/v2-job.log | tail -n 240 || true
+          } > .github/v2-build-error.txt
+          test -s .github/v2-build-error.txt
+      - name: Commit diagnostic and remove extractor
+        run: |
+          git config user.name "Moonwitch CI"
+          git config user.email "actions@users.noreply.github.com"
+          git rm .github/workflows/moonwitch-v2-log-dump.yml
+          git add .github/v2-build-error.txt
+          git commit -m "ci: capture V2 build failure diagnostic"
+          git push origin HEAD:exp/moonwitch-reconstruction-stage10-classic-ui
