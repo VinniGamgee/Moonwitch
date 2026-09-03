@@ -14,7 +14,7 @@
     android:focusable="true"
     android:gravity="center_vertical"
     android:minHeight="82dp"
-    android:padding="16dp">
+    android:padding="18dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -22,23 +22,15 @@
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
-        <FrameLayout
-            android:id="@+id/icon_container"
-            android:layout_width="46dp"
-            android:layout_height="46dp"
-            android:layout_marginEnd="16dp"
-            android:background="@drawable/moonwitch_setting_card">
-
-            <ImageView
-                android:id="@+id/icon"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_gravity="center"
-                android:visibility="gone"
-                app:tint="@color/moonwitch_frontend_accent"
-                tools:src="@drawable/ic_graphics"
-                tools:visibility="visible" />
-        </FrameLayout>
+        <ImageView
+            android:id="@+id/icon"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:layout_marginEnd="18dp"
+            android:visibility="gone"
+            app:tint="@color/moonwitch_frontend_accent"
+            tools:src="@drawable/ic_graphics"
+            tools:visibility="visible" />
 
         <LinearLayout
             android:layout_width="0dp"
