@@ -1,0 +1,146 @@
+name: Moonwitch Settings Finalizer
+
+on:
+  push:
+    branches:
+      - exp/moonwitch-reconstruction-stage10-classic-ui
+    paths:
+      - .github/workflows/moonwitch-settings-finalize.yml
+
+permissions:
+  contents: write
+
+jobs:
+  finalize-settings:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Finalize Moonwitch settings organization
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/ui/SettingsFragmentPresenter.kt')
+          text = path.read_text()
+
+          def replace_once(old: str, new: str, label: str):
+              global text
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected exactly one match, found {count}')
+              text = text.replace(old, new, 1)
+
+          # Performance owns frame/speed controls and CPU/GPU tuning.
+          replace_once(
+              '''    private fun addMoonwitchPerformanceSettings(sl: ArrayList<SettingsItem>) {\n        sl.apply {\n            add(HeaderSetting(R.string.mw_pacing_and_latency))''',
+              '''    private fun addMoonwitchPerformanceSettings(sl: ArrayList<SettingsItem>) {\n        sl.apply {\n            add(BooleanSetting.RENDERER_USE_SPEED_LIMIT.key)\n            add(ShortSetting.RENDERER_SPEED_LIMIT.key)\n            add(ShortSetting.RENDERER_TURBO_SPEED_LIMIT.key)\n            add(ShortSetting.RENDERER_SLOW_SPEED_LIMIT.key)\n\n            add(HeaderSetting(R.string.mw_pacing_and_latency))''',
+              'performance speed controls'
+          )
+
+          replace_once(
+              '''            add(HeaderSetting(R.string.mw_telemetry_and_tuning))\n            add(IntSetting.ANDROID_PIPELINE_WORKERS.key)''',
+              '''            add(HeaderSetting(R.string.clocks))\n            add(IntSetting.FAST_CPU_TIME.key)\n            add(IntSetting.FAST_GPU_TIME.key)\n            add(BooleanSetting.CORE_SYNC_CORE_SPEED.key)\n            add(BooleanSetting.USE_CUSTOM_CPU_TICKS.key)\n            add(IntSetting.CPU_TICKS.key)\n            add(BooleanSetting.RENDERER_FORCE_MAX_CLOCK.key)\n            add(BooleanSetting.RENDERER_USE_DISK_SHADER_CACHE.key)\n            add(BooleanSetting.RENDERER_ASYNCHRONOUS_SHADERS.key)\n            add(BooleanSetting.RENDERER_ASYNCHRONOUS_GPU_EMULATION.key)\n            add(BooleanSetting.SKIP_CPU_INNER_INVALIDATION.key)\n            add(BooleanSetting.USE_OPTIMIZED_VERTEX_BUFFERS.key)\n\n            add(HeaderSetting(R.string.mw_telemetry_and_tuning))\n            add(IntSetting.ANDROID_PIPELINE_WORKERS.key)''',
+              'performance tuning controls'
+          )
+
+          # System keeps emulated-console/system identity; CPU backend/accuracy belong here, not Debug.
+          replace_once(
+              '''            add(BooleanSetting.RENDERER_USE_SPEED_LIMIT.key)\n            add(ShortSetting.RENDERER_SPEED_LIMIT.key)\n            add(ShortSetting.RENDERER_TURBO_SPEED_LIMIT.key)\n            add(ShortSetting.RENDERER_SLOW_SPEED_LIMIT.key)\n            add(BooleanSetting.USE_DOCKED_MODE.key)\n\n            add(HeaderSetting(R.string.clocks))\n            add(IntSetting.FAST_CPU_TIME.key)\n            add(IntSetting.FAST_GPU_TIME.key)\n            add(BooleanSetting.CORE_SYNC_CORE_SPEED.key)\n\n            add(IntSetting.MEMORY_LAYOUT.key)\n            add(BooleanSetting.USE_CUSTOM_CPU_TICKS.key)\n            add(IntSetting.CPU_TICKS.key)''',
+              '''            add(BooleanSetting.USE_DOCKED_MODE.key)\n            add(IntSetting.MEMORY_LAYOUT.key)\n\n            add(HeaderSetting(R.string.cpu))\n            add(IntSetting.CPU_BACKEND.key)\n            add(IntSetting.CPU_ACCURACY.key)''',
+              'system cleanup'
+          )
+
+          # Graphics owns renderer/image/display settings. Restore Screen Layout and move renderer backend/compat controls here.
+          replace_once(
+              '''    private fun addGraphicsSettings(sl: ArrayList<SettingsItem>) {\n        sl.apply {\n            add(IntSetting.RENDERER_RESOLUTION.key)''',
+              '''    private fun addGraphicsSettings(sl: ArrayList<SettingsItem>) {\n        sl.apply {\n            add(IntSetting.RENDERER_BACKEND.key)\n            add(IntSetting.RENDERER_RESOLUTION.key)''',
+              'graphics renderer backend'
+          )
+
+          replace_once(
+              '''            add(IntSetting.RENDERER_NVDEC_EMULATION.key)\n\n            add(BooleanSetting.SYNC_MEMORY_OPERATIONS.key)\n            add(BooleanSetting.RENDERER_USE_DISK_SHADER_CACHE.key)\n            add(BooleanSetting.RENDERER_FORCE_MAX_CLOCK.key)\n            add(BooleanSetting.RENDERER_REACTIVE_FLUSHING.key)\n            add(BooleanSetting.ENABLE_BUFFER_HISTORY.key)\n            add(BooleanSetting.ENABLE_GPU_BUFFER_READBACK.key)\n            add(BooleanSetting.USE_OPTIMIZED_VERTEX_BUFFERS.key)''',
+              '''            add(IntSetting.RENDERER_NVDEC_EMULATION.key)\n            add(BooleanSetting.RENDERER_PATCH_OLD_QCOM_DRIVERS.key)\n            add(BooleanSetting.BUFFER_REORDER_DISABLE.key)\n\n            add(BooleanSetting.SYNC_MEMORY_OPERATIONS.key)\n            add(BooleanSetting.RENDERER_REACTIVE_FLUSHING.key)\n            add(BooleanSetting.ENABLE_BUFFER_HISTORY.key)\n            add(BooleanSetting.ENABLE_GPU_BUFFER_READBACK.key)''',
+              'graphics advanced cleanup'
+          )
+
+          replace_once(
+              '''            add(HeaderSetting(R.string.hacks))\n\n            add(BooleanSetting.SKIP_CPU_INNER_INVALIDATION.key)\n            add(BooleanSetting.FIX_BLOOM_EFFECTS.key)\n            add(BooleanSetting.EMULATE_BGR565.key)\n            add(BooleanSetting.RENDERER_ASYNCHRONOUS_SHADERS.key)\n            add(BooleanSetting.RENDERER_ASYNCHRONOUS_GPU_EMULATION.key)\n            add(SettingsItem.GPU_UNSWIZZLE_COMBINED)''',
+              '''            add(HeaderSetting(R.string.hacks))\n\n            add(BooleanSetting.FIX_BLOOM_EFFECTS.key)\n            add(BooleanSetting.EMULATE_BGR565.key)\n            add(SettingsItem.GPU_UNSWIZZLE_COMBINED)''',
+              'graphics performance duplicates'
+          )
+
+          replace_once(
+              '''            add(HeaderSetting(R.string.display))\n\n            add(IntSetting.RENDERER_ASPECT_RATIO.key)''',
+              '''            add(HeaderSetting(R.string.display))\n\n            add(IntSetting.RENDERER_SCREEN_LAYOUT.key)\n            add(IntSetting.RENDERER_ASPECT_RATIO.key)''',
+              'restore screen layout'
+          )
+
+          # General is the single canonical home for app language.
+          replace_once(
+              '''            add(HeaderSetting(R.string.app_settings))\n            add(IntSetting.APP_LANGUAGE.key)''',
+              '''            add(HeaderSetting(R.string.app_settings))''',
+              'remove duplicate app language'
+          )
+
+          # Debug keeps actual diagnostic/unsafe controls, not ordinary renderer/CPU configuration.
+          replace_once(
+              '''            add(IntSetting.RENDERER_BACKEND.key)\n            add(BooleanSetting.RENDERER_DEBUG.key)\n            add(BooleanSetting.RENDERER_PATCH_OLD_QCOM_DRIVERS.key)\n            add(BooleanSetting.BUFFER_REORDER_DISABLE.key)''',
+              '''            add(BooleanSetting.RENDERER_DEBUG.key)''',
+              'debug gpu cleanup'
+          )
+
+          replace_once(
+              '''            add(IntSetting.CPU_BACKEND.key)\n            add(IntSetting.CPU_ACCURACY.key)\n            add(BooleanSetting.USE_AUTO_STUB.key)''',
+              '''            add(BooleanSetting.USE_AUTO_STUB.key)''',
+              'debug cpu cleanup'
+          )
+
+          # Guard the navigation invariant: one canonical UI home for every moved setting.
+          canonical_adds = [
+              'add(IntSetting.APP_LANGUAGE.key)',
+              'add(IntSetting.RENDERER_SCREEN_LAYOUT.key)',
+              'add(IntSetting.RENDERER_BACKEND.key)',
+              'add(IntSetting.CPU_BACKEND.key)',
+              'add(IntSetting.CPU_ACCURACY.key)',
+              'add(BooleanSetting.RENDERER_USE_SPEED_LIMIT.key)',
+              'add(ShortSetting.RENDERER_SPEED_LIMIT.key)',
+              'add(ShortSetting.RENDERER_TURBO_SPEED_LIMIT.key)',
+              'add(ShortSetting.RENDERER_SLOW_SPEED_LIMIT.key)',
+              'add(IntSetting.FAST_CPU_TIME.key)',
+              'add(IntSetting.FAST_GPU_TIME.key)',
+              'add(BooleanSetting.CORE_SYNC_CORE_SPEED.key)',
+              'add(BooleanSetting.USE_CUSTOM_CPU_TICKS.key)',
+              'add(IntSetting.CPU_TICKS.key)',
+              'add(BooleanSetting.RENDERER_FORCE_MAX_CLOCK.key)',
+              'add(BooleanSetting.RENDERER_USE_DISK_SHADER_CACHE.key)',
+              'add(BooleanSetting.RENDERER_ASYNCHRONOUS_SHADERS.key)',
+              'add(BooleanSetting.RENDERER_ASYNCHRONOUS_GPU_EMULATION.key)',
+              'add(BooleanSetting.SKIP_CPU_INNER_INVALIDATION.key)',
+              'add(BooleanSetting.USE_OPTIMIZED_VERTEX_BUFFERS.key)',
+              'add(BooleanSetting.RENDERER_PATCH_OLD_QCOM_DRIVERS.key)',
+              'add(BooleanSetting.BUFFER_REORDER_DISABLE.key)',
+          ]
+          bad = [(item, text.count(item)) for item in canonical_adds if text.count(item) != 1]
+          if bad:
+              raise SystemExit('Canonical-setting audit failed: ' + repr(bad))
+
+          path.write_text(text)
+          PY
+
+          git diff --check
+          git diff -- src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/ui/SettingsFragmentPresenter.kt
+
+      - name: Commit final organization and remove one-shot workflow
+        shell: bash
+        run: |
+          rm -f .github/workflows/moonwitch-settings-finalize.yml
+          git config user.name "Moonwitch CI"
+          git config user.email "actions@users.noreply.github.com"
+          git add src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/ui/SettingsFragmentPresenter.kt .github/workflows/moonwitch-settings-finalize.yml
+          git commit -m "Moonwitch: finalize settings organization"
+          git push origin HEAD:exp/moonwitch-reconstruction-stage10-classic-ui
