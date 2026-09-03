@@ -19,7 +19,9 @@ replace_once(
     path,
     "        GameIconUtils.loadGameIcon(args.game, binding.imageGameScreen)\n",
     "        GameIconUtils.loadGameIcon(args.game, binding.imageGameScreen)\n"
-    "        GameIconUtils.loadGameIcon(args.game, binding.heroGameImage)\n",
+    "        binding.heroGameImage?.let { hero ->\n"
+    "            GameIconUtils.loadGameIcon(args.game, hero)\n"
+    "        }\n",
 )
 
 replace_once(
@@ -32,17 +34,17 @@ helper = r'''
     private fun setupExactFrontend() {
         val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(requireContext())
 
-        binding.gameMetadata.text = buildString {
+        binding.gameMetadata?.text = buildString {
             append(args.game.developer.ifBlank { getString(R.string.app_name) })
             if (args.game.version.isNotBlank()) {
                 append(" • ")
                 append(args.game.version)
             }
         }
-        binding.gameDescription.text = "ID do programa: ${args.game.programIdHex}"
+        binding.gameDescription?.text = "ID do programa: ${args.game.programIdHex}"
 
         val lastPlayed = prefs.getLong(args.game.keyLastPlayedTime, 0L)
-        binding.lastPlayed.text = if (lastPlayed <= 0L) {
+        binding.lastPlayed?.text = if (lastPlayed <= 0L) {
             "Nunca"
         } else {
             java.text.DateFormat.getDateTimeInstance(
@@ -56,7 +58,7 @@ helper = r'''
             android.net.Uri.parse(args.game.path)
         )
         val bytes = document?.length() ?: 0L
-        binding.fileSize.text = when {
+        binding.fileSize?.text = when {
             bytes >= 1024L * 1024L * 1024L -> String.format(
                 java.util.Locale.getDefault(),
                 "%.1f GB",
@@ -73,10 +75,10 @@ helper = r'''
 
         fun refreshFavorite() {
             val favorite = prefs.getBoolean(args.game.keyFavorite, false)
-            binding.favoriteIcon.setImageResource(
+            binding.favoriteIcon?.setImageResource(
                 if (favorite) R.drawable.ic_mw_star_filled else R.drawable.ic_mw_star
             )
-            binding.favoriteIcon.imageTintList = android.content.res.ColorStateList.valueOf(
+            binding.favoriteIcon?.imageTintList = android.content.res.ColorStateList.valueOf(
                 androidx.core.content.ContextCompat.getColor(
                     requireContext(),
                     if (favorite) R.color.mw_ui_accent_hi else R.color.mw_ui_text
@@ -85,13 +87,13 @@ helper = r'''
         }
         refreshFavorite()
 
-        binding.buttonFavorite.setOnClickListener {
+        binding.buttonFavorite?.setOnClickListener {
             val next = !prefs.getBoolean(args.game.keyFavorite, false)
             prefs.edit().putBoolean(args.game.keyFavorite, next).apply()
             refreshFavorite()
         }
 
-        binding.buttonGameSettings.setOnClickListener {
+        binding.buttonGameSettings?.setOnClickListener {
             val action = HomeNavigationDirections.actionGlobalSettingsActivity(
                 args.game,
                 Settings.MenuTag.SECTION_ROOT
@@ -99,7 +101,7 @@ helper = r'''
             binding.root.findNavController().navigate(action)
         }
 
-        binding.buttonCheats.setOnClickListener {
+        binding.buttonCheats?.setOnClickListener {
             val action = HomeNavigationDirections.actionGlobalSettingsSubscreenActivity(
                 SettingsSubscreen.ADDONS,
                 args.game
@@ -109,21 +111,23 @@ helper = r'''
 
         val showMore = View.OnClickListener {
             binding.listAll.post {
-                binding.listAll.smoothScrollTo(0, binding.moreOptionsLabel.top)
+                binding.moreOptionsLabel?.let { label ->
+                    binding.listAll.smoothScrollTo(0, label.top)
+                }
             }
         }
-        binding.buttonMore.setOnClickListener(showMore)
-        binding.heroMoreButton.setOnClickListener(showMore)
+        binding.buttonMore?.setOnClickListener(showMore)
+        binding.heroMoreButton?.setOnClickListener(showMore)
 
-        binding.navHome.setOnClickListener {
+        binding.navHome?.setOnClickListener {
             prefs.edit().putInt("MoonwitchFrontendPage", 0).apply()
             binding.root.findNavController().popBackStack(R.id.gamesFragment, false)
         }
-        binding.navGames.setOnClickListener {
+        binding.navGames?.setOnClickListener {
             prefs.edit().putInt("MoonwitchFrontendPage", 1).apply()
             binding.root.findNavController().popBackStack(R.id.gamesFragment, false)
         }
-        binding.navSettings.setOnClickListener {
+        binding.navSettings?.setOnClickListener {
             binding.root.findNavController().navigate(R.id.homeSettingsFragment)
         }
     }
@@ -143,11 +147,45 @@ replace_once(
 
 games = ROOT / "src/android/app/src/main/java/org/yuzu/yuzu_emu/ui/GamesFragment.kt"
 games_text = games.read_text(encoding="utf-8")
+# These controls exist only in the portrait frontend layout. View Binding therefore
+# exposes them as nullable because the legacy landscape layout remains available.
+for member in (
+    "tabAllText",
+    "headerSearchButton",
+    "tabsContainer",
+    "searchTools",
+    "headerMoreButton",
+    "navHome",
+    "navGames",
+    "navSettings",
+    "tabAll",
+    "tabRecent",
+    "tabFavorites",
+    "screenTitle",
+    "navHomeShell",
+    "navGamesShell",
+    "navSettingsShell",
+    "navHomeIcon",
+    "navGamesIcon",
+    "navSettingsIcon",
+    "navHomeText",
+    "navGamesText",
+    "navSettingsText",
+    "tabRecentText",
+    "tabFavoritesText",
+):
+    games_text = games_text.replace(f"binding.{member}.", f"binding.{member}?.")
+
+games_text = games_text.replace("card.setCardBackgroundColor", "card?.setCardBackgroundColor")
+games_text = games_text.replace("card.strokeWidth", "card?.strokeWidth")
+games_text = games_text.replace("card.strokeColor", "card?.strokeColor")
+games_text = games_text.replace("labels[index].setTextColor", "labels[index]?.setTextColor")
+
 # In Jogos mode the hidden search row must keep its measured height so the tabs and
 # list never overlap. INVISIBLE keeps layout space while remaining visually absent.
 games_text = games_text.replace(
-    "binding.searchTools.visibility = View.GONE",
-    "binding.searchTools.visibility = View.INVISIBLE",
+    "binding.searchTools?.visibility = View.GONE",
+    "binding.searchTools?.visibility = View.INVISIBLE",
 )
 games.write_text(games_text, encoding="utf-8")
 
