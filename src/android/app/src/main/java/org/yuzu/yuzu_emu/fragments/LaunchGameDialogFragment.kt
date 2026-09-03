@@ -20,7 +20,7 @@ class LaunchGameDialogFragment : DialogFragment() {
     private var selectedItem = 1
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val game = requireArguments().parcelable<Game>(GAME)
+        val game = requireNotNull(requireArguments().parcelable<Game>(GAME))
         val launchOptions = arrayOf(getString(R.string.global), getString(R.string.custom))
 
         if (savedInstanceState != null) {
