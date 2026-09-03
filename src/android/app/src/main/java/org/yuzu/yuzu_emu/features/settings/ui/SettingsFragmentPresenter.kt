@@ -210,6 +210,11 @@ class SettingsFragmentPresenter(
 
     private fun addMoonwitchPerformanceSettings(sl: ArrayList<SettingsItem>) {
         sl.apply {
+            add(BooleanSetting.RENDERER_USE_SPEED_LIMIT.key)
+            add(ShortSetting.RENDERER_SPEED_LIMIT.key)
+            add(ShortSetting.RENDERER_TURBO_SPEED_LIMIT.key)
+            add(ShortSetting.RENDERER_SLOW_SPEED_LIMIT.key)
+
             add(HeaderSetting(R.string.mw_pacing_and_latency))
             add(
                 SubmenuSetting(
@@ -235,6 +240,19 @@ class SettingsFragmentPresenter(
                     menuKey = MenuTag.SECTION_FRAME_GEN
                 )
             )
+
+            add(HeaderSetting(R.string.clocks))
+            add(IntSetting.FAST_CPU_TIME.key)
+            add(IntSetting.FAST_GPU_TIME.key)
+            add(BooleanSetting.CORE_SYNC_CORE_SPEED.key)
+            add(BooleanSetting.USE_CUSTOM_CPU_TICKS.key)
+            add(IntSetting.CPU_TICKS.key)
+            add(BooleanSetting.RENDERER_FORCE_MAX_CLOCK.key)
+            add(BooleanSetting.RENDERER_USE_DISK_SHADER_CACHE.key)
+            add(BooleanSetting.RENDERER_ASYNCHRONOUS_SHADERS.key)
+            add(BooleanSetting.RENDERER_ASYNCHRONOUS_GPU_EMULATION.key)
+            add(BooleanSetting.SKIP_CPU_INNER_INVALIDATION.key)
+            add(BooleanSetting.USE_OPTIMIZED_VERTEX_BUFFERS.key)
 
             add(HeaderSetting(R.string.mw_telemetry_and_tuning))
             add(IntSetting.ANDROID_PIPELINE_WORKERS.key)
@@ -437,20 +455,12 @@ class SettingsFragmentPresenter(
 
     private fun addSystemSettings(sl: ArrayList<SettingsItem>) {
         sl.apply {
-            add(BooleanSetting.RENDERER_USE_SPEED_LIMIT.key)
-            add(ShortSetting.RENDERER_SPEED_LIMIT.key)
-            add(ShortSetting.RENDERER_TURBO_SPEED_LIMIT.key)
-            add(ShortSetting.RENDERER_SLOW_SPEED_LIMIT.key)
             add(BooleanSetting.USE_DOCKED_MODE.key)
-
-            add(HeaderSetting(R.string.clocks))
-            add(IntSetting.FAST_CPU_TIME.key)
-            add(IntSetting.FAST_GPU_TIME.key)
-            add(BooleanSetting.CORE_SYNC_CORE_SPEED.key)
-
             add(IntSetting.MEMORY_LAYOUT.key)
-            add(BooleanSetting.USE_CUSTOM_CPU_TICKS.key)
-            add(IntSetting.CPU_TICKS.key)
+
+            add(HeaderSetting(R.string.cpu))
+            add(IntSetting.CPU_BACKEND.key)
+            add(IntSetting.CPU_ACCURACY.key)
 
             if (!NativeConfig.isPerGameConfigLoaded()) {
                 add(HeaderSetting(R.string.network))
@@ -463,6 +473,7 @@ class SettingsFragmentPresenter(
     // TODO(crueter): sub-submenus?
     private fun addGraphicsSettings(sl: ArrayList<SettingsItem>) {
         sl.apply {
+            add(IntSetting.RENDERER_BACKEND.key)
             add(IntSetting.RENDERER_RESOLUTION.key)
             add(IntSetting.RENDERER_VSYNC.key)
             add(IntSetting.RENDERER_SCALING_FILTER.key)
@@ -502,22 +513,18 @@ class SettingsFragmentPresenter(
             add(IntSetting.RENDERER_VRAM_USAGE_MODE.key)
             add(IntSetting.RENDERER_ASTC_DECODE_METHOD.key)
             add(IntSetting.RENDERER_NVDEC_EMULATION.key)
+            add(BooleanSetting.RENDERER_PATCH_OLD_QCOM_DRIVERS.key)
+            add(BooleanSetting.BUFFER_REORDER_DISABLE.key)
 
             add(BooleanSetting.SYNC_MEMORY_OPERATIONS.key)
-            add(BooleanSetting.RENDERER_USE_DISK_SHADER_CACHE.key)
-            add(BooleanSetting.RENDERER_FORCE_MAX_CLOCK.key)
             add(BooleanSetting.RENDERER_REACTIVE_FLUSHING.key)
             add(BooleanSetting.ENABLE_BUFFER_HISTORY.key)
             add(BooleanSetting.ENABLE_GPU_BUFFER_READBACK.key)
-            add(BooleanSetting.USE_OPTIMIZED_VERTEX_BUFFERS.key)
 
             add(HeaderSetting(R.string.hacks))
 
-            add(BooleanSetting.SKIP_CPU_INNER_INVALIDATION.key)
             add(BooleanSetting.FIX_BLOOM_EFFECTS.key)
             add(BooleanSetting.EMULATE_BGR565.key)
-            add(BooleanSetting.RENDERER_ASYNCHRONOUS_SHADERS.key)
-            add(BooleanSetting.RENDERER_ASYNCHRONOUS_GPU_EMULATION.key)
             add(SettingsItem.GPU_UNSWIZZLE_COMBINED)
 
             add(HeaderSetting(R.string.extensions))
@@ -528,6 +535,7 @@ class SettingsFragmentPresenter(
 
             add(HeaderSetting(R.string.display))
 
+            add(IntSetting.RENDERER_SCREEN_LAYOUT.key)
             add(IntSetting.RENDERER_ASPECT_RATIO.key)
             add(IntSetting.VERTICAL_ALIGNMENT.key)
             add(BooleanSetting.PICTURE_IN_PICTURE.key)
@@ -1302,7 +1310,6 @@ class SettingsFragmentPresenter(
             }
 
             add(HeaderSetting(R.string.app_settings))
-            add(IntSetting.APP_LANGUAGE.key)
 
             if (NativeLibrary.isUpdateCheckerEnabled()) {
                 add(BooleanSetting.ENABLE_UPDATE_CHECKS.key)
@@ -1475,15 +1482,10 @@ class SettingsFragmentPresenter(
         sl.apply {
             add(HeaderSetting(R.string.gpu))
 
-            add(IntSetting.RENDERER_BACKEND.key)
             add(BooleanSetting.RENDERER_DEBUG.key)
-            add(BooleanSetting.RENDERER_PATCH_OLD_QCOM_DRIVERS.key)
-            add(BooleanSetting.BUFFER_REORDER_DISABLE.key)
 
             add(HeaderSetting(R.string.cpu))
 
-            add(IntSetting.CPU_BACKEND.key)
-            add(IntSetting.CPU_ACCURACY.key)
             add(BooleanSetting.USE_AUTO_STUB.key)
             add(SettingsItem.FASTMEM_COMBINED)
             add(BooleanSetting.CPUOPT_UNSAFE_HOST_MMU.key)
