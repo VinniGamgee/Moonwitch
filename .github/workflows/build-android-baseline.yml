@@ -1,4 +1,4 @@
-name: Moonwitch Stage 9 + Exact UI
+name: Moonwitch Stage 9 + Classic UI
 
 on:
   workflow_dispatch:
@@ -7,12 +7,13 @@ on:
       - exp/moonwitch-reconstruction-stage9
       - feat/stage9-frontend-ui
       - feat/stage9-ui-exact
+      - feat/stage9-classic-ui
 
 permissions:
   contents: read
 
 concurrency:
-  group: moonwitch-stage9-exact-ui-${{ github.ref }}
+  group: moonwitch-stage9-classic-ui-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -57,10 +58,6 @@ jobs:
       - name: Apply Moonwitch Reconstruction Stage 9
         shell: bash
         run: python3 .github/scripts/apply_moonwitch_reconstruction_stage9.py
-
-      - name: Apply exact Moonwitch frontend wiring
-        shell: bash
-        run: python3 .github/scripts/apply_moonwitch_exact_ui.py
 
       - name: Guard motion-evidence integrity and TOTK foliage workaround
         shell: bash
@@ -114,12 +111,18 @@ jobs:
             spirv-val --target-env spv1.3 "/tmp/$(basename "$shader").spv"
           done
 
-      - name: Validate exact UI generated sources
+      - name: Validate classic UI and current feature wiring
         shell: bash
         run: |
-          grep -q "setupExactFrontend" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/GamePropertiesFragment.kt
-          grep -q "heroGameImage" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/GamePropertiesFragment.kt
-          grep -q "MoonwitchFrontendPage" src/android/app/src/main/java/org/yuzu/yuzu_emu/ui/GamesFragment.kt
+          grep -q "updateButtonsVisibility" src/android/app/src/main/java/org/yuzu/yuzu_emu/ui/GamesFragment.kt
+          grep -q "filter_favorites" src/android/app/src/main/java/org/yuzu/yuzu_emu/ui/GamesFragment.kt
+          grep -q "SECTION_MOONWITCH_PERFORMANCE" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/HomeSettingsFragment.kt
+          grep -q '@+id/settings_button' src/android/app/src/main/res/layout/fragment_games.xml
+          grep -q '@+id/launch_qlaunch' src/android/app/src/main/res/layout/fragment_games.xml
+          if grep -q '@+id/bottom_nav' src/android/app/src/main/res/layout/fragment_games.xml; then
+            echo "Modern bottom navigation is present in the classic frontend; refusing to build."
+            exit 1
+          fi
           git diff --check
 
       - name: Build
@@ -133,7 +136,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-STAGE9-EXACT-UI
+          name: MOONWITCH-STAGE9-CLASSIC-UI
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7

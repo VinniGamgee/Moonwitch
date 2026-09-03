@@ -16,12 +16,14 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import androidx.core.content.edit
 import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.navArgs
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.google.android.material.transition.MaterialSharedAxis
 import kotlinx.coroutines.Dispatchers
@@ -342,6 +344,21 @@ class GamePropertiesFragment : Fragment() {
 
         driverViewModel.updateDriverNameForGame(args.game)
         val properties = mutableListOf<GameProperty>().apply {
+            val favorite = isFavorite()
+            add(
+                SubmenuProperty(
+                    R.string.mw_ui_favorite,
+                    R.string.mw_favorite_game_desc,
+                    if (favorite) R.drawable.ic_mw_star_filled else R.drawable.ic_mw_star,
+                    details = {
+                        getString(
+                            if (isFavorite()) R.string.mw_favorite_enabled
+                            else R.string.mw_favorite_disabled
+                        )
+                    },
+                    action = { toggleFavorite() }
+                )
+            )
             add(
                 SubmenuProperty(
                     R.string.info,
@@ -619,6 +636,19 @@ class GamePropertiesFragment : Fragment() {
             layoutManager = staggered
             adapter = GamePropertiesAdapter(viewLifecycleOwner, properties)
         }
+    }
+
+    private fun isFavorite(): Boolean =
+        PreferenceManager.getDefaultSharedPreferences(requireContext())
+            .getBoolean(args.game.keyFavorite, false)
+
+    private fun toggleFavorite() {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        preferences.edit {
+            putBoolean(args.game.keyFavorite, !preferences.getBoolean(args.game.keyFavorite, false))
+        }
+        gamesViewModel.setShouldSwapData(true)
+        reloadList()
     }
 
     override fun onResume() {

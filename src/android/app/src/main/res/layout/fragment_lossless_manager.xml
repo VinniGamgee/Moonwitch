@@ -4,13 +4,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/moonwitch_background">
+    android:background="?attr/colorSurface">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appbar_lossless"
+        style="@style/Widget.Eden.TransparentTopAppBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@android:color/transparent"
         android:fitsSystemWindows="true"
         android:touchscreenBlocksFocus="false"
         app:layout_constraintEnd_toEndOf="parent"
@@ -19,19 +19,12 @@
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar_lossless"
+            style="@style/Widget.Eden.TransparentTopToolbar"
             android:layout_width="match_parent"
-            android:layout_height="64dp"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="10dp"
-            android:layout_marginEnd="16dp"
-            android:layout_marginBottom="6dp"
-            android:background="@drawable/moonwitch_toolbar_surface"
-            android:paddingStart="4dp"
-            android:paddingEnd="8dp"
+            android:layout_height="?attr/actionBarSize"
             android:touchscreenBlocksFocus="false"
             app:navigationIcon="@drawable/ic_back"
-            app:title="@string/lossless_scaling"
-            app:titleTextColor="@color/moonwitch_text" />
+            app:title="@string/lossless_scaling" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -54,8 +47,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingHorizontal="16dp"
-            android:paddingTop="12dp"
-            android:paddingBottom="20dp">
+            android:paddingTop="16dp">
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/lossless_options_list"

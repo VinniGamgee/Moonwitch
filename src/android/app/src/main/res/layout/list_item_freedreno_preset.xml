@@ -13,10 +13,6 @@
         android:layout_height="wrap_content"
         android:minWidth="100dp"
         android:text="Preset"
-        android:textColor="@color/moonwitch_cyan"
-        app:backgroundTint="@color/moonwitch_panel_high"
-        app:cornerRadius="14dp"
-        app:strokeColor="@color/moonwitch_border"
-        app:strokeWidth="1dp" />
+        style="?attr/materialButtonOutlinedStyle" />
 
 </LinearLayout>

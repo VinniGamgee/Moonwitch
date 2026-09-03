@@ -9,6 +9,9 @@
     <string name="mw_search_settings">Buscar categorias e recursos</string>
     <string name="mw_recent">Recentes</string>
     <string name="mw_favorites">Favoritos</string>
+    <string name="mw_favorite_game_desc">Inclui ou remove este jogo do filtro Favoritos</string>
+    <string name="mw_favorite_enabled">Adicionado aos favoritos</string>
+    <string name="mw_favorite_disabled">Fora dos favoritos</string>
     <string name="mw_performance">Desempenho</string>
     <string name="mw_filters">Filtros</string>
     <string name="mw_recently_played">JOGADOS RECENTEMENTE</string>

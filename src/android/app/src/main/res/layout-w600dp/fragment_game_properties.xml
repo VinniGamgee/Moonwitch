@@ -1,230 +1,129 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/moonwitch_background">
-
-    <ImageView
-        android:layout_width="320dp"
-        android:layout_height="320dp"
-        android:alpha="0.024"
-        android:contentDescription="@null"
-        android:src="@drawable/ic_moonwitch_mark"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <LinearLayout
-        android:id="@+id/icon_layout"
-        android:layout_width="300dp"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingHorizontal="16dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="match_parent"
-            android:layout_height="68dp">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/button_back"
-                style="@style/Widget.Material3.Button.IconButton.Filled"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:backgroundTint="@color/moonwitch_panel_high"
-                android:contentDescription="@string/app_name"
-                app:icon="@drawable/ic_back"
-                app:iconSize="20dp"
-                app:iconTint="@color/moonwitch_cyan"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:strokeColor="@color/moonwitch_border"
-                app:strokeWidth="1dp" />
-
-            <ImageView
-                android:id="@+id/game_brand_mark"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
-                android:layout_marginStart="10dp"
-                android:contentDescription="@null"
-                android:src="@drawable/ic_moonwitch_mark"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toEndOf="@id/button_back"
-                app:layout_constraintTop_toTopOf="parent" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/button_shortcut"
-                style="@style/Widget.Material3.Button.IconButton.Filled"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:backgroundTint="@color/moonwitch_panel_high"
-                android:contentDescription="@string/app_name"
-                app:icon="@drawable/ic_shortcut"
-                app:iconSize="20dp"
-                app:iconTint="@color/moonwitch_red"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:strokeColor="@color/moonwitch_border"
-                app:strokeWidth="1dp" />
-        </androidx.constraintlayout.widget.ConstraintLayout>
-
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            app:cardBackgroundColor="@color/moonwitch_panel_high"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="0dp"
-            app:strokeColor="@color/moonwitch_border"
-            app:strokeWidth="1dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_horizontal"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="150dp"
-                    android:layout_height="150dp"
-                    app:cardBackgroundColor="@color/moonwitch_panel_soft"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="@color/moonwitch_border_soft"
-                    app:strokeWidth="1dp">
-
-                    <ImageView
-                        android:id="@+id/image_game_screen"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:padding="4dp"
-                        android:scaleType="fitCenter"
-                        tools:src="@drawable/default_icon" />
-                </com.google.android.material.card.MaterialCardView>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="14dp"
-                    android:fontFamily="sans-serif-medium"
-                    android:letterSpacing="0.13"
-                    android:text="PER-GAME"
-                    android:textColor="@color/moonwitch_red"
-                    android:textSize="8.5sp" />
-
-                <TextView
-                    android:id="@+id/title"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="5dp"
-                    android:ellipsize="end"
-                    android:fontFamily="sans-serif-medium"
-                    android:maxLines="2"
-                    android:textAlignment="center"
-                    android:textColor="@color/moonwitch_text"
-                    android:textSize="15sp"
-                    tools:text="The Legend of Zelda: Tears of the Kingdom" />
-
-                <TextView
-                    android:id="@+id/playtime"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="7dp"
-                    android:maxLines="1"
-                    android:textAlignment="center"
-                    android:textColor="@color/moonwitch_cyan"
-                    android:textSize="10sp"
-                    tools:text="Tempo de jogo: 40min 55seg" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-    </LinearLayout>
+    android:background="?attr/colorSurface">
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/list_all"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:clipToPadding="false"
-        android:defaultFocusHighlightEnabled="false"
         android:fadeScrollbars="false"
-        android:fillViewport="true"
-        android:overScrollMode="never"
         android:scrollbars="vertical"
+        android:defaultFocusHighlightEnabled="false"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/icon_layout"
+        app:layout_constraintStart_toEndOf="@+id/icon_layout"
         app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
             android:id="@+id/layout_all"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingTop="18dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="22dp"
-                android:layout_marginEnd="22dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <ImageView
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:contentDescription="@null"
-                    android:src="@drawable/ic_settings"
-                    app:tint="@color/moonwitch_cyan" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="9dp"
-                    android:fontFamily="sans-serif-medium"
-                    android:letterSpacing="0.14"
-                    android:text="@string/preferences_settings"
-                    android:textAllCaps="true"
-                    android:textColor="@color/moonwitch_text_muted"
-                    android:textSize="9.5sp" />
-            </LinearLayout>
+            android:gravity="center_horizontal"
+            android:orientation="horizontal">
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/list_properties"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="7dp"
-                android:clipToPadding="false"
-                android:defaultFocusHighlightEnabled="false"
-                android:nestedScrollingEnabled="false"
-                tools:listitem="@layout/card_moonwitch_game_property" />
+                android:layout_height="match_parent"
+                tools:listitem="@layout/card_simple_outlined" />
+
         </LinearLayout>
+
     </androidx.core.widget.NestedScrollView>
 
-    <com.google.android.material.button.MaterialButton
+    <LinearLayout
+        android:id="@+id/icon_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/button_back"
+                style="?attr/materialIconButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:icon="@drawable/ic_back"
+                app:iconSize="24dp"
+                app:iconTint="?attr/colorOnSurface"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <Button
+                android:id="@+id/button_shortcut"
+                style="?attr/materialIconButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:icon="@drawable/ic_shortcut"
+                app:iconSize="24dp"
+                app:iconTint="?attr/colorOnSurface"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <com.google.android.material.card.MaterialCardView
+            style="?attr/materialCardViewElevatedStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="8dp"
+            app:cardCornerRadius="4dp"
+            app:cardElevation="4dp">
+
+            <ImageView
+                android:id="@+id/image_game_screen"
+                android:layout_width="175dp"
+                android:layout_height="175dp"
+                tools:src="@drawable/default_icon" />
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/title"
+            style="@style/TextAppearance.Material3.TitleMedium"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="12dp"
+            android:ellipsize="none"
+            android:marqueeRepeatLimit="marquee_forever"
+            android:requiresFadingEdge="horizontal"
+            android:singleLine="true"
+            android:textAlignment="center"
+            tools:text="deko_basic" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/playtime"
+            style="?attr/textAppearanceBodyMedium"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginBottom="8dp"
+            android:textAlignment="center"
+            tools:text="Game Playtime" />
+
+    </LinearLayout>
+
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/button_start"
-        style="@style/Widget.Material3.Button"
-        android:layout_width="0dp"
-        android:layout_height="56dp"
-        android:layout_marginStart="18dp"
-        android:layout_marginEnd="18dp"
-        android:layout_marginBottom="14dp"
-        android:backgroundTint="@color/moonwitch_red"
-        android:fontFamily="sans-serif-medium"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:text="@string/start"
-        android:textAllCaps="false"
-        android:textColor="@android:color/white"
-        android:textSize="14sp"
-        app:cornerRadius="18dp"
         app:icon="@drawable/ic_play"
-        app:iconGravity="textStart"
-        app:iconSize="20dp"
-        app:iconTint="@android:color/white"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/icon_layout" />
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

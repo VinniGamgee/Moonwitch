@@ -2,98 +2,83 @@
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    style="@style/EdenCard"
     android:id="@+id/option_card"
     android:layout_width="match_parent"
-    android:layout_height="88dp"
-    android:layout_marginStart="2dp"
-    android:layout_marginTop="4dp"
-    android:layout_marginEnd="2dp"
-    android:layout_marginBottom="4dp"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="16dp"
+    android:layout_marginHorizontal="8dp"
+    android:background="@android:color/transparent"
     android:clickable="true"
     android:focusable="true"
-    app:cardBackgroundColor="@color/mw_ui_surface"
-    app:cardCornerRadius="18dp"
+    app:cardCornerRadius="16dp"
+    app:cardBackgroundColor="@android:color/transparent"
     app:cardElevation="0dp"
-    app:rippleColor="#249147FF"
-    app:strokeColor="@color/mw_ui_border"
+    app:strokeColor="?attr/colorOutline"
     app:strokeWidth="1dp">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:id="@+id/option_layout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:paddingStart="14dp"
-        android:paddingEnd="14dp">
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical">
 
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/icon_shell"
-            android:layout_width="52dp"
-            android:layout_height="52dp"
-            app:cardBackgroundColor="@color/mw_ui_accent_soft"
-            app:cardCornerRadius="14dp"
-            app:cardElevation="0dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
-            <ImageView
-                android:id="@+id/option_icon"
-                android:layout_width="29dp"
-                android:layout_height="29dp"
-                android:layout_gravity="center"
-                app:tint="@color/mw_ui_accent"
-                tools:src="@drawable/ic_settings" />
-        </com.google.android.material.card.MaterialCardView>
+        <ImageView
+            android:id="@+id/option_icon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginStart="24dp"
+            android:layout_gravity="center_vertical"
+            app:tint="?attr/colorPrimary" />
 
         <LinearLayout
-            android:id="@+id/option_text"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="14dp"
-            android:layout_marginEnd="10dp"
-            android:orientation="vertical"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/option_chevron"
-            app:layout_constraintStart_toEndOf="@id/icon_shell"
-            app:layout_constraintTop_toTopOf="parent">
+            android:layout_marginVertical="10dp"
+            android:layout_marginHorizontal="20dp"
+            android:orientation="vertical">
 
-            <TextView
+            <com.google.android.material.textview.MaterialTextView
+                style="@style/SynthwaveText.Body"
                 android:id="@+id/option_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:ellipsize="end"
-                android:fontFamily="sans-serif-medium"
-                android:maxLines="1"
-                android:textColor="@color/mw_ui_text"
-                android:textSize="18sp"
-                tools:text="Desempenho" />
+                android:textAlignment="viewStart"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                tools:text="@string/install_prod_keys" />
 
-            <TextView
+            <com.google.android.material.textview.MaterialTextView
+                style="@style/SynthwaveText.Body"
                 android:id="@+id/option_description"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:textColor="@color/mw_ui_text_2"
-                android:textSize="13sp"
-                tools:text="Ajustes de performance e otimização" />
+                android:textAlignment="viewStart"
+                android:textSize="14sp"
+                android:layout_marginTop="5dp"
+                android:alpha="0.8"
+                tools:text="@string/install_prod_keys_description" />
 
-            <TextView
+            <com.google.android.material.textview.MaterialTextView
+                style="@style/SynthwaveText.Secondary"
                 android:id="@+id/option_detail"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:visibility="gone" />
+                android:textAlignment="viewStart"
+                android:textColor="?attr/colorPrimary"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:singleLine="true"
+                android:marqueeRepeatLimit="marquee_forever"
+                android:ellipsize="none"
+                android:requiresFadingEdge="horizontal"
+                android:layout_marginTop="5dp"
+                android:visibility="gone"
+                tools:visibility="visible"
+                tools:text="/tree/primary:Games" />
+
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/option_chevron"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="›"
-            android:textColor="@color/mw_ui_text_2"
-            android:textSize="32sp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
+
 </com.google.android.material.card.MaterialCardView>

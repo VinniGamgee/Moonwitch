@@ -2,18 +2,17 @@
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    style="@style/EdenCard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="8dp"
-    android:layout_marginVertical="6dp"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="12dp"
     android:background="@android:color/transparent"
     android:clickable="true"
     android:focusable="true"
-    app:cardBackgroundColor="@color/moonwitch_panel_soft"
-    app:cardCornerRadius="18dp"
+    app:cardBackgroundColor="@android:color/transparent"
     app:cardElevation="0dp"
-    app:rippleColor="#3035D8FF"
-    app:strokeColor="@color/moonwitch_border_soft"
+    app:strokeColor="?attr/colorOutline"
     app:strokeWidth="1dp">
 
     <LinearLayout
@@ -30,8 +29,7 @@
             android:layout_gravity="center_vertical"
             android:focusable="false"
             android:clickable="false"
-            android:checked="false"
-            android:buttonTint="@color/moonwitch_cyan" />
+            android:checked="false" />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -47,7 +45,6 @@
                 android:layout_height="wrap_content"
                 android:requiresFadingEdge="horizontal"
                 android:textAlignment="viewStart"
-                android:textColor="@color/moonwitch_text"
                 tools:text="@string/select_gpu_driver_default" />
 
             <com.google.android.material.textview.MaterialTextView
@@ -58,7 +55,6 @@
                 android:layout_marginTop="6dp"
                 android:requiresFadingEdge="horizontal"
                 android:textAlignment="viewStart"
-                android:textColor="@color/moonwitch_cyan"
                 tools:text="@string/install_gpu_driver_description" />
 
             <com.google.android.material.textview.MaterialTextView
@@ -69,7 +65,6 @@
                 android:layout_marginTop="6dp"
                 android:requiresFadingEdge="horizontal"
                 android:textAlignment="viewStart"
-                android:textColor="@color/moonwitch_text_muted"
                 tools:text="@string/install_gpu_driver_description" />
 
         </LinearLayout>
@@ -83,7 +78,7 @@
             android:contentDescription="@string/delete"
             android:tooltipText="@string/delete"
             app:icon="@drawable/ic_delete"
-            app:iconTint="@color/moonwitch_red" />
+            app:iconTint="?attr/colorControlNormal" />
 
     </LinearLayout>
 

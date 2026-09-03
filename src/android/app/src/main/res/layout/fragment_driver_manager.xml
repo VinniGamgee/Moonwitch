@@ -4,7 +4,7 @@
     android:id="@+id/coordinator_licenses"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/moonwitch_background">
+    android:background="?attr/colorSurface">
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:id="@+id/coordinatorLayout"
@@ -13,27 +13,20 @@
 
         <com.google.android.material.appbar.AppBarLayout
             android:id="@+id/appbar_drivers"
+            style="@style/Widget.Eden.TransparentTopAppBarLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@android:color/transparent"
             android:fitsSystemWindows="true"
             android:touchscreenBlocksFocus="false">
 
             <com.google.android.material.appbar.MaterialToolbar
                 android:id="@+id/toolbar_drivers"
+                style="@style/Widget.Eden.TransparentTopToolbar"
                 android:layout_width="match_parent"
-                android:layout_height="64dp"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="10dp"
-                android:layout_marginEnd="16dp"
-                android:layout_marginBottom="6dp"
-                android:background="@drawable/moonwitch_toolbar_surface"
-                android:paddingStart="4dp"
-                android:paddingEnd="8dp"
+                android:layout_height="?attr/actionBarSize"
                 android:touchscreenBlocksFocus="false"
                 app:navigationIcon="@drawable/ic_back"
-                app:title="@string/gpu_driver_manager"
-                app:titleTextColor="@color/moonwitch_text" />
+                app:title="@string/gpu_driver_manager" />
 
         </com.google.android.material.appbar.AppBarLayout>
 
@@ -42,9 +35,6 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
-            android:paddingStart="8dp"
-            android:paddingTop="8dp"
-            android:paddingEnd="8dp"
             app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
@@ -55,10 +45,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:text="@string/install"
-        android:textColor="#041018"
-        app:backgroundTint="@color/moonwitch_cyan"
         app:icon="@drawable/ic_add"
-        app:iconTint="#041018"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
@@ -68,12 +55,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|start"
         android:text="@string/fetch"
-        android:textColor="@color/moonwitch_text"
-        app:backgroundTint="@color/moonwitch_panel_high"
         app:icon="@drawable/ic_import"
-        app:iconTint="@color/moonwitch_cyan"
-        app:strokeColor="@color/moonwitch_border"
-        app:strokeWidth="1dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 

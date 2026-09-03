@@ -12,8 +12,8 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.lifecycle.LifecycleOwner
 import com.google.android.material.button.MaterialButton
 import org.yuzu.yuzu_emu.R
-import org.yuzu.yuzu_emu.databinding.CardMoonwitchGameInstallableBinding
-import org.yuzu.yuzu_emu.databinding.CardMoonwitchGamePropertyBinding
+import org.yuzu.yuzu_emu.databinding.CardInstallableIconBinding
+import org.yuzu.yuzu_emu.databinding.CardSimpleOutlinedBinding
 import org.yuzu.yuzu_emu.model.GameProperty
 import org.yuzu.yuzu_emu.model.InstallableProperty
 import org.yuzu.yuzu_emu.model.SubmenuProperty
@@ -34,7 +34,7 @@ class GamePropertiesAdapter(
         return when (viewType) {
             PropertyType.Submenu.ordinal -> {
                 SubmenuPropertyViewHolder(
-                    CardMoonwitchGamePropertyBinding.inflate(
+                    CardSimpleOutlinedBinding.inflate(
                         inflater,
                         parent,
                         false
@@ -43,7 +43,7 @@ class GamePropertiesAdapter(
             }
 
             else -> InstallablePropertyViewHolder(
-                CardMoonwitchGameInstallableBinding.inflate(
+                CardInstallableIconBinding.inflate(
                     inflater,
                     parent,
                     false
@@ -59,7 +59,7 @@ class GamePropertiesAdapter(
         }
     }
 
-    inner class SubmenuPropertyViewHolder(val binding: CardMoonwitchGamePropertyBinding) :
+    inner class SubmenuPropertyViewHolder(val binding: CardSimpleOutlinedBinding) :
         AbstractViewHolder<GameProperty>(binding) {
         override fun bind(model: GameProperty) {
             val submenuProperty = model as SubmenuProperty
@@ -89,13 +89,13 @@ class GamePropertiesAdapter(
                 binding.details.setVisible(false)
             }
 
+
             val hasVisibleActions = submenuProperty.secondaryActions?.any { it.isShown } == true
             binding.layoutSecondaryActions.removeAllViews()
             binding.dividerSecondaryActions.setVisible(false)
 
             if (hasVisibleActions) {
                 binding.layoutSecondaryActions.setVisible(true)
-                binding.dividerSecondaryActions.setVisible(true)
 
                 val visibleActions = submenuProperty.secondaryActions!!.filter { it.isShown }
                 val inflater = LayoutInflater.from(binding.root.context)
@@ -123,7 +123,7 @@ class GamePropertiesAdapter(
         }
     }
 
-    inner class InstallablePropertyViewHolder(val binding: CardMoonwitchGameInstallableBinding) :
+    inner class InstallablePropertyViewHolder(val binding: CardInstallableIconBinding) :
         AbstractViewHolder<GameProperty>(binding) {
         override fun bind(model: GameProperty) {
             val installableProperty = model as InstallableProperty

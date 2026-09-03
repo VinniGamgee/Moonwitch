@@ -4,40 +4,31 @@
     android:id="@+id/coordinator_main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/moonwitch_frontend_background">
+    android:background="?attr/colorSurface">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appbar_settings"
+        style="@style/Widget.Eden.TransparentTopAppBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/moonwitch_frontend_background"
-        android:elevation="0dp"
         android:fitsSystemWindows="true"
-        android:touchscreenBlocksFocus="false"
-        app:elevation="0dp">
+        android:touchscreenBlocksFocus="false">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar_settings"
+            style="@style/Widget.Eden.TransparentTopToolbar"
             android:layout_width="match_parent"
-            android:layout_height="72dp"
-            android:background="@color/moonwitch_frontend_background"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
+            android:layout_height="?attr/actionBarSize"
             android:touchscreenBlocksFocus="false"
-            app:navigationIcon="@drawable/ic_back"
-            app:navigationIconTint="@color/moonwitch_frontend_text"
-            app:titleCentered="true"
-            app:titleTextColor="@color/moonwitch_frontend_text" />
+            app:navigationIcon="@drawable/ic_back" />
+
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/list_settings"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/moonwitch_frontend_background"
         android:clipToPadding="false"
-        android:paddingTop="10dp"
-        android:paddingBottom="28dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
