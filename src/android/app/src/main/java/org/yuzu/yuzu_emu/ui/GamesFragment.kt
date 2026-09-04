@@ -145,7 +145,7 @@ class GamesFragment : Fragment() {
 
         applyGridGamesBinding()
 
-        binding.libraryHeroOpen.setOnClickListener {
+        binding.libraryHeroOpen?.setOnClickListener {
             highlightedGame?.let(::openGameHub)
         }
 
@@ -493,14 +493,18 @@ class GamesFragment : Fragment() {
     private inner class ScoredGame(val score: Double, val item: Game)
 
     private fun updateLibraryHeroSelection(games: List<Game>) {
-        if (_binding == null) return
+        val currentBinding = _binding ?: return
+        val heroTitle = currentBinding.libraryHeroTitle ?: return
+        val heroMeta = currentBinding.libraryHeroMeta ?: return
+        val heroOpen = currentBinding.libraryHeroOpen ?: return
+        val heroBackdrop = currentBinding.libraryHeroBackdrop ?: return
         if (games.isEmpty()) {
             highlightedGame = null
-            binding.libraryHeroTitle.setText(R.string.mw_home_frontend_empty_title)
-            binding.libraryHeroMeta.setText(R.string.mw_home_frontend_empty_meta)
-            binding.libraryHeroOpen.isEnabled = false
-            binding.libraryHeroBackdrop.setImageDrawable(null)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) binding.libraryHeroBackdrop.setRenderEffect(null)
+            heroTitle.setText(R.string.mw_home_frontend_empty_title)
+            heroMeta.setText(R.string.mw_home_frontend_empty_meta)
+            heroOpen.isEnabled = false
+            heroBackdrop.setImageDrawable(null)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) heroBackdrop.setRenderEffect(null)
             return
         }
         val current = highlightedGame?.let { selected ->
@@ -531,12 +535,15 @@ class GamesFragment : Fragment() {
     }
 
     private fun showLibraryHero(game: Game, forceArtworkReload: Boolean = false) {
-        if (_binding == null) return
+        val currentBinding = _binding ?: return
+        val heroTitle = currentBinding.libraryHeroTitle ?: return
+        val heroMeta = currentBinding.libraryHeroMeta ?: return
+        val heroOpen = currentBinding.libraryHeroOpen ?: return
         val same = highlightedGame?.let { it.programId == game.programId && it.path == game.path } == true
         highlightedGame = game
-        binding.libraryHeroTitle.text = game.title.replace("[\\t\\n\\r]+".toRegex(), " ")
-        binding.libraryHeroMeta.text = buildHeroMeta(game)
-        binding.libraryHeroOpen.isEnabled = true
+        heroTitle.text = game.title.replace("[\\t\\n\\r]+".toRegex(), " ")
+        heroMeta.text = buildHeroMeta(game)
+        heroOpen.isEnabled = true
         if (!same || forceArtworkReload) loadLibraryHeroArtwork(game)
     }
 
@@ -568,31 +575,33 @@ class GamesFragment : Fragment() {
             val bitmap = withContext(Dispatchers.IO) { decodeLibraryArtwork(custom.first) }
             if (_binding == null || generation != heroLoadGeneration) return@launch
             if (bitmap == null) return@launch applyLibraryHeroFallback(game, generation)
-            binding.libraryHeroBackdrop.animate().cancel()
-            binding.libraryHeroBackdrop.alpha = 0f
-            binding.libraryHeroBackdrop.setImageBitmap(bitmap)
-            binding.libraryHeroBackdrop.scaleType = ImageView.ScaleType.CENTER_CROP
-            binding.libraryHeroBackdrop.scaleX = 1f
-            binding.libraryHeroBackdrop.scaleY = 1f
+            val heroBackdrop = _binding?.libraryHeroBackdrop ?: return@launch
+            heroBackdrop.animate().cancel()
+            heroBackdrop.alpha = 0f
+            heroBackdrop.setImageBitmap(bitmap)
+            heroBackdrop.scaleType = ImageView.ScaleType.CENTER_CROP
+            heroBackdrop.scaleX = 1f
+            heroBackdrop.scaleY = 1f
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                binding.libraryHeroBackdrop.setRenderEffect(
+                heroBackdrop.setRenderEffect(
                     if (custom.second) null else RenderEffect.createBlurEffect(18f,18f,Shader.TileMode.CLAMP)
                 )
             }
-            binding.libraryHeroBackdrop.animate().alpha(if (custom.second) 0.88f else 0.44f).setDuration(180L).start()
+            heroBackdrop.animate().alpha(if (custom.second) 0.88f else 0.44f).setDuration(180L).start()
         }
     }
 
     private fun applyLibraryHeroFallback(game: Game, generation: Int) {
         if (_binding == null || generation != heroLoadGeneration) return
-        binding.libraryHeroBackdrop.animate().cancel()
-        binding.libraryHeroBackdrop.alpha = 0.28f
-        binding.libraryHeroBackdrop.scaleType = ImageView.ScaleType.CENTER_CROP
-        binding.libraryHeroBackdrop.scaleX = 1.22f
-        binding.libraryHeroBackdrop.scaleY = 1.22f
-        GameIconUtils.loadGameIcon(game, binding.libraryHeroBackdrop)
+        val heroBackdrop = _binding?.libraryHeroBackdrop ?: return
+        heroBackdrop.animate().cancel()
+        heroBackdrop.alpha = 0.28f
+        heroBackdrop.scaleType = ImageView.ScaleType.CENTER_CROP
+        heroBackdrop.scaleX = 1.22f
+        heroBackdrop.scaleY = 1.22f
+        GameIconUtils.loadGameIcon(game, heroBackdrop)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            binding.libraryHeroBackdrop.setRenderEffect(RenderEffect.createBlurEffect(34f,34f,Shader.TileMode.CLAMP))
+            heroBackdrop.setRenderEffect(RenderEffect.createBlurEffect(34f,34f,Shader.TileMode.CLAMP))
         }
     }
 
