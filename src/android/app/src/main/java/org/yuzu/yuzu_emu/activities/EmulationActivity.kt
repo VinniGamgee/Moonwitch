@@ -122,7 +122,7 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener, InputManager
 
     @SuppressLint("SourceLockedOrientationActivity")
     override fun setRequestedOrientation(requestedOrientation: Int) {
-        super.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
+        super.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
