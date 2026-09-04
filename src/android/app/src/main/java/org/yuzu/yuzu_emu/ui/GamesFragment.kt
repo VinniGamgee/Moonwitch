@@ -515,12 +515,19 @@ class GamesFragment : Fragment() {
         val recycler = binding.gridGames as? RecyclerView ?: return
         val position = when (val lm = recycler.layoutManager) {
             is GridLayoutManager -> lm.findFirstVisibleItemPosition()
-            is LinearLayoutManager -> if (getCurrentViewType() == GameAdapter.VIEW_TYPE_CAROUSEL)
-                (recycler as? CarouselRecyclerView)?.getClosestChildPosition() ?: lm.findFirstVisibleItemPosition()
-            else lm.findFirstVisibleItemPosition()
+            is LinearLayoutManager -> {
+                if (getCurrentViewType() == GameAdapter.VIEW_TYPE_CAROUSEL) {
+                    (recycler as? CarouselRecyclerView)?.getClosestChildPosition()
+                        ?: lm.findFirstVisibleItemPosition()
+                } else {
+                    lm.findFirstVisibleItemPosition()
+                }
+            }
             else -> RecyclerView.NO_POSITION
         }
-        if (position in displayedGames.indices) showLibraryHero(displayedGames[position])
+        if (position in displayedGames.indices) {
+            showLibraryHero(displayedGames[position])
+        }
     }
 
     private fun showLibraryHero(game: Game, forceArtworkReload: Boolean = false) {
