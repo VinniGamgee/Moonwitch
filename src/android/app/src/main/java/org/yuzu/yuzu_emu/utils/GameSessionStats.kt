@@ -28,6 +28,7 @@ object GameSessionStats {
     private const val ACTIVE_GAME_KEY = "active_game_key"
     private const val ACTIVE_PROGRAM_ID = "active_program_id"
     private const val ACTIVE_BASELINE_SECONDS = "active_baseline_seconds"
+    private var processActiveGameKey: String? = null
 
     @Synchronized
     fun start(context: Context, game: Game) {
@@ -35,7 +36,7 @@ object GameSessionStats {
         val gameKey = gameKey(game)
         val activeGameKey = preferences.getString(ACTIVE_GAME_KEY, null)
 
-        if (activeGameKey == gameKey) {
+        if (activeGameKey == gameKey && processActiveGameKey == gameKey) {
             return
         }
         if (activeGameKey != null) {
@@ -49,6 +50,7 @@ object GameSessionStats {
             putLong(ACTIVE_BASELINE_SECONDS, baseline)
             putInt(sessionCountKey(gameKey), preferences.getInt(sessionCountKey(gameKey), 0) + 1)
         }
+        processActiveGameKey = gameKey
 
         PreferenceManager.getDefaultSharedPreferences(context.applicationContext).edit {
             putLong(game.keyLastPlayedTime, System.currentTimeMillis())
@@ -107,6 +109,7 @@ object GameSessionStats {
             remove(ACTIVE_PROGRAM_ID)
             remove(ACTIVE_BASELINE_SECONDS)
         }
+        processActiveGameKey = null
     }
 
     private fun nativePlayTime(programId: String): Long =
