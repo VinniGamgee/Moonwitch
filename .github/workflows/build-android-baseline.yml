@@ -138,6 +138,22 @@ jobs:
           CCACHE: 'false'
         run: |
           chmod +x .ci/android/build.sh src/android/gradlew
+
+          set +e
+          (
+            cd src/android
+            ./gradlew :app:compileMainlineReleaseKotlin --console=plain --warning-mode none
+          ) > /tmp/moonwitch-kotlin.log 2>&1
+          kotlin_status=$?
+          set -e
+          if [ "$kotlin_status" -ne 0 ]; then
+            echo "===== MOONWITCH KOTLIN ERROR EXTRACT ====="
+            grep -nE '(^e: |error:|FAILURE:|What went wrong|Execution failed|Compilation error|Unresolved reference|Type mismatch|Cannot infer|Expecting |No value passed|Too many arguments|Overload resolution)' /tmp/moonwitch-kotlin.log | tail -n 200 || true
+            echo "===== END KOTLIN ERROR EXTRACT ====="
+            exit "$kotlin_status"
+          fi
+
+          echo "Kotlin preflight passed; starting full Android build."
           set +e
           .ci/android/build.sh -t standard -b Release > /tmp/moonwitch-build.log 2>&1
           status=$?
