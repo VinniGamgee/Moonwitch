@@ -1,38 +1,170 @@
-name: Moonwitch Home Frontend V1 Staging
+name: Moonwitch Stage 10 + Classic UI
 
 on:
+  workflow_dispatch:
   push:
     branches:
-      - work/home-frontend-v1
+      - exp/moonwitch-reconstruction-stage9
+      - feat/stage9-frontend-ui
+      - feat/stage9-ui-exact
+      - feat/stage9-classic-ui
+      - exp/moonwitch-reconstruction-stage10-classic-ui
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: moonwitch-home-frontend-v1-${{ github.ref }}
+  group: moonwitch-stage10-classic-ui-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  apply:
+  build:
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          submodules: recursive
           fetch-depth: 1
 
-      - name: Apply Home Frontend V1 Kotlin patch
+      - name: Apply Moonwitch Reconstruction Stage 2
+        shell: bash
+        run: python3 .github/scripts/apply_moonwitch_reconstruction_stage2.py
+
+      - name: Apply Moonwitch Reconstruction Stage 3
+        shell: bash
+        run: python3 .github/scripts/apply_moonwitch_reconstruction_stage3.py
+
+      - name: Apply Moonwitch Reconstruction Stage 4
+        shell: bash
+        run: python3 .github/scripts/apply_moonwitch_reconstruction_stage4.py
+
+      - name: Apply Moonwitch Reconstruction Stage 5
+        shell: bash
+        run: python3 .github/scripts/apply_moonwitch_reconstruction_stage5.py
+
+      - name: Apply Moonwitch Reconstruction Stage 6
+        shell: bash
+        run: python3 .github/scripts/apply_moonwitch_reconstruction_stage6.py
+
+      - name: Apply Moonwitch Reconstruction Stage 7
+        shell: bash
+        run: python3 .github/scripts/apply_moonwitch_reconstruction_stage7.py
+
+      - name: Apply Moonwitch Reconstruction Stage 8
+        shell: bash
+        run: python3 .github/scripts/apply_moonwitch_reconstruction_stage8_runner.py
+
+      - name: Apply Moonwitch Reconstruction Stage 9
+        shell: bash
+        run: python3 .github/scripts/apply_moonwitch_reconstruction_stage9.py
+
+      - name: Apply Moonwitch Reconstruction Stage 10
+        shell: bash
+        run: python3 .github/scripts/apply_moonwitch_reconstruction_stage10.py
+
+      - name: Guard Stage 10 integrity and TOTK foliage workaround
         shell: bash
         run: |
-          set -euo pipefail
-          python3 .github/scripts/apply_home_frontend_v1.py
-          git config user.name "Moonwitch CI"
-          git config user.email "actions@users.noreply.github.com"
-          git rm .github/scripts/apply_home_frontend_v1.py
-          git add -A
-          git diff --cached --check
-          grep -q "libraryHeroBackdrop" src/android/app/src/main/java/org/yuzu/yuzu_emu/ui/GamesFragment.kt
-          grep -q '@+id/library_hero_backdrop' src/android/app/src/main/res/layout/fragment_games.xml
-          grep -q 'mw_home_frontend_open_hub' src/android/app/src/main/res/values-pt-rBR/moonwitch_home_frontend.xml
-          git commit -m "Moonwitch: Home Frontend V1 [skip ci]"
-          git push origin HEAD:work/home-frontend-v1
+          if ! grep -q "TOTK_PROGRAM_ID" src/video_core/renderer_vulkan/vk_rasterizer.cpp; then
+            echo "TOTK foliage workaround is missing; refusing to build."
+            exit 1
+          fi
+          if ! git diff --quiet -- src/video_core/renderer_vulkan/vk_rasterizer.cpp; then
+            echo "Reconstruction patch touched vk_rasterizer.cpp; refusing to build."
+            git diff -- src/video_core/renderer_vulkan/vk_rasterizer.cpp
+            exit 1
+          fi
+          grep -q "SGSR2_SCENE_HISTORY_CAPACITY" src/video_core/renderer_vulkan/vk_texture_cache.h
+          grep -q "SGSR2FindSceneHistory" src/video_core/renderer_vulkan/vk_texture_cache.cpp
+          grep -q "SGSR2RecordImageLineage" src/video_core/renderer_vulkan/vk_texture_cache.cpp
+          grep -q "GPUVAddr gpu_addr" src/video_core/renderer_vulkan/vk_texture_cache.h
+          grep -q "guest_address_match" src/video_core/renderer_vulkan/vk_texture_cache.h
+          grep -q "guest_address_correlated" src/video_core/renderer_vulkan/vk_rasterizer.h
+          grep -q "depth_guest_address_correlated" src/video_core/renderer_vulkan/present/sgsr2_runtime_inputs.h
+          grep -q "guest_addr_match" src/video_core/renderer_vulkan/present/layer.cpp
+          grep -q "motion_scene_history_evidence" src/video_core/renderer_vulkan/present/sgsr2_runtime_inputs.h
+          grep -q "Stage 9 intentionally keeps motion_valid false" src/video_core/renderer_vulkan/present/layer.cpp
+          grep -q "ReadyForTemporalDispatch" src/video_core/renderer_vulkan/present/sgsr2_runtime_inputs.h
+          if grep -Eq "sgsr2_inputs\.motion_valid[[:space:]]*=[[:space:]]*true" src/video_core/renderer_vulkan/present/layer.cpp; then
+            echo "Stage 10 attempted to promote unverified motion data; refusing to build."
+            exit 1
+          fi
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y glslang-tools spirv-tools
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0" "ndk;28.2.13676358" "cmake;3.31.6"
+
+      - name: Validate Qualcomm SGSR2 compute shaders
+        shell: bash
+        run: |
+          for shader in \
+            src/video_core/host_shaders/sgsr2_convert.comp \
+            src/video_core/host_shaders/sgsr2_activate.comp \
+            src/video_core/host_shaders/sgsr2_upscale.comp; do
+            echo "Validating $shader"
+            glslangValidator -V --target-env spirv1.3 "$shader" -o "/tmp/$(basename "$shader").spv"
+            spirv-val --target-env spv1.3 "/tmp/$(basename "$shader").spv"
+          done
+
+      - name: Validate classic UI and current feature wiring
+        shell: bash
+        run: |
+          grep -q "updateButtonsVisibility" src/android/app/src/main/java/org/yuzu/yuzu_emu/ui/GamesFragment.kt
+          grep -q "filter_favorites" src/android/app/src/main/java/org/yuzu/yuzu_emu/ui/GamesFragment.kt
+          grep -q "SECTION_MOONWITCH_PERFORMANCE" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/HomeSettingsFragment.kt
+          grep -q '@+id/settings_button' src/android/app/src/main/res/layout/fragment_games.xml
+          grep -q '@+id/launch_qlaunch' src/android/app/src/main/res/layout/fragment_games.xml
+          if grep -q '@+id/bottom_nav' src/android/app/src/main/res/layout/fragment_games.xml; then
+            echo "Modern bottom navigation is present in the classic frontend; refusing to build."
+            exit 1
+          fi
+          git diff --check
+
+      - name: Build
+        shell: bash
+        env:
+          CCACHE: 'false'
+        run: |
+          chmod +x .ci/android/build.sh src/android/gradlew
+          .ci/android/build.sh -t standard -b Release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MOONWITCH-STAGE10-CLASSIC-UI
+          path: artifacts/*.apk
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Validate generated Stage 10 sources
+        shell: bash
+        run: |
+          git diff --check
+          for file in \
+            src/video_core/host_shaders/sgsr2_convert.comp \
+            src/video_core/host_shaders/sgsr2_activate.comp \
+            src/video_core/host_shaders/sgsr2_upscale.comp \
+            src/video_core/renderer_vulkan/present/sgsr2_resources.cpp \
+            src/video_core/renderer_vulkan/present/sgsr2_resources.h \
+            src/video_core/renderer_vulkan/present/sgsr2_runtime_inputs.h \
+            src/video_core/renderer_vulkan/present/sgsr2_motion_probe.cpp \
+            src/video_core/renderer_vulkan/present/sgsr2_motion_probe.h \
+            src/video_core/renderer_vulkan/present/layer.cpp \
+            src/video_core/renderer_vulkan/present/layer.h \
+            src/video_core/renderer_vulkan/vk_texture_cache.cpp \
+            src/video_core/renderer_vulkan/vk_texture_cache.h \
+            src/video_core/renderer_vulkan/vk_rasterizer.h; do
+            test -s "$file" || { echo "Missing generated file: $file"; exit 1; }
+          done
