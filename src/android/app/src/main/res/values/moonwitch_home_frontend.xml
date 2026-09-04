@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mw_home_frontend_featured">FEATURED</string>
+    <string name="mw_home_frontend_open_hub">Open game</string>
+    <string name="mw_home_frontend_empty_title">Your Moonwitch library</string>
+    <string name="mw_home_frontend_empty_meta">Add a games folder to get started.</string>
+    <string name="mw_home_frontend_switch_game">Nintendo Switch title</string>
+</resources>
