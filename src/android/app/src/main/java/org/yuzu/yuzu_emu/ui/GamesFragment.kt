@@ -26,6 +26,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.doOnPreDraw
 import androidx.core.view.updatePadding
 import androidx.core.widget.doOnTextChanged
+import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
@@ -276,7 +277,6 @@ class GamesFragment : Fragment() {
             outState.putString(SEARCH_TEXT, binding.searchText.text.toString())
         }
     }
-
     override fun onPause() {
         super.onPause()
         if (getCurrentViewType() == GameAdapter.VIEW_TYPE_CAROUSEL) {
