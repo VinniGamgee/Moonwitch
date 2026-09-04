@@ -36,8 +36,7 @@ jobs:
             src/android/app/src/main/res/layout-w600dp/fragment_game_properties.xml \
             src/android/app/src/main/res/values/moonwitch_gamehub_v2.xml \
             src/android/app/src/main/res/values-pt-rBR/moonwitch_gamehub_v2.xml \
-            src/android/app/src/main/res/drawable/mw_game_hub_hero_scrim.xml \
-            .github/scripts/apply_gamehub_v21.py
+            src/android/app/src/main/res/drawable/mw_game_hub_hero_scrim.xml
           git diff --cached --check
           git commit -m "Moonwitch: polish Game Hub V2.1 frontend"
           git push origin HEAD:exp/moonwitch-reconstruction-stage10-classic-ui
