@@ -22,4 +22,17 @@
     <string name="mw_gamehub_v2_base_version">Base</string>
     <string name="mw_gamehub_v2_create_shortcut">Criar atalho na tela inicial</string>
     <string name="mw_gamehub_v2_edit_playtime">Editar tempo de jogo</string>
+    <string name="mw_gamehub_v22_more_subtitle">Ações rápidas e personalização deste jogo.</string>
+    <string name="mw_gamehub_v22_profile_desc">Aplique uma recomendação real baseada no dispositivo.</string>
+    <string name="mw_gamehub_v22_cover">Capa do jogo</string>
+    <string name="mw_gamehub_v22_cover_desc">Escolha uma capa vertical salva no aparelho.</string>
+    <string name="mw_gamehub_v22_hero">Hero / fundo</string>
+    <string name="mw_gamehub_v22_hero_desc">Escolha a arte horizontal exibida atrás do jogo.</string>
+    <string name="mw_gamehub_v22_info_desc">Versão, Title ID e detalhes do jogo.</string>
+    <string name="mw_gamehub_v22_shortcut_desc">Fixe este jogo diretamente na tela inicial.</string>
+    <string name="mw_gamehub_v22_playtime_desc">Ajuste o contador de tempo deste jogo.</string>
+    <string name="mw_gamehub_v22_advanced_desc">Abra todos os demais ajustes específicos do jogo.</string>
+    <string name="mw_gamehub_v22_cover_updated">Capa do jogo atualizada.</string>
+    <string name="mw_gamehub_v22_hero_updated">Hero do jogo atualizado.</string>
+    <string name="mw_gamehub_v22_artwork_failed">Não foi possível importar esta imagem.</string>
 </resources>

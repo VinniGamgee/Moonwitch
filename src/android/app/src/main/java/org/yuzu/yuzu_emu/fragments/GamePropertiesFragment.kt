@@ -4,6 +4,8 @@
 package org.yuzu.yuzu_emu.fragments
 
 import android.content.Intent
+import android.graphics.Color
+import android.net.Uri
 import android.graphics.BitmapFactory
 import android.graphics.RenderEffect
 import android.graphics.Shader
@@ -16,6 +18,9 @@ import android.provider.DocumentsContract
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
+import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
@@ -30,6 +35,8 @@ import androidx.navigation.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.transition.MaterialSharedAxis
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -97,7 +104,7 @@ class GamePropertiesFragment : Fragment() {
 
         binding.buttonShortcut.setOnClickListener { showMoreActions() }
 
-        GameIconUtils.loadGameIcon(args.game, binding.imageGameScreen)
+        setupGameCover()
         setupGameArtwork()
         binding.title.text = args.game.title
         binding.developer.text = args.game.developer.ifBlank {
@@ -273,21 +280,60 @@ class GamePropertiesFragment : Fragment() {
         return customDescription ?: getString(R.string.mw_gamehub_v2_description_fallback)
     }
 
-    private fun findHeroArtwork(): File? {
+    private fun findArtwork(names: List<String>): File? {
         val directory = gameAssetDirectory()
         runCatching { directory.mkdirs() }
-        return listOf(
-            "hero.jpg",
-            "hero.jpeg",
-            "hero.png",
-            "hero.webp",
-            "background.jpg",
-            "background.jpeg",
-            "background.png",
-            "background.webp"
-        ).asSequence()
+        return names.asSequence()
             .map { File(directory, it) }
             .firstOrNull(File::isFile)
+    }
+
+    private fun findHeroArtwork(): File? = findArtwork(
+        listOf(
+            "hero.jpg", "hero.jpeg", "hero.png", "hero.webp",
+            "background.jpg", "background.jpeg", "background.png", "background.webp"
+        )
+    )
+
+    private fun findCoverArtwork(): File? = findArtwork(
+        listOf(
+            "cover.jpg", "cover.jpeg", "cover.png", "cover.webp",
+            "poster.jpg", "poster.jpeg", "poster.png", "poster.webp",
+            "boxart.jpg", "boxart.jpeg", "boxart.png", "boxart.webp"
+        )
+    )
+
+    private fun setupGameCover() {
+        val coverArtwork = findCoverArtwork()
+        if (coverArtwork == null) {
+            applyFallbackCover()
+            return
+        }
+
+        (binding.imageGameScreen.parent as? View)?.let { updateViewHeight(it, 164) }
+        viewLifecycleOwner.lifecycleScope.launch {
+            val bitmap = withContext(Dispatchers.IO) { decodeArtwork(coverArtwork, 1200) }
+            if (_binding == null || bitmap == null) {
+                if (_binding != null) applyFallbackCover()
+                return@launch
+            }
+
+            binding.imageGameScreen.apply {
+                setPadding(0, 0, 0, 0)
+                scaleType = ImageView.ScaleType.CENTER_CROP
+                setImageBitmap(bitmap)
+            }
+        }
+    }
+
+    private fun applyFallbackCover() {
+        GameIconUtils.loadGameIcon(args.game, binding.imageGameScreen)
+        val inset = (6 * resources.displayMetrics.density).toInt()
+        binding.imageGameScreen.apply {
+            setPadding(inset, inset, inset, inset)
+            scaleType = ImageView.ScaleType.FIT_CENTER
+        }
+        (binding.imageGameScreen.parent as? View)?.let { updateViewHeight(it, 118) }
     }
 
     private fun setupGameArtwork() {
@@ -297,8 +343,9 @@ class GamePropertiesFragment : Fragment() {
             return
         }
 
+        (binding.imageGameBackdrop.parent as? View)?.let { updateViewHeight(it, 430) }
         viewLifecycleOwner.lifecycleScope.launch {
-            val bitmap = withContext(Dispatchers.IO) { decodeHeroArtwork(heroArtwork) }
+            val bitmap = withContext(Dispatchers.IO) { decodeArtwork(heroArtwork, 1920) }
             if (_binding == null || bitmap == null) {
                 if (_binding != null) applyFallbackBackdrop()
                 return@launch
@@ -309,28 +356,38 @@ class GamePropertiesFragment : Fragment() {
             }
             binding.imageGameBackdrop.scaleX = 1f
             binding.imageGameBackdrop.scaleY = 1f
-            binding.imageGameBackdrop.alpha = 0.78f
+            binding.imageGameBackdrop.alpha = 0.82f
             binding.imageGameBackdrop.setImageBitmap(bitmap)
         }
     }
 
     private fun applyFallbackBackdrop() {
+        (binding.imageGameBackdrop.parent as? View)?.let { updateViewHeight(it, 330) }
         GameIconUtils.loadGameIcon(args.game, binding.imageGameBackdrop)
-        binding.imageGameBackdrop.alpha = 0.34f
-        binding.imageGameBackdrop.scaleX = 1.18f
-        binding.imageGameBackdrop.scaleY = 1.18f
+        binding.imageGameBackdrop.alpha = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) 0.30f else 0.16f
+        binding.imageGameBackdrop.scaleX = 1.28f
+        binding.imageGameBackdrop.scaleY = 1.28f
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             binding.imageGameBackdrop.setRenderEffect(
-                RenderEffect.createBlurEffect(32f, 32f, Shader.TileMode.CLAMP)
+                RenderEffect.createBlurEffect(36f, 36f, Shader.TileMode.CLAMP)
             )
         }
     }
 
-    private fun decodeHeroArtwork(file: File) = runCatching {
+    private fun updateViewHeight(view: View, heightDp: Int) {
+        val params = view.layoutParams
+        params.height = (heightDp * resources.displayMetrics.density).toInt()
+        view.layoutParams = params
+    }
+
+    private fun decodeArtwork(file: File, maxDimension: Int) = runCatching {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(file.absolutePath, bounds)
         var sampleSize = 1
-        while (bounds.outWidth / sampleSize > 1920 || bounds.outHeight / sampleSize > 1920) {
+        while (
+            bounds.outWidth > 0 && bounds.outHeight > 0 &&
+            (bounds.outWidth / sampleSize > maxDimension || bounds.outHeight / sampleSize > maxDimension)
+        ) {
             sampleSize *= 2
         }
         BitmapFactory.decodeFile(
@@ -338,6 +395,47 @@ class GamePropertiesFragment : Fragment() {
             BitmapFactory.Options().apply { inSampleSize = sampleSize }
         )
     }.getOrNull()
+
+    private fun importArtwork(uri: Uri, stem: String) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val imported = withContext(Dispatchers.IO) {
+                runCatching {
+                    val directory = gameAssetDirectory().apply { mkdirs() }
+                    val resolver = requireContext().contentResolver
+                    val extension = when (resolver.getType(uri)) {
+                        "image/jpeg" -> "jpg"
+                        "image/webp" -> "webp"
+                        else -> "png"
+                    }
+                    listOf("jpg", "jpeg", "png", "webp").forEach {
+                        File(directory, "$stem.$it").delete()
+                    }
+                    val target = File(directory, "$stem.$extension")
+                    resolver.openInputStream(uri)?.use { input ->
+                        target.outputStream().use { output -> input.copyTo(output) }
+                    } ?: return@runCatching false
+                    target.isFile && target.length() > 0L
+                }.getOrDefault(false)
+            }
+
+            if (_binding == null) return@launch
+            if (imported) {
+                if (stem == "cover") setupGameCover() else setupGameArtwork()
+                Toast.makeText(
+                    requireContext(),
+                    if (stem == "cover") R.string.mw_gamehub_v22_cover_updated
+                    else R.string.mw_gamehub_v22_hero_updated,
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                Toast.makeText(
+                    requireContext(),
+                    R.string.mw_gamehub_v22_artwork_failed,
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
 
     private fun readableLastPlayed(): String {
         val value = PreferenceManager.getDefaultSharedPreferences(requireContext())
@@ -425,29 +523,51 @@ class GamePropertiesFragment : Fragment() {
     }
 
     private fun showMoreActions() {
-        val actions = mutableListOf<Pair<String, () -> Unit>>()
-        actions += getString(R.string.device_profile_title) to { showDeviceProfileDialog() }
-        actions += getString(R.string.mw_gamehub_info) to {
+        val sheet = layoutInflater.inflate(R.layout.bottom_sheet_gamehub_more, null)
+        sheet.findViewById<android.widget.TextView>(R.id.more_game_title).text = args.game.title
+
+        val dialog = BottomSheetDialog(requireContext())
+        dialog.setContentView(sheet)
+
+        fun bindAction(viewId: Int, action: () -> Unit) {
+            sheet.findViewById<View>(viewId).setOnClickListener {
+                dialog.dismiss()
+                action()
+            }
+        }
+
+        bindAction(R.id.more_device_profile) { showDeviceProfileDialog() }
+        bindAction(R.id.more_cover) { importCoverArtwork.launch(arrayOf("image/*")) }
+        bindAction(R.id.more_hero) { importHeroArtwork.launch(arrayOf("image/*")) }
+        bindAction(R.id.more_game_info) {
             val action = HomeNavigationDirections.actionGlobalSettingsSubscreenActivity(
                 SettingsSubscreen.GAME_INFO,
                 args.game
             )
             binding.root.findNavController().navigate(action)
         }
-        val shortcutManager = requireActivity().getSystemService(ShortcutManager::class.java)
-        if (shortcutManager.isRequestPinShortcutSupported) {
-            actions += getString(R.string.mw_gamehub_v2_create_shortcut) to { requestPinnedShortcut() }
-        }
-        actions += getString(R.string.mw_gamehub_v2_edit_playtime) to { showEditPlaytimeDialog() }
-        actions += getString(R.string.mw_gamehub_advanced) to { openRootSettings() }
+        bindAction(R.id.more_shortcut) { requestPinnedShortcut() }
+        bindAction(R.id.more_playtime) { showEditPlaytimeDialog() }
+        bindAction(R.id.more_advanced) { openRootSettings() }
 
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
-            .setTitle(args.game.title)
-            .setItems(actions.map { it.first }.toTypedArray()) { _, which ->
-                actions[which].second.invoke()
+        val shortcutManager = requireActivity().getSystemService(ShortcutManager::class.java)
+        sheet.findViewById<View>(R.id.more_shortcut).visibility =
+            if (shortcutManager.isRequestPinShortcutSupported) View.VISIBLE else View.GONE
+
+        dialog.setOnShowListener {
+            dialog.findViewById<FrameLayout>(com.google.android.material.R.id.design_bottom_sheet)?.let {
+                it.setBackgroundColor(Color.TRANSPARENT)
+                BottomSheetBehavior.from(it).apply {
+                    state = BottomSheetBehavior.STATE_EXPANDED
+                    skipCollapsed = true
+                }
             }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            dialog.window?.apply {
+                addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+                attributes = attributes.apply { dimAmount = 0.64f }
+            }
+        }
+        dialog.show()
     }
 
     private fun showEditPlaytimeDialog() {
@@ -786,6 +906,16 @@ class GamePropertiesFragment : Fragment() {
                 bottom = barInsets.bottom + (24 * resources.displayMetrics.density).toInt()
             )
             windowInsets
+        }
+
+    private val importCoverArtwork =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) importArtwork(uri, "cover")
+        }
+
+    private val importHeroArtwork =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) importArtwork(uri, "hero")
         }
 
     private val importSaves =

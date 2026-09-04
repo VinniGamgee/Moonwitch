@@ -26,4 +26,17 @@
     <string name="mw_gamehub_v2_base_version">Base</string>
     <string name="mw_gamehub_v2_create_shortcut">Create home screen shortcut</string>
     <string name="mw_gamehub_v2_edit_playtime">Edit play time</string>
+    <string name="mw_gamehub_v22_more_subtitle">Quick actions and artwork for this title.</string>
+    <string name="mw_gamehub_v22_profile_desc">Apply a real device-aware recommendation.</string>
+    <string name="mw_gamehub_v22_cover">Game cover</string>
+    <string name="mw_gamehub_v22_cover_desc">Choose a portrait cover from your device.</string>
+    <string name="mw_gamehub_v22_hero">Hero / background</string>
+    <string name="mw_gamehub_v22_hero_desc">Choose the wide artwork shown behind the game.</string>
+    <string name="mw_gamehub_v22_info_desc">Version, title ID and game details.</string>
+    <string name="mw_gamehub_v22_shortcut_desc">Pin this game directly to your home screen.</string>
+    <string name="mw_gamehub_v22_playtime_desc">Adjust the play-time counter for this title.</string>
+    <string name="mw_gamehub_v22_advanced_desc">Open every remaining per-game override.</string>
+    <string name="mw_gamehub_v22_cover_updated">Game cover updated.</string>
+    <string name="mw_gamehub_v22_hero_updated">Hero artwork updated.</string>
+    <string name="mw_gamehub_v22_artwork_failed">Could not import this image.</string>
 </resources>
