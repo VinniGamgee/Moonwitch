@@ -15,7 +15,8 @@
     <string name="mw_gamehub_v2_title_id">Title ID</string>
     <string name="mw_gamehub_v2_game_settings">Ajustes por jogo</string>
     <string name="mw_gamehub_v2_meta">%1$s • %2$s</string>
-    <string name="mw_gamehub_v2_description_fallback">%1$s é um título de Nintendo Switch publicado por %2$s. O Moonwitch ainda não possui uma sinopse externa para este título; abaixo ficam atividade real e metadados técnicos do jogo.</string>
+    <string name="mw_gamehub_v2_description_fallback">Ainda não há uma sinopse disponível para este jogo.</string>
+    <string name="mw_gamehub_v21_settings_intro">Ajuste desempenho, gráficos e componentes especificamente para este jogo.</string>
     <string name="mw_gamehub_v2_never">Nunca</string>
     <string name="mw_gamehub_v2_unknown_value">—</string>
     <string name="mw_gamehub_v2_base_version">Base</string>

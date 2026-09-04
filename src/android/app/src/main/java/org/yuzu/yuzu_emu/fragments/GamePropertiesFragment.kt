@@ -4,8 +4,12 @@
 package org.yuzu.yuzu_emu.fragments
 
 import android.content.Intent
+import android.graphics.BitmapFactory
+import android.graphics.RenderEffect
+import android.graphics.Shader
 import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
+import android.os.Build
 import android.os.Bundle
 import android.text.format.DateUtils
 import android.provider.DocumentsContract
@@ -53,7 +57,6 @@ import org.yuzu.yuzu_emu.utils.FileUtil
 import org.yuzu.yuzu_emu.utils.GameHelper
 import org.yuzu.yuzu_emu.utils.GameIconUtils
 import org.yuzu.yuzu_emu.utils.MemoryUtil
-import org.yuzu.yuzu_emu.utils.ViewUtils.marquee
 import org.yuzu.yuzu_emu.utils.collect
 import java.io.BufferedOutputStream
 import java.io.File
@@ -95,12 +98,12 @@ class GamePropertiesFragment : Fragment() {
         binding.buttonShortcut.setOnClickListener { showMoreActions() }
 
         GameIconUtils.loadGameIcon(args.game, binding.imageGameScreen)
-        GameIconUtils.loadGameIcon(args.game, binding.imageGameBackdrop)
+        setupGameArtwork()
         binding.title.text = args.game.title
-        binding.title.marquee()
         binding.developer.text = args.game.developer.ifBlank {
             getString(R.string.mw_gamehub_unknown_developer)
         }
+        binding.developer.visibility = View.GONE
         setupQuickActions()
         refreshOverview()
 
@@ -246,25 +249,95 @@ class GamePropertiesFragment : Fragment() {
         else getString(R.string.mw_gamehub_v2_meta, developer, args.game.version)
     }
 
+    private fun gameAssetDirectory(): File = File(
+        DirectoryInitialization.userDirectory +
+            "/moonwitch/metadata/" + args.game.settingsName
+    )
+
     private fun gameDescription(): String {
-        val metadataFile = File(
+        val assetDirectory = gameAssetDirectory()
+        val legacyMetadata = File(
             DirectoryInitialization.userDirectory +
                 "/moonwitch/metadata/" + args.game.settingsName + ".txt"
         )
-        val customDescription = runCatching {
-            if (metadataFile.isFile) metadataFile.readText().trim() else ""
-        }.getOrDefault("")
-        if (customDescription.isNotBlank()) return customDescription
-
-        val developer = args.game.developer.ifBlank {
-            getString(R.string.mw_gamehub_unknown_developer)
-        }
-        return getString(
-            R.string.mw_gamehub_v2_description_fallback,
-            args.game.title,
-            developer
+        val candidates = listOf(
+            File(assetDirectory, "description.txt"),
+            File(assetDirectory, "description.pt-BR.txt"),
+            legacyMetadata
         )
+        val customDescription = candidates.firstNotNullOfOrNull { file ->
+            runCatching {
+                if (file.isFile) file.readText().trim().takeIf(String::isNotBlank) else null
+            }.getOrNull()
+        }
+        return customDescription ?: getString(R.string.mw_gamehub_v2_description_fallback)
     }
+
+    private fun findHeroArtwork(): File? {
+        val directory = gameAssetDirectory()
+        runCatching { directory.mkdirs() }
+        return listOf(
+            "hero.jpg",
+            "hero.jpeg",
+            "hero.png",
+            "hero.webp",
+            "background.jpg",
+            "background.jpeg",
+            "background.png",
+            "background.webp"
+        ).asSequence()
+            .map { File(directory, it) }
+            .firstOrNull(File::isFile)
+    }
+
+    private fun setupGameArtwork() {
+        val heroArtwork = findHeroArtwork()
+        if (heroArtwork == null) {
+            applyFallbackBackdrop()
+            return
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            val bitmap = withContext(Dispatchers.IO) { decodeHeroArtwork(heroArtwork) }
+            if (_binding == null || bitmap == null) {
+                if (_binding != null) applyFallbackBackdrop()
+                return@launch
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                binding.imageGameBackdrop.setRenderEffect(null)
+            }
+            binding.imageGameBackdrop.scaleX = 1f
+            binding.imageGameBackdrop.scaleY = 1f
+            binding.imageGameBackdrop.alpha = 0.78f
+            binding.imageGameBackdrop.setImageBitmap(bitmap)
+        }
+    }
+
+    private fun applyFallbackBackdrop() {
+        GameIconUtils.loadGameIcon(args.game, binding.imageGameBackdrop)
+        binding.imageGameBackdrop.alpha = 0.34f
+        binding.imageGameBackdrop.scaleX = 1.18f
+        binding.imageGameBackdrop.scaleY = 1.18f
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            binding.imageGameBackdrop.setRenderEffect(
+                RenderEffect.createBlurEffect(32f, 32f, Shader.TileMode.CLAMP)
+            )
+        }
+    }
+
+    private fun decodeHeroArtwork(file: File) = runCatching {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(file.absolutePath, bounds)
+        var sampleSize = 1
+        while (bounds.outWidth / sampleSize > 1920 || bounds.outHeight / sampleSize > 1920) {
+            sampleSize *= 2
+        }
+        BitmapFactory.decodeFile(
+            file.absolutePath,
+            BitmapFactory.Options().apply { inSampleSize = sampleSize }
+        )
+    }.getOrNull()
 
     private fun readableLastPlayed(): String {
         val value = PreferenceManager.getDefaultSharedPreferences(requireContext())
