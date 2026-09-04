@@ -22,23 +22,22 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Apply Game Hub V2.1 and restore canonical CI
+      - name: Apply Game Hub V2.1 source changes
         shell: bash
         run: |
           set -euo pipefail
           python3 .github/scripts/apply_gamehub_v21.py
           git config user.name "Moonwitch CI"
           git config user.email "actions@users.noreply.github.com"
-          git show HEAD^:.github/workflows/build-android-baseline.yml > .github/workflows/build-android-baseline.yml
           git rm .github/scripts/apply_gamehub_v21.py
           git add \
-            .github/workflows/build-android-baseline.yml \
             src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/GamePropertiesFragment.kt \
             src/android/app/src/main/res/layout/fragment_game_properties.xml \
             src/android/app/src/main/res/layout-w600dp/fragment_game_properties.xml \
             src/android/app/src/main/res/values/moonwitch_gamehub_v2.xml \
             src/android/app/src/main/res/values-pt-rBR/moonwitch_gamehub_v2.xml \
-            src/android/app/src/main/res/drawable/mw_game_hub_hero_scrim.xml
+            src/android/app/src/main/res/drawable/mw_game_hub_hero_scrim.xml \
+            .github/scripts/apply_gamehub_v21.py
           git diff --cached --check
           git commit -m "Moonwitch: polish Game Hub V2.1 frontend"
           git push origin HEAD:exp/moonwitch-reconstruction-stage10-classic-ui
