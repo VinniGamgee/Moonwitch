@@ -1,0 +1,43 @@
+name: Moonwitch Emulation Landscape Source Fix
+
+on:
+  push:
+    branches:
+      - exp/moonwitch-reconstruction-stage10-classic-ui
+    paths:
+      - .github/workflows/fix-emulation-landscape.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply portrait frontend / landscape emulation fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/fix_emulation_landscape.py
+          grep -A5 'org.yuzu.yuzu_emu.activities.EmulationActivity' src/android/app/src/main/AndroidManifest.xml | grep -q 'screenOrientation="sensorLandscape"'
+          grep -q 'SCREEN_ORIENTATION_SENSOR_LANDSCAPE' src/android/app/src/main/java/org/yuzu/yuzu_emu/activities/EmulationActivity.kt
+          grep -A4 'org.yuzu.yuzu_emu.ui.main.MainActivity' src/android/app/src/main/AndroidManifest.xml | grep -q 'screenOrientation="portrait"'
+          git diff --check
+
+      - name: Commit source fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Moonwitch CI"
+          git config user.email "actions@users.noreply.github.com"
+          git add src/android/app/src/main/AndroidManifest.xml src/android/app/src/main/java/org/yuzu/yuzu_emu/activities/EmulationActivity.kt
+          git rm .github/scripts/fix_emulation_landscape.py .github/workflows/fix-emulation-landscape.yml
+          git diff --cached --check
+          git commit -m "Moonwitch: keep frontend portrait and games landscape [skip ci]"
+          git push origin HEAD:exp/moonwitch-reconstruction-stage10-classic-ui
