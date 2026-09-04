@@ -39,4 +39,26 @@
     <string name="mw_gamehub_v22_cover_updated">Game cover updated.</string>
     <string name="mw_gamehub_v22_hero_updated">Hero artwork updated.</string>
     <string name="mw_gamehub_v22_artwork_failed">Could not import this image.</string>
+    <string name="mw_gamehub_v23_performance">Performance</string>
+    <string name="mw_gamehub_v23_graphics">Graphics</string>
+    <string name="mw_gamehub_v23_mods">Mods</string>
+    <string name="mw_gamehub_v23_updates_dlc">Updates / DLC</string>
+    <string name="mw_gamehub_v23_driver">Driver</string>
+    <string name="mw_gamehub_v23_statistics">Statistics</string>
+    <string name="mw_gamehub_v23_customize">Customize</string>
+    <string name="mw_gamehub_v23_mods_game">Mods • %1$s</string>
+    <string name="mw_gamehub_v23_updates_game">Updates / DLC • %1$s</string>
+    <string name="mw_gamehub_v23_statistics_subtitle">Total history plus real sessions tracked from this version.</string>
+    <string name="mw_gamehub_v23_total_time">Total play time</string>
+    <string name="mw_gamehub_v23_sessions">Sessions</string>
+    <string name="mw_gamehub_v23_longest_session">Longest session</string>
+    <string name="mw_gamehub_v23_average_session">Average session</string>
+    <string name="mw_gamehub_v23_customize_subtitle">Use separate artwork for this game hub.</string>
+    <string name="mw_gamehub_v23_logo">Game logo</string>
+    <string name="mw_gamehub_v23_logo_desc">Choose a transparent logo to replace the title in the hero.</string>
+    <string name="mw_gamehub_v23_logo_updated">Game logo updated.</string>
+    <string name="mw_gamehub_v23_reset_artwork">Restore original artwork</string>
+    <string name="mw_gamehub_v23_reset_artwork_desc">Remove the custom cover, hero and logo.</string>
+    <string name="mw_gamehub_v23_reset_artwork_confirm">Remove every custom image imported for this game?</string>
+    <string name="mw_gamehub_v23_artwork_reset">Original artwork restored.</string>
 </resources>

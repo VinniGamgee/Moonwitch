@@ -163,6 +163,10 @@
         <argument
             android:name="game"
             app:argType="org.yuzu.yuzu_emu.model.Game" />
+        <argument
+            android:name="contentFilter"
+            app:argType="integer"
+            android:defaultValue="0" />
     </fragment>
     <fragment
         android:id="@+id/driverFetcherFragment"

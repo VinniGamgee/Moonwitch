@@ -63,6 +63,7 @@ import org.yuzu.yuzu_emu.utils.DirectoryInitialization
 import org.yuzu.yuzu_emu.utils.FileUtil
 import org.yuzu.yuzu_emu.utils.GameHelper
 import org.yuzu.yuzu_emu.utils.GameIconUtils
+import org.yuzu.yuzu_emu.utils.GameSessionStats
 import org.yuzu.yuzu_emu.utils.MemoryUtil
 import org.yuzu.yuzu_emu.utils.collect
 import java.io.BufferedOutputStream
@@ -104,9 +105,10 @@ class GamePropertiesFragment : Fragment() {
 
         binding.buttonShortcut.setOnClickListener { showMoreActions() }
 
+        binding.title.text = args.game.title
         setupGameCover()
         setupGameArtwork()
-        binding.title.text = args.game.title
+        setupGameLogo()
         binding.developer.text = args.game.developer.ifBlank {
             getString(R.string.mw_gamehub_unknown_developer)
         }
@@ -233,6 +235,10 @@ class GamePropertiesFragment : Fragment() {
 
     private fun readablePlayTime(): String {
         val playTimeSeconds = NativeLibrary.playTimeManagerGetPlayTime(args.game.programId)
+        return readableDuration(playTimeSeconds)
+    }
+
+    private fun readableDuration(playTimeSeconds: Long): String {
         val hours = playTimeSeconds / 3600
         val minutes = (playTimeSeconds % 3600) / 60
         val seconds = playTimeSeconds % 60
@@ -303,6 +309,10 @@ class GamePropertiesFragment : Fragment() {
         )
     )
 
+    private fun findLogoArtwork(): File? = findArtwork(
+        listOf("logo.png", "logo.webp", "logo.jpg", "logo.jpeg")
+    )
+
     private fun setupGameCover() {
         val coverArtwork = findCoverArtwork()
         if (coverArtwork == null) {
@@ -358,6 +368,30 @@ class GamePropertiesFragment : Fragment() {
             binding.imageGameBackdrop.scaleY = 1f
             binding.imageGameBackdrop.alpha = 0.82f
             binding.imageGameBackdrop.setImageBitmap(bitmap)
+        }
+    }
+
+    private fun setupGameLogo() {
+        val logoArtwork = findLogoArtwork()
+        if (logoArtwork == null) {
+            binding.imageGameLogo.setImageDrawable(null)
+            binding.imageGameLogo.visibility = View.GONE
+            binding.title.visibility = View.VISIBLE
+            return
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            val bitmap = withContext(Dispatchers.IO) { decodeArtwork(logoArtwork, 900) }
+            if (_binding == null) return@launch
+            if (bitmap == null) {
+                binding.imageGameLogo.setImageDrawable(null)
+                binding.imageGameLogo.visibility = View.GONE
+                binding.title.visibility = View.VISIBLE
+                return@launch
+            }
+            binding.imageGameLogo.setImageBitmap(bitmap)
+            binding.imageGameLogo.visibility = View.VISIBLE
+            binding.title.visibility = View.GONE
         }
     }
 
@@ -420,11 +454,18 @@ class GamePropertiesFragment : Fragment() {
 
             if (_binding == null) return@launch
             if (imported) {
-                if (stem == "cover") setupGameCover() else setupGameArtwork()
+                when (stem) {
+                    "cover" -> setupGameCover()
+                    "logo" -> setupGameLogo()
+                    else -> setupGameArtwork()
+                }
                 Toast.makeText(
                     requireContext(),
-                    if (stem == "cover") R.string.mw_gamehub_v22_cover_updated
-                    else R.string.mw_gamehub_v22_hero_updated,
+                    when (stem) {
+                        "cover" -> R.string.mw_gamehub_v22_cover_updated
+                        "logo" -> R.string.mw_gamehub_v23_logo_updated
+                        else -> R.string.mw_gamehub_v22_hero_updated
+                    },
                     Toast.LENGTH_SHORT
                 ).show()
             } else {
@@ -473,11 +514,25 @@ class GamePropertiesFragment : Fragment() {
 
     private fun setupQuickActions() {
         binding.actionFavorite.setOnClickListener { toggleFavorite() }
-        binding.actionSettings.setOnClickListener { openRootSettings() }
-        binding.actionContent.setOnClickListener { openContent() }
-        binding.actionMore.setOnClickListener { showMoreActions() }
-        binding.statPlaytimeRow.setOnClickListener { showEditPlaytimeDialog() }
-        binding.actionContent.visibility = if (args.game.isHomebrew) View.GONE else View.VISIBLE
+        binding.actionPerformance.setOnClickListener {
+            openSettings(Settings.MenuTag.SECTION_MOONWITCH_PERFORMANCE)
+        }
+        binding.actionGraphics.setOnClickListener {
+            openSettings(Settings.MenuTag.SECTION_RENDERER)
+        }
+        binding.actionMods.setOnClickListener {
+            openContent(SettingsSubscreen.ADDONS_MODS)
+        }
+        binding.actionUpdates.setOnClickListener {
+            openContent(SettingsSubscreen.ADDONS_UPDATES_DLC)
+        }
+        binding.actionDriver.setOnClickListener { openDriverManager() }
+        binding.actionStatistics.setOnClickListener { showStatistics() }
+        binding.actionCustomize.setOnClickListener { showCustomizeActions() }
+        binding.statPlaytimeRow.setOnClickListener { showStatistics() }
+        val contentVisibility = if (args.game.isHomebrew) View.GONE else View.VISIBLE
+        binding.actionMods.visibility = contentVisibility
+        binding.actionUpdates.visibility = contentVisibility
         refreshFavoriteAction()
     }
 
@@ -488,20 +543,119 @@ class GamePropertiesFragment : Fragment() {
     }
 
     private fun openRootSettings() {
+        openSettings(Settings.MenuTag.SECTION_ROOT)
+    }
+
+    private fun openSettings(menuTag: Settings.MenuTag) {
         val action = HomeNavigationDirections.actionGlobalSettingsActivity(
             args.game,
-            Settings.MenuTag.SECTION_ROOT
+            menuTag
         )
         binding.root.findNavController().navigate(action)
     }
 
-    private fun openContent() {
+    private fun openContent(destination: SettingsSubscreen) {
         if (args.game.isHomebrew) return
         val action = HomeNavigationDirections.actionGlobalSettingsSubscreenActivity(
-            SettingsSubscreen.ADDONS,
+            destination,
             args.game
         )
         binding.root.findNavController().navigate(action)
+    }
+
+    private fun openDriverManager() {
+        val action = HomeNavigationDirections.actionGlobalSettingsSubscreenActivity(
+            SettingsSubscreen.DRIVER_MANAGER,
+            args.game
+        )
+        binding.root.findNavController().navigate(action)
+    }
+
+    private fun showStatistics() {
+        refreshOverview()
+        val statistics = GameSessionStats.snapshot(requireContext(), args.game)
+        val sheet = layoutInflater.inflate(R.layout.bottom_sheet_gamehub_statistics, null)
+        sheet.findViewById<android.widget.TextView>(R.id.statistics_game_title).text = args.game.title
+        sheet.findViewById<android.widget.TextView>(R.id.statistics_total_value).text =
+            readablePlayTime()
+        sheet.findViewById<android.widget.TextView>(R.id.statistics_last_played_value).text =
+            readableLastPlayed()
+        sheet.findViewById<android.widget.TextView>(R.id.statistics_sessions_value).text =
+            statistics.sessionCount.toString()
+        sheet.findViewById<android.widget.TextView>(R.id.statistics_longest_value).text =
+            readableDuration(statistics.longestSessionSeconds)
+        sheet.findViewById<android.widget.TextView>(R.id.statistics_average_value).text =
+            readableDuration(statistics.averageSessionSeconds)
+
+        showExpandedBottomSheet(sheet)
+    }
+
+    private fun showCustomizeActions() {
+        val sheet = layoutInflater.inflate(R.layout.bottom_sheet_gamehub_customize, null)
+        sheet.findViewById<android.widget.TextView>(R.id.customize_game_title).text = args.game.title
+        val dialog = BottomSheetDialog(requireContext())
+        dialog.setContentView(sheet)
+
+        fun bindAction(viewId: Int, action: () -> Unit) {
+            sheet.findViewById<View>(viewId).setOnClickListener {
+                dialog.dismiss()
+                action()
+            }
+        }
+
+        bindAction(R.id.customize_cover) { importCoverArtwork.launch(arrayOf("image/*")) }
+        bindAction(R.id.customize_hero) { importHeroArtwork.launch(arrayOf("image/*")) }
+        bindAction(R.id.customize_logo) { importLogoArtwork.launch(arrayOf("image/*")) }
+        bindAction(R.id.customize_reset) { confirmResetArtwork() }
+        showExpandedBottomSheet(dialog)
+    }
+
+    private fun confirmResetArtwork() {
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.mw_gamehub_v23_reset_artwork)
+            .setMessage(R.string.mw_gamehub_v23_reset_artwork_confirm)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(android.R.string.ok) { _, _ -> resetArtwork() }
+            .show()
+    }
+
+    private fun resetArtwork() {
+        val stems = listOf("cover", "poster", "boxart", "hero", "background", "logo")
+        val extensions = listOf("jpg", "jpeg", "png", "webp")
+        stems.forEach { stem ->
+            extensions.forEach { extension -> File(gameAssetDirectory(), "$stem.$extension").delete() }
+        }
+        setupGameCover()
+        setupGameArtwork()
+        setupGameLogo()
+        Toast.makeText(
+            requireContext(),
+            R.string.mw_gamehub_v23_artwork_reset,
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
+    private fun showExpandedBottomSheet(sheet: View) {
+        val dialog = BottomSheetDialog(requireContext())
+        dialog.setContentView(sheet)
+        showExpandedBottomSheet(dialog)
+    }
+
+    private fun showExpandedBottomSheet(dialog: BottomSheetDialog) {
+        dialog.setOnShowListener {
+            dialog.findViewById<FrameLayout>(com.google.android.material.R.id.design_bottom_sheet)?.let {
+                it.setBackgroundColor(Color.TRANSPARENT)
+                BottomSheetBehavior.from(it).apply {
+                    state = BottomSheetBehavior.STATE_EXPANDED
+                    skipCollapsed = true
+                }
+            }
+            dialog.window?.apply {
+                addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+                attributes = attributes.apply { dimAmount = 0.64f }
+            }
+        }
+        dialog.show()
     }
 
     private fun requestPinnedShortcut() {
@@ -916,6 +1070,11 @@ class GamePropertiesFragment : Fragment() {
     private val importHeroArtwork =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             if (uri != null) importArtwork(uri, "hero")
+        }
+
+    private val importLogoArtwork =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) importArtwork(uri, "logo")
         }
 
     private val importSaves =

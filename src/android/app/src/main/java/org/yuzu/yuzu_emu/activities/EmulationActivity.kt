@@ -68,6 +68,7 @@ import org.yuzu.yuzu_emu.utils.ThemeHelper
 import java.text.NumberFormat
 import kotlin.math.roundToInt
 import org.yuzu.yuzu_emu.utils.ForegroundService
+import org.yuzu.yuzu_emu.utils.GameSessionStats
 import androidx.core.os.BundleCompat
 
 class EmulationActivity : AppCompatActivity(), SensorEventListener, InputManager.InputDeviceListener {
@@ -786,7 +787,7 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener, InputManager
         emulationViewModel.setIsEmulationStopping(false)
         emulationViewModel.setEmulationStopped(false)
         NativeLibrary.playTimeManagerStart()
-
+        processSessionGame?.let { GameSessionStats.start(this, it) }
     }
 
     fun onEmulationStopped(status: Int) {
@@ -796,6 +797,8 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener, InputManager
         }
         hasEmulationSession = false
         processHasEmulationSession = false
+        NativeLibrary.playTimeManagerStop()
+        processSessionGame?.let { GameSessionStats.stop(this, it) }
         if (isWaitingForRomSwapStop) {
             romSwapNativeStopped = true
             Log.info("[EmulationActivity] ROM swap native stop acknowledged")

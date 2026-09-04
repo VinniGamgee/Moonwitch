@@ -19,6 +19,7 @@ import com.google.android.material.color.MaterialColors
 import org.yuzu.yuzu_emu.R
 import org.yuzu.yuzu_emu.YuzuApplication
 import org.yuzu.yuzu_emu.databinding.ActivitySettingsBinding
+import org.yuzu.yuzu_emu.fragments.AddonsFragment
 import org.yuzu.yuzu_emu.utils.DirectoryInitialization
 import org.yuzu.yuzu_emu.utils.FullscreenHelper
 import org.yuzu.yuzu_emu.utils.InsetsHelper
@@ -37,6 +38,8 @@ enum class SettingsSubscreen {
     LICENSES,
     GAME_INFO,
     ADDONS,
+    ADDONS_MODS,
+    ADDONS_UPDATES_DLC,
 }
 
 class SettingsSubscreenActivity : AppCompatActivity() {
@@ -134,7 +137,9 @@ class SettingsSubscreenActivity : AppCompatActivity() {
             SettingsSubscreen.ABOUT -> R.id.aboutFragment
             SettingsSubscreen.LICENSES -> R.id.licensesFragment
             SettingsSubscreen.GAME_INFO -> R.id.gameInfoFragment
-            SettingsSubscreen.ADDONS -> R.id.addonsFragment
+            SettingsSubscreen.ADDONS,
+            SettingsSubscreen.ADDONS_MODS,
+            SettingsSubscreen.ADDONS_UPDATES_DLC -> R.id.addonsFragment
         }
 
     private fun createStartDestinationArgs(): Bundle =
@@ -142,10 +147,22 @@ class SettingsSubscreenActivity : AppCompatActivity() {
             SettingsSubscreen.DRIVER_MANAGER,
             SettingsSubscreen.FREEDRENO_SETTINGS -> bundleOf("game" to args.game)
 
-            SettingsSubscreen.GAME_INFO,
-            SettingsSubscreen.ADDONS -> bundleOf(
+            SettingsSubscreen.GAME_INFO -> bundleOf(
                 "game" to requireNotNull(args.game) {
                     "Game is required for ${args.destination}"
+                }
+            )
+
+            SettingsSubscreen.ADDONS,
+            SettingsSubscreen.ADDONS_MODS,
+            SettingsSubscreen.ADDONS_UPDATES_DLC -> bundleOf(
+                "game" to requireNotNull(args.game) {
+                    "Game is required for ${args.destination}"
+                },
+                "contentFilter" to when (args.destination) {
+                    SettingsSubscreen.ADDONS_MODS -> AddonsFragment.FILTER_MODS
+                    SettingsSubscreen.ADDONS_UPDATES_DLC -> AddonsFragment.FILTER_UPDATES_DLC
+                    else -> AddonsFragment.FILTER_ALL
                 }
             )
 

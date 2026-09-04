@@ -23,6 +23,7 @@ import org.yuzu.yuzu_emu.adapters.AddonAdapter
 import org.yuzu.yuzu_emu.databinding.FragmentAddonsBinding
 import org.yuzu.yuzu_emu.model.AddonViewModel
 import org.yuzu.yuzu_emu.model.HomeViewModel
+import org.yuzu.yuzu_emu.model.PatchType
 import org.yuzu.yuzu_emu.utils.AddonUtil
 import org.yuzu.yuzu_emu.utils.FileUtil.copyFilesTo
 import org.yuzu.yuzu_emu.utils.InstallableActions
@@ -64,7 +65,11 @@ class AddonsFragment : Fragment() {
             requireActivity().onBackPressedDispatcher.onBackPressed()
         }
 
-        binding.toolbarAddons.title = getString(R.string.addons_game, args.game.title)
+        binding.toolbarAddons.title = when (args.contentFilter) {
+            FILTER_MODS -> getString(R.string.mw_gamehub_v23_mods_game, args.game.title)
+            FILTER_UPDATES_DLC -> getString(R.string.mw_gamehub_v23_updates_game, args.game.title)
+            else -> getString(R.string.addons_game, args.game.title)
+        }
 
         binding.listAddons.apply {
             layoutManager = LinearLayoutManager(requireContext())
@@ -72,7 +77,14 @@ class AddonsFragment : Fragment() {
         }
 
         addonViewModel.addonList.collect(viewLifecycleOwner) {
-            (binding.listAddons.adapter as AddonAdapter).submitList(it)
+            val filteredList = when (args.contentFilter) {
+                FILTER_MODS -> it.filter { patch -> PatchType.from(patch.type) == PatchType.Mod }
+                FILTER_UPDATES_DLC -> it.filter { patch ->
+                    PatchType.from(patch.type) != PatchType.Mod
+                }
+                else -> it
+            }
+            (binding.listAddons.adapter as AddonAdapter).submitList(filteredList)
         }
         addonViewModel.showModInstallPicker.collect(
             viewLifecycleOwner,
@@ -116,10 +128,14 @@ class AddonsFragment : Fragment() {
         }
 
         binding.buttonInstall.setOnClickListener {
-            ContentTypeSelectionDialogFragment().show(
-                parentFragmentManager,
-                ContentTypeSelectionDialogFragment.TAG
-            )
+            when (args.contentFilter) {
+                FILTER_MODS -> requestModInstall()
+                FILTER_UPDATES_DLC -> installGameUpdate.launch(arrayOf("*/*"))
+                else -> ContentTypeSelectionDialogFragment().show(
+                    parentFragmentManager,
+                    ContentTypeSelectionDialogFragment.TAG
+                )
+            }
         }
 
         setInsets()
@@ -135,6 +151,17 @@ class AddonsFragment : Fragment() {
             addonViewModel.onCloseAddons()
         }
         super.onDestroy()
+    }
+
+    private fun requestModInstall() {
+        val preferences = androidx.preference.PreferenceManager
+            .getDefaultSharedPreferences(requireContext())
+        if (!preferences.getBoolean(MOD_NOTICE_SEEN, false)) {
+            preferences.edit().putBoolean(MOD_NOTICE_SEEN, true).apply()
+            addonViewModel.showModNoticeDialog(true)
+        } else {
+            addonViewModel.showModInstallPicker(true)
+        }
     }
 
     private val installAddon =
@@ -219,4 +246,11 @@ class AddonsFragment : Fragment() {
 
             windowInsets
         }
+
+    companion object {
+        const val FILTER_ALL = 0
+        const val FILTER_MODS = 1
+        const val FILTER_UPDATES_DLC = 2
+        private const val MOD_NOTICE_SEEN = "ModNoticeSeen"
+    }
 }
