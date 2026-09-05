@@ -21,7 +21,7 @@ enum class OverlayControl(
         Pair(R.integer.BUTTON_A_X, R.integer.BUTTON_A_Y),
         Pair(R.integer.BUTTON_A_X_PORTRAIT, R.integer.BUTTON_A_Y_PORTRAIT),
         Pair(R.integer.BUTTON_A_X_FOLDABLE, R.integer.BUTTON_A_Y_FOLDABLE),
-        1.0f
+        1.185f
     ),
     BUTTON_B(
         "button_b",
@@ -29,7 +29,7 @@ enum class OverlayControl(
         Pair(R.integer.BUTTON_B_X, R.integer.BUTTON_B_Y),
         Pair(R.integer.BUTTON_B_X_PORTRAIT, R.integer.BUTTON_B_Y_PORTRAIT),
         Pair(R.integer.BUTTON_B_X_FOLDABLE, R.integer.BUTTON_B_Y_FOLDABLE),
-        1.0f
+        1.185f
     ),
     BUTTON_X(
         "button_x",
@@ -37,7 +37,7 @@ enum class OverlayControl(
         Pair(R.integer.BUTTON_X_X, R.integer.BUTTON_X_Y),
         Pair(R.integer.BUTTON_X_X_PORTRAIT, R.integer.BUTTON_X_Y_PORTRAIT),
         Pair(R.integer.BUTTON_X_X_FOLDABLE, R.integer.BUTTON_X_Y_FOLDABLE),
-        1.0f
+        1.185f
     ),
     BUTTON_Y(
         "button_y",
@@ -45,7 +45,7 @@ enum class OverlayControl(
         Pair(R.integer.BUTTON_Y_X, R.integer.BUTTON_Y_Y),
         Pair(R.integer.BUTTON_Y_X_PORTRAIT, R.integer.BUTTON_Y_Y_PORTRAIT),
         Pair(R.integer.BUTTON_Y_X_FOLDABLE, R.integer.BUTTON_Y_Y_FOLDABLE),
-        1.0f
+        1.185f
     ),
     BUTTON_PLUS(
         "button_plus",
@@ -53,7 +53,7 @@ enum class OverlayControl(
         Pair(R.integer.BUTTON_PLUS_X, R.integer.BUTTON_PLUS_Y),
         Pair(R.integer.BUTTON_PLUS_X_PORTRAIT, R.integer.BUTTON_PLUS_Y_PORTRAIT),
         Pair(R.integer.BUTTON_PLUS_X_FOLDABLE, R.integer.BUTTON_PLUS_Y_FOLDABLE),
-        1.0f
+        1.282f
     ),
     BUTTON_MINUS(
         "button_minus",
@@ -61,15 +61,15 @@ enum class OverlayControl(
         Pair(R.integer.BUTTON_MINUS_X, R.integer.BUTTON_MINUS_Y),
         Pair(R.integer.BUTTON_MINUS_X_PORTRAIT, R.integer.BUTTON_MINUS_Y_PORTRAIT),
         Pair(R.integer.BUTTON_MINUS_X_FOLDABLE, R.integer.BUTTON_MINUS_Y_FOLDABLE),
-        1.0f
+        1.282f
     ),
     BUTTON_HOME(
         "button_home",
-        false,
+        true,
         Pair(R.integer.BUTTON_HOME_X, R.integer.BUTTON_HOME_Y),
         Pair(R.integer.BUTTON_HOME_X_PORTRAIT, R.integer.BUTTON_HOME_Y_PORTRAIT),
         Pair(R.integer.BUTTON_HOME_X_FOLDABLE, R.integer.BUTTON_HOME_Y_FOLDABLE),
-        1.0f
+        1.116f
     ),
     BUTTON_CAPTURE(
         "button_capture",
@@ -85,7 +85,7 @@ enum class OverlayControl(
         Pair(R.integer.BUTTON_L_X, R.integer.BUTTON_L_Y),
         Pair(R.integer.BUTTON_L_X_PORTRAIT, R.integer.BUTTON_L_Y_PORTRAIT),
         Pair(R.integer.BUTTON_L_X_FOLDABLE, R.integer.BUTTON_L_Y_FOLDABLE),
-        1.0f
+        1.076f
     ),
     BUTTON_R(
         "button_r",
@@ -93,7 +93,7 @@ enum class OverlayControl(
         Pair(R.integer.BUTTON_R_X, R.integer.BUTTON_R_Y),
         Pair(R.integer.BUTTON_R_X_PORTRAIT, R.integer.BUTTON_R_Y_PORTRAIT),
         Pair(R.integer.BUTTON_R_X_FOLDABLE, R.integer.BUTTON_R_Y_FOLDABLE),
-        1.0f
+        1.076f
     ),
     BUTTON_ZL(
         "button_zl",
@@ -101,7 +101,7 @@ enum class OverlayControl(
         Pair(R.integer.BUTTON_ZL_X, R.integer.BUTTON_ZL_Y),
         Pair(R.integer.BUTTON_ZL_X_PORTRAIT, R.integer.BUTTON_ZL_Y_PORTRAIT),
         Pair(R.integer.BUTTON_ZL_X_FOLDABLE, R.integer.BUTTON_ZL_Y_FOLDABLE),
-        1.0f
+        1.076f
     ),
     BUTTON_ZR(
         "button_zr",
@@ -109,7 +109,7 @@ enum class OverlayControl(
         Pair(R.integer.BUTTON_ZR_X, R.integer.BUTTON_ZR_Y),
         Pair(R.integer.BUTTON_ZR_X_PORTRAIT, R.integer.BUTTON_ZR_Y_PORTRAIT),
         Pair(R.integer.BUTTON_ZR_X_FOLDABLE, R.integer.BUTTON_ZR_Y_FOLDABLE),
-        1.0f
+        1.076f
     ),
     BUTTON_STICK_L(
         "button_stick_l",
@@ -117,7 +117,7 @@ enum class OverlayControl(
         Pair(R.integer.BUTTON_STICK_L_X, R.integer.BUTTON_STICK_L_Y),
         Pair(R.integer.BUTTON_STICK_L_X_PORTRAIT, R.integer.BUTTON_STICK_L_Y_PORTRAIT),
         Pair(R.integer.BUTTON_STICK_L_X_FOLDABLE, R.integer.BUTTON_STICK_L_Y_FOLDABLE),
-        1.0f
+        0.840f
     ),
     BUTTON_STICK_R(
         "button_stick_r",
@@ -125,7 +125,7 @@ enum class OverlayControl(
         Pair(R.integer.BUTTON_STICK_R_X, R.integer.BUTTON_STICK_R_Y),
         Pair(R.integer.BUTTON_STICK_R_X_PORTRAIT, R.integer.BUTTON_STICK_R_Y_PORTRAIT),
         Pair(R.integer.BUTTON_STICK_R_X_FOLDABLE, R.integer.BUTTON_STICK_R_Y_FOLDABLE),
-        1.0f
+        0.840f
     ),
     STICK_L(
         "stick_l",
@@ -133,7 +133,7 @@ enum class OverlayControl(
         Pair(R.integer.STICK_L_X, R.integer.STICK_L_Y),
         Pair(R.integer.STICK_L_X_PORTRAIT, R.integer.STICK_L_Y_PORTRAIT),
         Pair(R.integer.STICK_L_X_FOLDABLE, R.integer.STICK_L_Y_FOLDABLE),
-        1.0f
+        1.023f
     ),
     STICK_R(
         "stick_r",
@@ -141,7 +141,7 @@ enum class OverlayControl(
         Pair(R.integer.STICK_R_X, R.integer.STICK_R_Y),
         Pair(R.integer.STICK_R_X_PORTRAIT, R.integer.STICK_R_Y_PORTRAIT),
         Pair(R.integer.STICK_R_X_FOLDABLE, R.integer.STICK_R_Y_FOLDABLE),
-        1.0f
+        1.023f
     ),
     COMBINED_DPAD(
         "combined_dpad",
@@ -149,7 +149,7 @@ enum class OverlayControl(
         Pair(R.integer.COMBINED_DPAD_X, R.integer.COMBINED_DPAD_Y),
         Pair(R.integer.COMBINED_DPAD_X_PORTRAIT, R.integer.COMBINED_DPAD_Y_PORTRAIT),
         Pair(R.integer.COMBINED_DPAD_X_FOLDABLE, R.integer.COMBINED_DPAD_Y_FOLDABLE),
-        1.0f
+        1.233f
     );
 
     fun getDefaultPositionForLayout(layout: OverlayLayout): Pair<Double, Double> {
