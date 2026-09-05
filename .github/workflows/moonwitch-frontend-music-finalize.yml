@@ -31,7 +31,7 @@ jobs:
           python3 .github/scripts/apply_frontend_game_music.py
           grep -q 'GameFrontendAudio.play(requireContext(), game)' src/android/app/src/main/java/org/yuzu/yuzu_emu/ui/GamesFragment.kt
           grep -q 'customize_music' src/android/app/src/main/res/layout/bottom_sheet_gamehub_customize.xml
-          grep -q 'music.mp3' src/android/app/src/main/java/org/yuzu/yuzu_emu/utils/GameFrontendAudio.kt
+          grep -q 'supportedExtensions' src/android/app/src/main/java/org/yuzu/yuzu_emu/utils/GameFrontendAudio.kt
           git diff --check
 
       - name: Commit implementation and self-clean
