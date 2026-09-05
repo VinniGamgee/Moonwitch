@@ -49,6 +49,7 @@ class InputOverlayDrawableDpad(
     private val defaultStateBitmap: BitmapDrawable
     private val pressedOneDirectionStateBitmap: BitmapDrawable
     private val pressedTwoDirectionsStateBitmap: BitmapDrawable
+    private var opacity = 255
 
     private var previousTouchX = 0
     private var previousTouchY = 0
@@ -135,77 +136,15 @@ class InputOverlayDrawableDpad(
     }
 
     fun draw(canvas: Canvas) {
-        val px = controlPositionX + width / 2
-        val py = controlPositionY + height / 2
-
-        // Pressed up
-        if (upButtonState && !leftButtonState && !rightButtonState) {
-            pressedOneDirectionStateBitmap.draw(canvas)
-            return
-        }
-
-        // Pressed down
-        if (downButtonState && !leftButtonState && !rightButtonState) {
-            canvas.save()
-            canvas.rotate(180f, px.toFloat(), py.toFloat())
-            pressedOneDirectionStateBitmap.draw(canvas)
-            canvas.restore()
-            return
-        }
-
-        // Pressed left
-        if (leftButtonState && !upButtonState && !downButtonState) {
-            canvas.save()
-            canvas.rotate(270f, px.toFloat(), py.toFloat())
-            pressedOneDirectionStateBitmap.draw(canvas)
-            canvas.restore()
-            return
-        }
-
-        // Pressed right
-        if (rightButtonState && !upButtonState && !downButtonState) {
-            canvas.save()
-            canvas.rotate(90f, px.toFloat(), py.toFloat())
-            pressedOneDirectionStateBitmap.draw(canvas)
-            canvas.restore()
-            return
-        }
-
-        // Pressed up left
-        if (upButtonState && leftButtonState && !rightButtonState) {
-            pressedTwoDirectionsStateBitmap.draw(canvas)
-            return
-        }
-
-        // Pressed up right
-        if (upButtonState && !leftButtonState && rightButtonState) {
-            canvas.save()
-            canvas.rotate(90f, px.toFloat(), py.toFloat())
-            pressedTwoDirectionsStateBitmap.draw(canvas)
-            canvas.restore()
-            return
-        }
-
-        // Pressed down right
-        if (downButtonState && !leftButtonState && rightButtonState) {
-            canvas.save()
-            canvas.rotate(180f, px.toFloat(), py.toFloat())
-            pressedTwoDirectionsStateBitmap.draw(canvas)
-            canvas.restore()
-            return
-        }
-
-        // Pressed down left
-        if (downButtonState && leftButtonState && !rightButtonState) {
-            canvas.save()
-            canvas.rotate(270f, px.toFloat(), py.toFloat())
-            pressedTwoDirectionsStateBitmap.draw(canvas)
-            canvas.restore()
-            return
-        }
-
-        // Not pressed
-        defaultStateBitmap.draw(canvas)
+        MoonwitchOverlayStyle.drawDpad(
+            canvas,
+            bounds,
+            upButtonState,
+            downButtonState,
+            leftButtonState,
+            rightButtonState,
+            opacity
+        )
     }
 
     val upStatus: Int
@@ -273,9 +212,10 @@ class InputOverlayDrawableDpad(
     }
 
     fun setOpacity(value: Int) {
-        defaultStateBitmap.alpha = value
-        pressedOneDirectionStateBitmap.alpha = value
-        pressedTwoDirectionsStateBitmap.alpha = value
+        opacity = value.coerceIn(0, 255)
+        defaultStateBitmap.alpha = opacity
+        pressedOneDirectionStateBitmap.alpha = opacity
+        pressedTwoDirectionsStateBitmap.alpha = opacity
     }
 
     val bounds: Rect
