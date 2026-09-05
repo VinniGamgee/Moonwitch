@@ -106,9 +106,16 @@ class InputOverlayDrawableJoystick(
     }
 
     fun draw(canvas: Canvas?) {
-        outerBitmap.draw(canvas!!)
-        currentStateBitmapDrawable.draw(canvas)
-        boundsBoxBitmap.draw(canvas)
+        canvas ?: return
+        val visualBounds = if (pressedState) virtBounds else bounds
+        MoonwitchOverlayStyle.drawJoystick(
+            canvas,
+            visualBounds,
+            xAxis,
+            yAxis,
+            pressedState,
+            opacity
+        )
     }
 
     fun updateStatus(event: MotionEvent): Boolean {
@@ -296,17 +303,17 @@ class InputOverlayDrawableJoystick(
     }
 
     fun setOpacity(value: Int) {
-        opacity = value
+        opacity = value.coerceIn(0, 255)
 
-        defaultStateInnerBitmap.alpha = value
-        pressedStateInnerBitmap.alpha = value
+        defaultStateInnerBitmap.alpha = opacity
+        pressedStateInnerBitmap.alpha = opacity
 
         if (trackId == -1) {
-            outerBitmap.alpha = value
+            outerBitmap.alpha = opacity
             boundsBoxBitmap.alpha = 0
         } else {
             outerBitmap.alpha = 0
-            boundsBoxBitmap.alpha = value
+            boundsBoxBitmap.alpha = opacity
         }
     }
 }

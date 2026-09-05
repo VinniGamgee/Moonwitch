@@ -47,6 +47,7 @@ class InputOverlayDrawableButton(
     private val defaultStateBitmap: BitmapDrawable
     private val pressedStateBitmap: BitmapDrawable
     private var pressedState = false
+    private var opacity = 255
 
     private var previousTouchX = 0
     private var previousTouchY = 0
@@ -104,7 +105,14 @@ class InputOverlayDrawableButton(
     }
 
     fun draw(canvas: Canvas?) {
-        currentStateBitmapDrawable.draw(canvas!!)
+        canvas ?: return
+        MoonwitchOverlayStyle.drawButton(
+            canvas,
+            bounds,
+            overlayControlData.id,
+            pressedState,
+            opacity
+        )
     }
 
     private val currentStateBitmapDrawable: BitmapDrawable
@@ -162,8 +170,9 @@ class InputOverlayDrawableButton(
     }
 
     fun setOpacity(value: Int) {
-        defaultStateBitmap.alpha = value
-        pressedStateBitmap.alpha = value
+        opacity = value.coerceIn(0, 255)
+        defaultStateBitmap.alpha = opacity
+        pressedStateBitmap.alpha = opacity
     }
 
     val status: Int
