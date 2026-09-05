@@ -22,10 +22,30 @@ import org.yuzu.yuzu_emu.utils.ViewUtils.setVisible
 import org.yuzu.yuzu_emu.utils.collect
 import org.yuzu.yuzu_emu.viewholder.AbstractViewHolder
 
+/**
+ * The Game Hub already exposes Performance and Graphics as primary quick actions.
+ * Keep the detailed list focused on destinations that are not already present above it.
+ * This avoids two buttons leading to the exact same settings screen while preserving
+ * broader entries such as Drivers & Components, which is not the same destination as
+ * the dedicated GPU driver manager quick action.
+ */
+private fun uniqueGameHubProperties(properties: List<GameProperty>): List<GameProperty> {
+    val quickActionDuplicates = setOf(
+        R.string.mw_ui_performance,
+        R.string.mw_ui_graphics
+    )
+
+    return properties.filterNot { property ->
+        property is SubmenuProperty && property.titleId in quickActionDuplicates
+    }
+}
+
 class GamePropertiesAdapter(
     private val viewLifecycle: LifecycleOwner,
-    private var properties: List<GameProperty>
-) : AbstractListAdapter<GameProperty, AbstractViewHolder<GameProperty>>(properties) {
+    properties: List<GameProperty>
+) : AbstractListAdapter<GameProperty, AbstractViewHolder<GameProperty>>(
+    uniqueGameHubProperties(properties)
+) {
     override fun onCreateViewHolder(
         parent: ViewGroup,
         viewType: Int
@@ -53,7 +73,7 @@ class GamePropertiesAdapter(
     }
 
     override fun getItemViewType(position: Int): Int {
-        return when (properties[position]) {
+        return when (currentList[position]) {
             is SubmenuProperty -> PropertyType.Submenu.ordinal
             else -> PropertyType.Installable.ordinal
         }
