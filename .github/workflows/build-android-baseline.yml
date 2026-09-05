@@ -24,7 +24,7 @@ jobs:
           submodules: recursive
           fetch-depth: 1
 
-      - name: Apply Moonwitch transparent touch controls
+      - name: Apply Moonwitch Glass touch controls
         shell: bash
         run: |
           python3 .github/scripts/apply_moonwitch_transparent_overlay.py
@@ -41,9 +41,15 @@ jobs:
           grep -q "MOONWITCH_RECONSTRUCTION" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/BooleanSetting.kt
           grep -q "MOONWITCH_RECONSTRUCTION_TARGET" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/IntSetting.kt
           grep -q "moonwitchHomeListener" src/android/app/src/main/java/org/yuzu/yuzu_emu/overlay/InputOverlay.kt
-          grep -q "setTint(Color.WHITE)" src/android/app/src/main/java/org/yuzu/yuzu_emu/overlay/InputOverlay.kt
+          grep -q "Moonwitch Glass preserves the authored cyan/graphite palette" src/android/app/src/main/java/org/yuzu/yuzu_emu/overlay/InputOverlay.kt
+          if grep -q "setTint(Color.WHITE)" src/android/app/src/main/java/org/yuzu/yuzu_emu/overlay/InputOverlay.kt; then
+            echo "Generic white overlay tint returned; refusing to erase Moonwitch Glass identity."
+            exit 1
+          fi
           grep -q "menu_transparent_overlay" src/android/app/src/main/res/menu/menu_overlay_options.xml
-          grep -q "mw_overlay_transparent_controls" src/android/app/src/main/res/values-pt-rBR/moonwitch_overlay_strings.xml
+          grep -q "Estilo Moonwitch Glass" src/android/app/src/main/res/values-pt-rBR/moonwitch_overlay_strings.xml
+          grep -q "#56101824" src/android/app/src/main/res/drawable/facebutton_home.xml
+          grep -q "M26,3H77.6" src/android/app/src/main/res/drawable/facebutton_a.xml
 
           # SGSR2 temporal work was intentionally retired. Keep the useful MIP/LOD
           # texture-detail feature, but never regenerate the abandoned temporal plumbing.
