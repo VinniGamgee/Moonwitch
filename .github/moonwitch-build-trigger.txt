@@ -1,1 +1,1 @@
-Trigger canonical Moonwitch build after orientation source correction.
+Trigger canonical Moonwitch build for per-game frontend music (source 05f3b9e8d4f3e9462df6d67183ef6b43653b24f1).
