@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mw_gamehub_music">Música do jogo</string>
+    <string name="mw_gamehub_music_desc">Toca uma faixa personalizada enquanto este jogo estiver em destaque no frontend</string>
+    <string name="mw_gamehub_music_remove">Remover música do jogo</string>
+    <string name="mw_gamehub_music_remove_desc">Deixa de usar a faixa personalizada deste jogo</string>
+    <string name="mw_gamehub_music_updated">Música do jogo atualizada</string>
+    <string name="mw_gamehub_music_removed">Música do jogo removida</string>
+    <string name="mw_gamehub_music_failed">Não foi possível importar este arquivo de áudio</string>
+</resources>

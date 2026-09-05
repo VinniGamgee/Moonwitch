@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mw_gamehub_music">Game music</string>
+    <string name="mw_gamehub_music_desc">Play a custom track while this game is highlighted in the frontend</string>
+    <string name="mw_gamehub_music_remove">Remove game music</string>
+    <string name="mw_gamehub_music_remove_desc">Stop using the custom track for this game</string>
+    <string name="mw_gamehub_music_updated">Game music updated</string>
+    <string name="mw_gamehub_music_removed">Game music removed</string>
+    <string name="mw_gamehub_music_failed">Could not import this audio file</string>
+</resources>

@@ -15,6 +15,7 @@ import android.os.Build
 import android.os.Bundle
 import android.text.format.DateUtils
 import android.provider.DocumentsContract
+import android.provider.OpenableColumns
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -63,6 +64,7 @@ import org.yuzu.yuzu_emu.utils.DirectoryInitialization
 import org.yuzu.yuzu_emu.utils.FileUtil
 import org.yuzu.yuzu_emu.utils.GameHelper
 import org.yuzu.yuzu_emu.utils.GameIconUtils
+import org.yuzu.yuzu_emu.utils.GameFrontendAudio
 import org.yuzu.yuzu_emu.utils.GameSessionStats
 import org.yuzu.yuzu_emu.utils.MemoryUtil
 import org.yuzu.yuzu_emu.utils.collect
@@ -478,6 +480,66 @@ class GamePropertiesFragment : Fragment() {
         }
     }
 
+    private fun resolveMusicExtension(uri: Uri): String? {
+        val resolver = requireContext().contentResolver
+        val mimeExtension = when (resolver.getType(uri)?.lowercase()) {
+            "audio/mpeg", "audio/mp3" -> "mp3"
+            "audio/ogg", "application/ogg" -> "ogg"
+            "audio/mp4", "audio/x-m4a", "audio/m4a" -> "m4a"
+            "audio/wav", "audio/x-wav", "audio/wave" -> "wav"
+            "audio/aac", "audio/aacp" -> "aac"
+            "audio/flac", "audio/x-flac" -> "flac"
+            else -> null
+        }
+        if (mimeExtension != null) return mimeExtension
+
+        val displayName = runCatching {
+            resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+                if (!cursor.moveToFirst()) null
+                else cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
+            }
+        }.getOrNull()
+        return displayName
+            ?.substringAfterLast('.', "")
+            ?.lowercase()
+            ?.takeIf { it in GameFrontendAudio.supportedExtensions }
+    }
+
+    private fun importGameMusic(uri: Uri) {
+        GameFrontendAudio.stop()
+        viewLifecycleOwner.lifecycleScope.launch {
+            val imported = withContext(Dispatchers.IO) {
+                runCatching {
+                    val extension = resolveMusicExtension(uri) ?: return@runCatching false
+                    val directory = gameAssetDirectory().apply { mkdirs() }
+                    GameFrontendAudio.deleteMusicFiles(args.game)
+                    val target = File(directory, "music.$extension")
+                    requireContext().contentResolver.openInputStream(uri)?.use { input ->
+                        target.outputStream().use { output -> input.copyTo(output) }
+                    } ?: return@runCatching false
+                    target.isFile && target.length() > 0L
+                }.getOrDefault(false)
+            }
+
+            if (_binding == null) return@launch
+            if (imported) {
+                GameFrontendAudio.play(requireContext(), args.game)
+                Toast.makeText(requireContext(), R.string.mw_gamehub_music_updated, Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(requireContext(), R.string.mw_gamehub_music_failed, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun removeGameMusic() {
+        GameFrontendAudio.stop()
+        viewLifecycleOwner.lifecycleScope.launch {
+            withContext(Dispatchers.IO) { GameFrontendAudio.deleteMusicFiles(args.game) }
+            if (_binding == null) return@launch
+            Toast.makeText(requireContext(), R.string.mw_gamehub_music_removed, Toast.LENGTH_SHORT).show()
+        }
+    }
+
     private fun readableLastPlayed(): String {
         val value = PreferenceManager.getDefaultSharedPreferences(requireContext())
             .getLong(args.game.keyLastPlayedTime, 0L)
@@ -606,6 +668,14 @@ class GamePropertiesFragment : Fragment() {
         bindAction(R.id.customize_cover) { importCoverArtwork.launch(arrayOf("image/*")) }
         bindAction(R.id.customize_hero) { importHeroArtwork.launch(arrayOf("image/*")) }
         bindAction(R.id.customize_logo) { importLogoArtwork.launch(arrayOf("image/*")) }
+        bindAction(R.id.customize_music) { importMusic.launch(arrayOf("audio/*")) }
+        sheet.findViewById<View>(R.id.customize_remove_music).apply {
+            visibility = if (GameFrontendAudio.musicFile(args.game) != null) View.VISIBLE else View.GONE
+            setOnClickListener {
+                dialog.dismiss()
+                removeGameMusic()
+            }
+        }
         bindAction(R.id.customize_reset) { confirmResetArtwork() }
         showExpandedBottomSheet(dialog)
     }
@@ -1047,6 +1117,12 @@ class GamePropertiesFragment : Fragment() {
         refreshOverview()
         refreshFavoriteAction()
         reloadList()
+        GameFrontendAudio.play(requireContext(), args.game)
+    }
+
+    override fun onPause() {
+        GameFrontendAudio.stop()
+        super.onPause()
     }
 
     private fun setInsets() =
@@ -1075,6 +1151,11 @@ class GamePropertiesFragment : Fragment() {
     private val importLogoArtwork =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             if (uri != null) importArtwork(uri, "logo")
+        }
+
+    private val importMusic =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) importGameMusic(uri)
         }
 
     private val importSaves =

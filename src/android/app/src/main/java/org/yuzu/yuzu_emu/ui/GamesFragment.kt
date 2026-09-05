@@ -50,6 +50,7 @@ import org.yuzu.yuzu_emu.model.HomeViewModel
 import org.yuzu.yuzu_emu.ui.main.MainActivity
 import org.yuzu.yuzu_emu.utils.DirectoryInitialization
 import org.yuzu.yuzu_emu.utils.GameIconUtils
+import org.yuzu.yuzu_emu.utils.GameFrontendAudio
 import org.yuzu.yuzu_emu.utils.ViewUtils.setVisible
 import org.yuzu.yuzu_emu.utils.collect
 import info.debatty.java.stringsimilarity.Jaccard
@@ -278,6 +279,7 @@ class GamesFragment : Fragment() {
         }
     }
     override fun onPause() {
+        GameFrontendAudio.stop()
         super.onPause()
         if (getCurrentViewType() == GameAdapter.VIEW_TYPE_CAROUSEL) {
             gamesViewModel.lastScrollPosition = (binding.gridGames as? CarouselRecyclerView)?.getClosestChildPosition() ?: 0
@@ -500,6 +502,7 @@ class GamesFragment : Fragment() {
         val heroBackdrop = currentBinding.libraryHeroBackdrop ?: return
         if (games.isEmpty()) {
             highlightedGame = null
+            GameFrontendAudio.stop()
             heroTitle.setText(R.string.mw_home_frontend_empty_title)
             heroMeta.setText(R.string.mw_home_frontend_empty_meta)
             heroOpen.isEnabled = false
@@ -541,6 +544,7 @@ class GamesFragment : Fragment() {
         val heroOpen = currentBinding.libraryHeroOpen ?: return
         val same = highlightedGame?.let { it.programId == game.programId && it.path == game.path } == true
         highlightedGame = game
+        GameFrontendAudio.play(requireContext(), game)
         heroTitle.text = game.title.replace("[\\t\\n\\r]+".toRegex(), " ")
         heroMeta.text = buildHeroMeta(game)
         heroOpen.isEnabled = true
@@ -631,6 +635,7 @@ class GamesFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        GameFrontendAudio.stop()
         super.onDestroyView()
         _binding = null
     }
