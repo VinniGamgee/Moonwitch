@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@drawable/mw_gamehub_sheet_background"
@@ -91,5 +92,38 @@
         android:paddingHorizontal="22dp">
         <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/mw_gamehub_v23_average_session" android:textColor="@color/moonwitch_text" android:textSize="13sp" />
         <TextView android:id="@+id/statistics_average_value" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/moonwitch_text_muted" android:textSize="13sp" />
+    </LinearLayout>
+
+    <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginHorizontal="22dp" android:layout_marginTop="4dp" android:background="@color/moonwitch_border_soft" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="18dp"
+        android:layout_marginTop="14dp"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/statistics_edit_playtime"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="6dp"
+            android:layout_weight="1"
+            android:text="@string/edit_playtime"
+            android:textAllCaps="false"
+            app:icon="@drawable/ic_edit" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/statistics_reset_playtime"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:text="@string/reset_playtime"
+            android:textAllCaps="false"
+            app:icon="@drawable/ic_delete" />
     </LinearLayout>
 </LinearLayout>

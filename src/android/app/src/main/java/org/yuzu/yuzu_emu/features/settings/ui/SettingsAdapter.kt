@@ -43,6 +43,35 @@ class SettingsAdapter(
     private val settingsViewModel: SettingsViewModel
         get() = ViewModelProvider(fragment.requireActivity())[SettingsViewModel::class.java]
 
+    /**
+     * The frontend already exposes Graphics, Performance and Drivers as first-class entries.
+     * Keep SECTION_ROOT as the genuinely advanced/remaining settings page instead of
+     * providing a second route to the same destination. Audio is filtered only for the
+     * global settings hub, because per-game Audio does not have its own Game Hub shortcut.
+     */
+    private fun removeDuplicateNavigation(items: List<SettingsItem>?): List<SettingsItem>? {
+        if (items == null) return null
+        val perGame = settingsViewModel.game != null
+        return items.filterNot { item ->
+            val submenu = item as? SubmenuSetting ?: return@filterNot false
+            when (submenu.menuKey) {
+                Settings.MenuTag.SECTION_RENDERER,
+                Settings.MenuTag.SECTION_MOONWITCH_PERFORMANCE,
+                Settings.MenuTag.SECTION_DRIVERS_COMPONENTS -> true
+                Settings.MenuTag.SECTION_AUDIO -> !perGame
+                else -> false
+            }
+        }
+    }
+
+    override fun submitList(list: List<SettingsItem>?) {
+        super.submitList(removeDuplicateNavigation(list))
+    }
+
+    override fun submitList(list: List<SettingsItem>?, commitCallback: Runnable?) {
+        super.submitList(removeDuplicateNavigation(list), commitCallback)
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SettingViewHolder {
         val inflater = LayoutInflater.from(parent.context)
         return when (viewType) {
@@ -97,7 +126,7 @@ class SettingsAdapter(
             SettingsItem.TYPE_LAUNCHABLE -> {
                 LaunchableViewHolder(ListItemSettingBinding.inflate(inflater), this)
             }
-			
+
             SettingsItem.TYPE_PATH -> {
                 PathViewHolder(ListItemSettingBinding.inflate(inflater), this)
             }
@@ -158,7 +187,6 @@ class SettingsAdapter(
     fun onDateTimeClick(item: DateTimeSetting, position: Int) {
         val storedTime = item.getValue() * 1000
 
-        // Helper to extract hour and minute from epoch time
         val calendar: Calendar = Calendar.getInstance()
         calendar.timeInMillis = storedTime
         calendar.timeZone = TimeZone.getTimeZone("UTC")
@@ -180,10 +208,7 @@ class SettingsAdapter(
             .build()
 
         datePicker.addOnPositiveButtonClickListener {
-            timePicker.show(
-                fragment.childFragmentManager,
-                "TimePicker"
-            )
+            timePicker.show(fragment.childFragmentManager, "TimePicker")
         }
         timePicker.addOnPositiveButtonClickListener {
             var epochTime: Long = datePicker.selection!! / 1000
@@ -194,10 +219,7 @@ class SettingsAdapter(
                 item.setValue(epochTime)
             }
         }
-        datePicker.show(
-            fragment.childFragmentManager,
-            "DatePicker"
-        )
+        datePicker.show(fragment.childFragmentManager, "DatePicker")
     }
 
     fun onSliderClick(item: SliderSetting, position: Int) {
@@ -208,6 +230,7 @@ class SettingsAdapter(
             position
         ).show(fragment.childFragmentManager, SettingsDialogFragment.TAG)
     }
+
     fun onSpinBoxClick(item: SpinBoxSetting, position: Int) {
         SettingsDialogFragment.newInstance(
             settingsViewModel,
@@ -218,7 +241,6 @@ class SettingsAdapter(
     }
 
     fun onSubmenuClick(item: SubmenuSetting) {
-        // Check if this is the Freedreno Settings submenu
         if (item.menuKey == Settings.MenuTag.SECTION_FREEDRENO) {
             fragment.view?.findNavController()?.navigate(
                 R.id.action_settingsFragment_to_freedrenoSettingsFragment
@@ -268,28 +290,21 @@ class SettingsAdapter(
                     invertAxis.isVisible = true
                     invertAxis.isCheckable = true
                     invertAxis.isChecked = when (item.analogDirection) {
-                        AnalogDirection.Left, AnalogDirection.Right -> {
-                            params.get("invert_x", "+") == "-"
-                        }
-
-                        AnalogDirection.Up, AnalogDirection.Down -> {
-                            params.get("invert_y", "+") == "-"
-                        }
+                        AnalogDirection.Left, AnalogDirection.Right -> params.get("invert_x", "+") == "-"
+                        AnalogDirection.Up, AnalogDirection.Down -> params.get("invert_y", "+") == "-"
                     }
                     invertAxis.setOnMenuItemClickListener {
                         if (item.analogDirection == AnalogDirection.Left ||
                             item.analogDirection == AnalogDirection.Right
                         ) {
                             val invertValue = params.get("invert_x", "+") == "-"
-                            val invertString = if (invertValue) "+" else "-"
-                            params.set("invert_x", invertString)
+                            params.set("invert_x", if (invertValue) "+" else "-")
                         } else if (
                             item.analogDirection == AnalogDirection.Up ||
                             item.analogDirection == AnalogDirection.Down
                         ) {
                             val invertValue = params.get("invert_y", "+") == "-"
-                            val invertString = if (invertValue) "+" else "-"
-                            params.set("invert_y", invertString)
+                            params.set("invert_y", if (invertValue) "+" else "-")
                         }
                         true
                     }
@@ -351,31 +366,19 @@ class SettingsAdapter(
                         setThreshold.isVisible = true
                         val thresholdSetting = object : AbstractIntSetting {
                             override val key = ""
-
                             override fun getInt(needsGlobal: Boolean): Int =
                                 (params.get("threshold", 0.5f) * 100).toInt()
-
                             override fun setInt(value: Int) {
                                 params.set("threshold", value.toFloat() / 100)
-                                NativeInput.setButtonParam(
-                                    item.playerIndex,
-                                    item.nativeButton,
-                                    params
-                                )
+                                NativeInput.setButtonParam(item.playerIndex, item.nativeButton, params)
                             }
-
                             override val defaultValue = 50
-
                             override fun getValueAsString(needsGlobal: Boolean): String =
                                 getInt(needsGlobal).toString()
-
                             override fun reset() = setInt(defaultValue)
                         }
                         setThreshold.setOnMenuItemClickListener {
-                            onSliderClick(
-                                SliderSetting(thresholdSetting, R.string.set_threshold),
-                                position
-                            )
+                            onSliderClick(SliderSetting(thresholdSetting, R.string.set_threshold), position)
                             true
                         }
 
@@ -420,11 +423,7 @@ class SettingsAdapter(
                     }
 
                     popup.setOnDismissListener {
-                        NativeInput.setStickParam(
-                            item.playerIndex,
-                            item.nativeAnalog,
-                            stickParams
-                        )
+                        NativeInput.setStickParam(item.playerIndex, item.nativeAnalog, stickParams)
                         settingsViewModel.setAdapterItemChanged(position)
                     }
                 }
@@ -450,11 +449,8 @@ class SettingsAdapter(
             position
         ).show(fragment.childFragmentManager, SettingsDialogFragment.TAG)
 
-        // reset language if detected
         if (item.setting.key == "app_language") {
-            // recreate page apply language change instantly
             fragment.requireActivity().recreate()
-
             settingsViewModel.setShouldRecreateForLanguageChange(true)
         }
 

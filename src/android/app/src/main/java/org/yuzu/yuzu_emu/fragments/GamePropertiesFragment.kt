@@ -588,10 +588,13 @@ class GamePropertiesFragment : Fragment() {
         binding.actionUpdates.setOnClickListener {
             openContent(SettingsSubscreen.ADDONS_UPDATES_DLC)
         }
-        binding.actionDriver.setOnClickListener { openDriverManager() }
+        binding.actionDriver.setOnClickListener {
+            openSettings(Settings.MenuTag.SECTION_DRIVERS_COMPONENTS)
+        }
         binding.actionStatistics.setOnClickListener { showStatistics() }
         binding.actionCustomize.setOnClickListener { showCustomizeActions() }
-        binding.statPlaytimeRow.setOnClickListener { showStatistics() }
+        binding.statPlaytimeRow.setOnClickListener(null)
+        binding.statPlaytimeRow.isClickable = false
         val contentVisibility = if (args.game.isHomebrew) View.GONE else View.VISIBLE
         binding.actionMods.visibility = contentVisibility
         binding.actionUpdates.visibility = contentVisibility
@@ -602,10 +605,6 @@ class GamePropertiesFragment : Fragment() {
         binding.actionFavoriteIcon.setImageResource(
             if (isFavorite()) R.drawable.ic_mw_star_filled else R.drawable.ic_mw_star
         )
-    }
-
-    private fun openRootSettings() {
-        openSettings(Settings.MenuTag.SECTION_ROOT)
     }
 
     private fun openSettings(menuTag: Settings.MenuTag) {
@@ -625,18 +624,13 @@ class GamePropertiesFragment : Fragment() {
         binding.root.findNavController().navigate(action)
     }
 
-    private fun openDriverManager() {
-        val action = HomeNavigationDirections.actionGlobalSettingsSubscreenActivity(
-            SettingsSubscreen.DRIVER_MANAGER,
-            args.game
-        )
-        binding.root.findNavController().navigate(action)
-    }
-
     private fun showStatistics() {
         refreshOverview()
         val statistics = GameSessionStats.snapshot(requireContext(), args.game)
         val sheet = layoutInflater.inflate(R.layout.bottom_sheet_gamehub_statistics, null)
+        val dialog = BottomSheetDialog(requireContext())
+        dialog.setContentView(sheet)
+
         sheet.findViewById<android.widget.TextView>(R.id.statistics_game_title).text = args.game.title
         sheet.findViewById<android.widget.TextView>(R.id.statistics_total_value).text =
             readablePlayTime()
@@ -649,7 +643,23 @@ class GamePropertiesFragment : Fragment() {
         sheet.findViewById<android.widget.TextView>(R.id.statistics_average_value).text =
             readableDuration(statistics.averageSessionSeconds)
 
-        showExpandedBottomSheet(sheet)
+        sheet.findViewById<View>(R.id.statistics_edit_playtime).setOnClickListener {
+            dialog.dismiss()
+            showEditPlaytimeDialog()
+        }
+        sheet.findViewById<View>(R.id.statistics_reset_playtime).apply {
+            visibility = if (NativeLibrary.playTimeManagerGetPlayTime(args.game.programId) > 0L) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
+            setOnClickListener {
+                dialog.dismiss()
+                confirmResetPlaytime()
+            }
+        }
+
+        showExpandedBottomSheet(dialog)
     }
 
     private fun showCustomizeActions() {
@@ -760,9 +770,6 @@ class GamePropertiesFragment : Fragment() {
             }
         }
 
-        bindAction(R.id.more_device_profile) { showDeviceProfileDialog() }
-        bindAction(R.id.more_cover) { importCoverArtwork.launch(arrayOf("image/*")) }
-        bindAction(R.id.more_hero) { importHeroArtwork.launch(arrayOf("image/*")) }
         bindAction(R.id.more_game_info) {
             val action = HomeNavigationDirections.actionGlobalSettingsSubscreenActivity(
                 SettingsSubscreen.GAME_INFO,
@@ -771,8 +778,6 @@ class GamePropertiesFragment : Fragment() {
             binding.root.findNavController().navigate(action)
         }
         bindAction(R.id.more_shortcut) { requestPinnedShortcut() }
-        bindAction(R.id.more_playtime) { showEditPlaytimeDialog() }
-        bindAction(R.id.more_advanced) { openRootSettings() }
 
         val shortcutManager = requireActivity().getSystemService(ShortcutManager::class.java)
         sheet.findViewById<View>(R.id.more_shortcut).visibility =
@@ -842,7 +847,6 @@ class GamePropertiesFragment : Fragment() {
 
                 var hasError = false
 
-                // normally cant be above 9999
                 if (hoursValue < 0 || hoursValue > 9999) {
                     hoursLayout.error = getString(R.string.hours_must_be_between_0_and_9999)
                     hasError = true
@@ -867,6 +871,7 @@ class GamePropertiesFragment : Fragment() {
                         R.string.playtime_updated_successfully,
                         Toast.LENGTH_SHORT
                     ).show()
+                    homeViewModel.reloadPropertiesList(true)
                     dialog.dismiss()
                 }
             }
@@ -875,52 +880,28 @@ class GamePropertiesFragment : Fragment() {
         dialog.show()
     }
 
+    private fun confirmResetPlaytime() {
+        MessageDialogFragment.newInstance(
+            requireActivity(),
+            titleId = R.string.reset_playtime,
+            descriptionId = R.string.reset_playtime_warning_description,
+            positiveAction = {
+                NativeLibrary.playTimeManagerResetProgramPlayTime(args.game.programId)
+                Toast.makeText(
+                    YuzuApplication.appContext,
+                    R.string.playtime_reset_successfully,
+                    Toast.LENGTH_SHORT
+                ).show()
+                getPlayTime()
+                homeViewModel.reloadPropertiesList(true)
+            }
+        ).show(parentFragmentManager, MessageDialogFragment.TAG)
+    }
+
     private fun reloadList() {
         _binding ?: return
 
         val properties = mutableListOf<GameProperty>().apply {
-            add(
-                SubmenuProperty(
-                    R.string.mw_ui_performance,
-                    R.string.mw_gamehub_performance_desc,
-                    R.drawable.ic_mw_gauge,
-                    action = {
-                        val action = HomeNavigationDirections.actionGlobalSettingsActivity(
-                            args.game,
-                            Settings.MenuTag.SECTION_MOONWITCH_PERFORMANCE
-                        )
-                        binding.root.findNavController().navigate(action)
-                    }
-                )
-            )
-            add(
-                SubmenuProperty(
-                    R.string.mw_ui_graphics,
-                    R.string.mw_gamehub_graphics_desc,
-                    R.drawable.ic_graphics,
-                    action = {
-                        val action = HomeNavigationDirections.actionGlobalSettingsActivity(
-                            args.game,
-                            Settings.MenuTag.SECTION_RENDERER
-                        )
-                        binding.root.findNavController().navigate(action)
-                    }
-                )
-            )
-            add(
-                SubmenuProperty(
-                    R.string.mw_drivers_components,
-                    R.string.mw_drivers_components_desc,
-                    R.drawable.ic_build,
-                    action = {
-                        val action = HomeNavigationDirections.actionGlobalSettingsActivity(
-                            args.game,
-                            Settings.MenuTag.SECTION_DRIVERS_COMPONENTS
-                        )
-                        binding.root.findNavController().navigate(action)
-                    }
-                )
-            )
             add(
                 SubmenuProperty(
                     R.string.device_profile_title,
@@ -949,7 +930,7 @@ class GamePropertiesFragment : Fragment() {
                         ).exists()
 
                         add(SubMenuPropertySecondaryAction(
-                            isShown = configExists,
+                            isShown = true,
                             descriptionId = R.string.import_config,
                             iconId = R.drawable.ic_import,
                             action = { importConfig.launch(arrayOf("text/ini", "application/octet-stream")) }
@@ -1057,32 +1038,6 @@ class GamePropertiesFragment : Fragment() {
                                             R.string.cleared_shaders_successfully,
                                             Toast.LENGTH_SHORT
                                         ).show()
-                                        homeViewModel.reloadPropertiesList(true)
-                                    }
-                                ).show(parentFragmentManager, MessageDialogFragment.TAG)
-                            }
-                        )
-                    )
-                }
-                if (NativeLibrary.playTimeManagerGetPlayTime(args.game.programId) > 0) {
-                    add(
-                        SubmenuProperty(
-                            R.string.reset_playtime,
-                            R.string.reset_playtime_description,
-                            R.drawable.ic_delete,
-                            action = {
-                                MessageDialogFragment.newInstance(
-                                    requireActivity(),
-                                    titleId = R.string.reset_playtime,
-                                    descriptionId = R.string.reset_playtime_warning_description,
-                                    positiveAction = {
-                                        NativeLibrary.playTimeManagerResetProgramPlayTime(args.game.programId)
-                                        Toast.makeText(
-                                            YuzuApplication.appContext,
-                                            R.string.playtime_reset_successfully,
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                        getPlayTime()
                                         homeViewModel.reloadPropertiesList(true)
                                     }
                                 ).show(parentFragmentManager, MessageDialogFragment.TAG)
@@ -1222,10 +1177,6 @@ class GamePropertiesFragment : Fragment() {
             }.show(parentFragmentManager, ProgressDialogFragment.TAG)
         }
 
-    /**
-     * Exports the save file located in the given folder path by creating a zip file and opening a
-     * file picker to save.
-     */
     private val exportSaves = registerForActivityResult(
         ActivityResultContracts.CreateDocument("application/zip")
     ) { result ->
@@ -1252,9 +1203,6 @@ class GamePropertiesFragment : Fragment() {
         }.show(parentFragmentManager, ProgressDialogFragment.TAG)
     }
 
-    /**
-     * Imports an ini file from external storage to internal app directory and override per-game config
-     */
     private val importConfig = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { result ->
@@ -1284,9 +1232,6 @@ class GamePropertiesFragment : Fragment() {
         }
     }
 
-    /**
-     * Exports game's config ini to the specified location in external storage
-     */
     private val exportConfig = registerForActivityResult(
         ActivityResultContracts.CreateDocument("text/ini")
     ) { result ->
