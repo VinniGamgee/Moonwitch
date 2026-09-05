@@ -70,11 +70,11 @@
     <string name="mw_lossless_scaling">Lossless Scaling</string>
     <string name="mw_lossless_scaling_desc">Instalar ou substituir a biblioteca exigida pelo Frame Generation</string>
 
-    <string name="mw_reconstruction_and_detail">RECONSTRUÇÃO E DETALHE</string>
-    <string name="mw_reconstruction_stage1">Reconstrução Moonwitch • preparação</string>
-    <string name="mw_reconstruction_stage1_desc">Preserva detalhe real de textura com compensação dinâmica de MIP/LOD sem aumentar a resolução interna. Requer reiniciar o jogo.</string>
-    <string name="mw_reconstruction_target">Alvo de qualidade da reconstrução</string>
-    <string name="mw_reconstruction_target_desc">Qualidade-alvo relativa ao 1×. Em 1×, 150% prepara mipmaps para uma reconstrução equivalente a 1,5× sem renderizar a cena em 1,5×.</string>
+    <string name="mw_reconstruction_and_detail">TEXTURAS E DETALHE</string>
+    <string name="mw_reconstruction_stage1">Detalhe de textura aprimorado</string>
+    <string name="mw_reconstruction_stage1_desc">Ajusta dinamicamente MIP/LOD para preservar texturas mais detalhadas sem aumentar a resolução interna. Pode aumentar cintilação em algumas cenas. Requer reiniciar o jogo.</string>
+    <string name="mw_reconstruction_target">Alvo de detalhe de textura</string>
+    <string name="mw_reconstruction_target_desc">Controla a intensidade da compensação MIP/LOD. Valores maiores priorizam mipmaps mais detalhados; não alteram a resolução interna e não equivalem a renderização em 1,5× ou 2×.</string>
 
     <string name="mw_pacing_and_latency">PACING E LATÊNCIA</string>
     <string name="mw_telemetry_and_tuning">TELEMETRIA E AJUSTE</string>
@@ -83,7 +83,6 @@
     <string name="mw_frame_pacing_target">ALVO DE APRESENTAÇÃO</string>
     <string name="mw_frame_pacing_mode">Modo de Frame Pacing</string>
     <string name="mw_frame_pacing_mode_desc">Define o alvo usado pelo controlador adaptativo Vulkan. Automático acompanha a cadência detectada.</string>
-    <string name="mw_frame_pacing_auto">Automático</string>
     <string name="mw_live_diagnostics">DIAGNÓSTICO AO VIVO</string>
     <string name="mw_refresh_adpf">Atualizar telemetria ADPF</string>
     <string name="mw_adpf_no_session">Nenhum jogo está em execução. Abra esta tela durante uma sessão para ler a telemetria nativa.</string>
