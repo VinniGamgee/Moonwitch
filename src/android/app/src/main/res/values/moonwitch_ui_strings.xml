@@ -83,6 +83,7 @@
     <string name="mw_frame_pacing_target">ALVO DE APRESENTAÇÃO</string>
     <string name="mw_frame_pacing_mode">Modo de Frame Pacing</string>
     <string name="mw_frame_pacing_mode_desc">Define o alvo usado pelo controlador adaptativo Vulkan. Automático acompanha a cadência detectada.</string>
+    <string name="mw_frame_pacing_auto">Automático</string>
     <string name="mw_live_diagnostics">DIAGNÓSTICO AO VIVO</string>
     <string name="mw_refresh_adpf">Atualizar telemetria ADPF</string>
     <string name="mw_adpf_no_session">Nenhum jogo está em execução. Abra esta tela durante uma sessão para ler a telemetria nativa.</string>
