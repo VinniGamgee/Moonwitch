@@ -1,0 +1,48 @@
+name: Moonwitch Frontend Music Finalizer
+
+on:
+  push:
+    branches:
+      - exp/moonwitch-reconstruction-stage10-classic-ui
+    paths:
+      - .github/scripts/apply_frontend_game_music.py
+      - .github/workflows/moonwitch-frontend-music-finalize.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: moonwitch-frontend-music-finalizer-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply per-game frontend music
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/apply_frontend_game_music.py
+          grep -q 'GameFrontendAudio.play(requireContext(), game)' src/android/app/src/main/java/org/yuzu/yuzu_emu/ui/GamesFragment.kt
+          grep -q 'customize_music' src/android/app/src/main/res/layout/bottom_sheet_gamehub_customize.xml
+          grep -q 'music.mp3' src/android/app/src/main/java/org/yuzu/yuzu_emu/utils/GameFrontendAudio.kt
+          git diff --check
+
+      - name: Commit implementation and self-clean
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/scripts/apply_frontend_game_music.py
+          rm -f .github/workflows/moonwitch-frontend-music-finalize.yml
+          git config user.name "Moonwitch CI"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "feat(android): add per-game frontend music"
+          git push origin HEAD:${GITHUB_REF_NAME}
