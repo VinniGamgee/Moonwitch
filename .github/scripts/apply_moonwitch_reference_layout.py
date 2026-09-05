@@ -113,24 +113,22 @@ def apply_scales():
     rel = "src/android/app/src/main/java/org/yuzu/yuzu_emu/overlay/model/OverlayControl.kt"
     text = read(rel)
     for enum_name, scale in CONTROL_SCALES.items():
-        start = text.find(f"    {enum_name}(")
-        if start < 0:
-            raise RuntimeError(f"Missing OverlayControl entry: {enum_name}")
-        next_entry = text.find("\n    ", start + 5)
-        if next_entry < 0:
-            next_entry = text.find("\n    fun getDefaultPositionForLayout", start)
-        block = text[start:next_entry]
-        updated, count = re.subn(r"\n        [0-9]+(?:\.[0-9]+)?f\n    \),?$", f"\n        {scale}\n    )" + ("," if block.rstrip().endswith(",") else ""), block, count=1)
-        if count != 1:
-            # The final enum entry ends with ');' rather than '),'. Handle both forms explicitly.
-            updated, count = re.subn(r"\n        [0-9]+(?:\.[0-9]+)?f\n    \);?$", f"\n        {scale}\n    );", block, count=1)
+        pattern = rf'(?ms)(    {re.escape(enum_name)}\(.*?\n        )([0-9]+(?:\.[0-9]+)?f)(\n    \)[,;])'
+        text, count = re.subn(pattern, rf'\g<1>{scale}\g<3>', text, count=1)
         if count != 1:
             raise RuntimeError(f"Could not update scale for {enum_name}")
-        text = text[:start] + updated + text[next_entry:]
 
     # Home is part of the supplied layout; Capture is not.
-    text = text.replace('    BUTTON_HOME(\n        "button_home",\n        false,\n', '    BUTTON_HOME(\n        "button_home",\n        true,\n', 1)
-    text = text.replace('    BUTTON_CAPTURE(\n        "button_capture",\n        true,\n', '    BUTTON_CAPTURE(\n        "button_capture",\n        false,\n', 1)
+    text = text.replace(
+        '    BUTTON_HOME(\n        "button_home",\n        false,\n',
+        '    BUTTON_HOME(\n        "button_home",\n        true,\n',
+        1,
+    )
+    text = text.replace(
+        '    BUTTON_CAPTURE(\n        "button_capture",\n        true,\n',
+        '    BUTTON_CAPTURE(\n        "button_capture",\n        false,\n',
+        1,
+    )
     write(rel, text)
 
 
@@ -221,7 +219,11 @@ def patch_one_time_layout_migration():
     }
 
 '''
-    replace_once(rel, "    fun refreshControls(gameless: Boolean = false) {\n", migration + "    fun refreshControls(gameless: Boolean = false) {\n")
+    replace_once(
+        rel,
+        "    fun refreshControls(gameless: Boolean = false) {\n",
+        migration + "    fun refreshControls(gameless: Boolean = false) {\n",
+    )
 
 
 def main():
