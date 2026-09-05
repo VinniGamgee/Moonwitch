@@ -19,10 +19,9 @@ import kotlin.math.min
 /**
  * Moonwitch touch-controller renderer.
  *
- * The geometry and proportions mirror the reference layout supplied for the Moonwitch frontend:
- * near-black controls, a restrained graphite rim, white bold labels, separated D-pad pieces and
- * dual-layer analog sticks. Drawing the controls in Canvas keeps the look identical at every
- * resolution instead of depending on device density or vector drawable tinting.
+ * The supplied black background is only a presentation backdrop. The actual controls are rendered
+ * as soft translucent glass so the game remains visible underneath them, even when overlay opacity
+ * is set to 100%.
  */
 internal object MoonwitchOverlayStyle {
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -56,7 +55,6 @@ internal object MoonwitchOverlayStyle {
             "button_stick_r" -> drawRoundButton(canvas, bounds, "R3", pressed, alpha)
             "button_plus" -> drawRoundButton(canvas, bounds, "+", pressed, alpha, compact = true)
             "button_minus" -> drawRoundButton(canvas, bounds, "-", pressed, alpha, compact = true)
-            // The reference has a deliberately unlabelled small button at the top centre.
             "button_home" -> drawRoundButton(canvas, bounds, "", pressed, alpha, compact = true)
             "button_capture" -> drawRoundButton(canvas, bounds, "", pressed, alpha, compact = true)
             else -> drawRoundButton(canvas, bounds, "", pressed, alpha)
@@ -79,8 +77,6 @@ internal object MoonwitchOverlayStyle {
         val w = r.width()
         val h = r.height()
 
-        // Reference proportions: ~66x81 vertical pieces and ~80x68 horizontal pieces
-        // inside a ~210x213 footprint.
         val halfVerticalWidth = w * 0.157f
         val verticalLength = h * 0.382f
         val halfHorizontalHeight = h * 0.160f
@@ -150,6 +146,7 @@ internal object MoonwitchOverlayStyle {
         val cy = rect.centerY()
         val alpha = opacity.coerceIn(0, 255)
 
+        // Outer analog ring: translucent glass, never an opaque black disc.
         fillPaint.alpha = alpha
         fillPaint.style = Paint.Style.FILL
         fillPaint.shader = RadialGradient(
@@ -157,9 +154,9 @@ internal object MoonwitchOverlayStyle {
             cy,
             outerRadius,
             intArrayOf(
-                Color.rgb(if (pressed) 10 else 4, if (pressed) 10 else 4, if (pressed) 10 else 4),
-                Color.rgb(0, 0, 0),
-                Color.rgb(if (pressed) 25 else 13, if (pressed) 25 else 13, if (pressed) 25 else 13)
+                Color.argb(if (pressed) 22 else 12, 210, 210, 210),
+                Color.argb(if (pressed) 28 else 16, 150, 150, 150),
+                Color.argb(if (pressed) 52 else 34, 235, 235, 235)
             ),
             floatArrayOf(0f, 0.72f, 1f),
             Shader.TileMode.CLAMP
@@ -168,7 +165,7 @@ internal object MoonwitchOverlayStyle {
 
         strokePaint.alpha = alpha
         strokePaint.shader = null
-        strokePaint.color = Color.rgb(31, 31, 31)
+        strokePaint.color = Color.argb(if (pressed) 105 else 76, 235, 235, 235)
         strokePaint.strokeWidth = max(1f, outerRadius * 0.012f)
         canvas.drawCircle(cx, cy, outerRadius - strokePaint.strokeWidth / 2f, strokePaint)
 
@@ -183,13 +180,13 @@ internal object MoonwitchOverlayStyle {
             knobY - knobRadius,
             knobX,
             knobY + knobRadius,
-            if (pressed) Color.rgb(44, 44, 44) else Color.rgb(34, 34, 34),
-            if (pressed) Color.rgb(22, 22, 22) else Color.rgb(15, 15, 15),
+            Color.argb(if (pressed) 88 else 66, 245, 245, 245),
+            Color.argb(if (pressed) 52 else 38, 125, 125, 125),
             Shader.TileMode.CLAMP
         )
         canvas.drawCircle(knobX, knobY, knobRadius, fillPaint)
 
-        strokePaint.color = Color.rgb(42, 42, 42)
+        strokePaint.color = Color.argb(if (pressed) 126 else 92, 245, 245, 245)
         strokePaint.strokeWidth = max(1f, knobRadius * 0.020f)
         canvas.drawCircle(knobX, knobY, knobRadius - strokePaint.strokeWidth / 2f, strokePaint)
         clearShaders()
@@ -216,9 +213,9 @@ internal object MoonwitchOverlayStyle {
             cy + radius * 0.08f,
             radius,
             intArrayOf(
-                Color.rgb(if (pressed) 22 else 5, if (pressed) 22 else 5, if (pressed) 22 else 5),
-                Color.rgb(if (pressed) 10 else 0, if (pressed) 10 else 0, if (pressed) 10 else 0),
-                Color.rgb(if (pressed) 42 else 28, if (pressed) 42 else 28, if (pressed) 42 else 28)
+                Color.argb(if (pressed) 64 else 42, 235, 235, 235),
+                Color.argb(if (pressed) 38 else 22, 145, 145, 145),
+                Color.argb(if (pressed) 82 else 54, 245, 245, 245)
             ),
             floatArrayOf(0f, 0.62f, 1f),
             Shader.TileMode.CLAMP
@@ -227,7 +224,7 @@ internal object MoonwitchOverlayStyle {
 
         strokePaint.alpha = opacity
         strokePaint.shader = null
-        strokePaint.color = Color.rgb(if (pressed) 70 else 47, if (pressed) 70 else 47, if (pressed) 70 else 47)
+        strokePaint.color = Color.argb(if (pressed) 135 else 94, 245, 245, 245)
         strokePaint.strokeWidth = max(1f, radius * 0.018f)
         canvas.drawCircle(cx, cy, radius - strokePaint.strokeWidth / 2f, strokePaint)
 
@@ -251,8 +248,6 @@ internal object MoonwitchOverlayStyle {
     ) {
         if (bounds.isEmpty) return
         val width = bounds.width().toFloat()
-        // The stock trigger vectors are wider than the supplied reference. Keep the exact width
-        // supplied by InputOverlay but expand the visual height around the same centre.
         val targetHeight = width / 2.17f
         val r = RectF(
             bounds.left.toFloat(),
@@ -342,9 +337,9 @@ internal object MoonwitchOverlayStyle {
             r.right,
             r.bottom,
             intArrayOf(
-                Color.rgb(if (pressed) 33 else 21, if (pressed) 33 else 21, if (pressed) 33 else 21),
-                Color.rgb(if (pressed) 11 else 0, if (pressed) 11 else 0, if (pressed) 11 else 0),
-                Color.rgb(if (pressed) 26 else 10, if (pressed) 26 else 10, if (pressed) 26 else 10)
+                Color.argb(if (pressed) 82 else 52, 245, 245, 245),
+                Color.argb(if (pressed) 34 else 18, 130, 130, 130),
+                Color.argb(if (pressed) 68 else 42, 225, 225, 225)
             ),
             floatArrayOf(0f, 0.58f, 1f),
             Shader.TileMode.CLAMP
@@ -353,7 +348,7 @@ internal object MoonwitchOverlayStyle {
 
         strokePaint.alpha = opacity
         strokePaint.shader = null
-        strokePaint.color = Color.rgb(if (pressed) 67 else 44, if (pressed) 67 else 44, if (pressed) 67 else 44)
+        strokePaint.color = Color.argb(if (pressed) 136 else 92, 245, 245, 245)
         strokePaint.strokeWidth = max(1f, min(r.width(), r.height()) * 0.014f)
         canvas.drawPath(path, strokePaint)
         clearShaders()
@@ -387,15 +382,15 @@ internal object MoonwitchOverlayStyle {
             whole.top,
             whole.right,
             whole.bottom,
-            if (pressed) Color.rgb(31, 31, 31) else Color.rgb(16, 16, 16),
-            if (pressed) Color.rgb(10, 10, 10) else Color.rgb(0, 0, 0),
+            Color.argb(if (pressed) 72 else 44, 238, 238, 238),
+            Color.argb(if (pressed) 34 else 20, 130, 130, 130),
             Shader.TileMode.CLAMP
         )
         canvas.drawPath(path, fillPaint)
 
         strokePaint.alpha = opacity
         strokePaint.shader = null
-        strokePaint.color = Color.rgb(if (pressed) 58 else 35, if (pressed) 58 else 35, if (pressed) 58 else 35)
+        strokePaint.color = Color.argb(if (pressed) 126 else 82, 245, 245, 245)
         strokePaint.strokeWidth = max(1f, min(whole.width(), whole.height()) * 0.005f)
         canvas.drawPath(path, strokePaint)
         clearShaders()
