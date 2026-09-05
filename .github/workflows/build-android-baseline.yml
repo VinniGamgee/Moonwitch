@@ -60,6 +60,8 @@ jobs:
       - name: Dependencies
         shell: bash
         run: |
+          sudo apt-get update
+          sudo apt-get install -y glslang-tools spirv-tools
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0" "ndk;28.2.13676358" "cmake;3.31.6"
 
@@ -93,7 +95,7 @@ jobs:
           set -e
           if [ "$kotlin_status" -ne 0 ]; then
             echo "===== MOONWITCH KOTLIN ERROR EXTRACT ====="
-            grep -nE '(^e: |error:|FAILURE:|What went wrong|Execution failed|Compilation error|Unresolved reference|Type mismatch|Cannot infer|Expecting |No value passed|Too many arguments|Overload resolution)' /tmp/moonwitch-kotlin.log | tail -n 200 || true
+            grep -nE '(^e: |error:|FAILURE:|What went wrong|Execution failed|Compilation error|Unresolved reference|Type mismatch|Cannot infer|Expecting |No value passed|Too many arguments|Overload resolution|CMake Error|FATAL_ERROR|not found)' /tmp/moonwitch-kotlin.log | tail -n 220 || true
             echo "===== END KOTLIN ERROR EXTRACT ====="
             exit "$kotlin_status"
           fi
@@ -105,7 +107,7 @@ jobs:
           set -e
           if [ "$status" -ne 0 ]; then
             echo "===== MOONWITCH BUILD ERROR EXTRACT ====="
-            grep -nE '(^e: |error:|FAILURE:|What went wrong|Execution failed|Compilation error|Unresolved reference|Type mismatch|Cannot infer|Expecting |No value passed|Too many arguments|Overload resolution)' /tmp/moonwitch-build.log | tail -n 160 || true
+            grep -nE '(^e: |error:|FAILURE:|What went wrong|Execution failed|Compilation error|Unresolved reference|Type mismatch|Cannot infer|Expecting |No value passed|Too many arguments|Overload resolution|CMake Error|FATAL_ERROR|not found|No such file)' /tmp/moonwitch-build.log | tail -n 220 || true
             echo "===== END ERROR EXTRACT ====="
           else
             tail -n 80 /tmp/moonwitch-build.log
