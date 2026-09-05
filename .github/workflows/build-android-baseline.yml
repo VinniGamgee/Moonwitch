@@ -1,16 +1,16 @@
-name: Moonwitch Classic UI
+name: Moonwitch Reference Layout
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - exp/moonwitch-reconstruction-stage10-classic-ui
+      - exp/moonwitch-reference-layout-build200
 
 permissions:
   contents: read
 
 concurrency:
-  group: moonwitch-classic-ui-${{ github.ref }}
+  group: moonwitch-reference-layout-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -51,8 +51,6 @@ jobs:
           grep -q "#56101824" src/android/app/src/main/res/drawable/facebutton_home.xml
           grep -q "M26,3H77.6" src/android/app/src/main/res/drawable/facebutton_a.xml
 
-          # SGSR2 temporal work was intentionally retired. Keep the useful MIP/LOD
-          # texture-detail feature, but never regenerate the abandoned temporal plumbing.
           for file in \
             src/video_core/renderer_vulkan/present/sgsr2_resources.cpp \
             src/video_core/renderer_vulkan/present/sgsr2_resources.h \
@@ -64,6 +62,22 @@ jobs:
               exit 1
             fi
           done
+          git diff --check
+
+      - name: Apply exact 1536x691 reference layout
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_moonwitch_reference_layout.py
+
+          # Refuse to build unless the measured reference layout and glass renderer are active.
+          grep -q '<integer name="BUTTON_A_X">934</integer>' src/android/app/src/main/res/values/integers.xml
+          grep -q '<integer name="BUTTON_HOME_Y">52</integer>' src/android/app/src/main/res/values/integers.xml
+          grep -q '<integer name="STICK_L_Y">774</integer>' src/android/app/src/main/res/values/integers.xml
+          grep -q '<integer name="COMBINED_DPAD_Y">661</integer>' src/android/app/src/main/res/values/integers.xml
+          grep -q 'MoonwitchOverlayStyle.drawButton' src/android/app/src/main/java/org/yuzu/yuzu_emu/overlay/InputOverlayDrawableButton.kt
+          grep -q 'MoonwitchOverlayStyle.drawDpad' src/android/app/src/main/java/org/yuzu/yuzu_emu/overlay/InputOverlayDrawableDpad.kt
+          grep -q 'MoonwitchOverlayStyle.drawJoystick' src/android/app/src/main/java/org/yuzu/yuzu_emu/overlay/InputOverlayDrawableJoystick.kt
+          grep -q 'reference_layout_1536x691_v1' src/android/app/src/main/java/org/yuzu/yuzu_emu/overlay/InputOverlay.kt
           git diff --check
 
       - name: Java 17
@@ -132,7 +146,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-CLASSIC-UI
+          name: MOONWITCH-REFERENCE-LAYOUT
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7
