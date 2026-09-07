@@ -243,7 +243,7 @@
     <string name="open_user_folder_description">Gestisci i file interni di Moonwitch</string>
     <string name="app_settings_description">Modifica il comportamento e l\'aspetto dell\'app</string>
     <string name="no_file_manager">Nessun file manager trovato</string>
-    <string name="notification_no_directory_link">Impossibile aprire la cartella di Eden</string>
+    <string name="notification_no_directory_link">Impossibile aprire la cartella di Moonwitch</string>
     <string name="notification_no_directory_link_description">Per favore individua la cartella dell\'utente manualmente con il pannello laterale del file manager.</string>
     <string name="manage_save_data">Gestisci i salvataggi</string>
     <string name="manage_save_data_description">Salvataggio non trovato. Seleziona un\'opzione di seguito.</string>

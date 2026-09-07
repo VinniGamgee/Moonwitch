@@ -315,7 +315,7 @@
     <string name="open_user_folder_description">إدارة الملفات الداخلية لـ Moonwitch</string>
     <string name="app_settings_description">تعديل سلوك ومظهر التطبيق</string>
     <string name="no_file_manager">لم يتم العثور على مدير الملفات</string>
-    <string name="notification_no_directory_link">تعذر فتح مجلد Eden</string>
+    <string name="notification_no_directory_link">تعذر فتح مجلد Moonwitch</string>
     <string name="notification_no_directory_link_description">يرجى تحديد موقع مجلد المستخدم يدويًا باستخدام اللوحة الجانبية لمدير الملفات.</string>
     <string name="manage_save_data">إدارة بيانات الحفظ</string>
     <string name="manage_save_data_description">تم العثور على بيانات محفوظة. يرجى تحديد أحد الخيارات أدناه.</string>

@@ -290,7 +290,7 @@
     <string name="open_user_folder_description">Správa interních souborů aplikace</string>
     <string name="app_settings_description">Změna chování a vzhledu aplikace</string>
     <string name="no_file_manager">Nenalezen žádný správce souborů</string>
-    <string name="notification_no_directory_link">Nepovedlo se otevřít složku Edenu</string>
+    <string name="notification_no_directory_link">Nepovedlo se otevřít složku Moonwitchu</string>
     <string name="notification_no_directory_link_description">Vyhledejte prosím uživatelskou složku ručně v postranním panelu správce souborů.</string>
     <string name="manage_save_data">Správa uložených pozic</string>
     <string name="manage_save_data_description">Nalezeny uložené pozice. Prosím vyberte možnost níže.</string>

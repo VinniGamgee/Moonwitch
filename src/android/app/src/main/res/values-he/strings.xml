@@ -220,7 +220,7 @@
     <string name="open_user_folder">פתח את תיקיית Moonwitch </string>
     <string name="open_user_folder_description">נה ל את הקבצים הפנימיין של Moonwitch</string>
     <string name="no_file_manager">לא נמצא מנהל קבצים</string>
-    <string name="notification_no_directory_link">לא יכול לפתוח את ספריית Eden</string>
+    <string name="notification_no_directory_link">לא יכול לפתוח את ספריית Moonwitch</string>
     <string name="notification_no_directory_link_description">בבקשה מקם את תיקיית המשתמש בפנל הצידי של מנהל הקבצים באופן ידני.</string>
     <string name="manage_save_data">נהל  מידע שמור</string>
     <string name="manage_save_data_description">מידע שמור לא נמצא. בבקשה בחר/י אופציה מלמטה</string>

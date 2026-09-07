@@ -299,7 +299,7 @@
     <string name="open_user_folder_description">Керування внутрішніми файлами Moonwitch</string>
     <string name="app_settings_description">Змінити зовнішній вигляд і поведінку застосунку</string>
     <string name="no_file_manager">Не знайдено файлового менеджера</string>
-    <string name="notification_no_directory_link">Не вдалося відкрити теку Eden</string>
+    <string name="notification_no_directory_link">Не вдалося відкрити теку Moonwitch</string>
     <string name="notification_no_directory_link_description">Будь ласка, знайдіть теку користувача за допомогою бічної панелі файлового менеджера вручну.</string>
     <string name="manage_save_data">Керування даними збережень</string>
     <string name="manage_save_data_description">Знайдено дані збережень. Будь ласка, виберіть варіант нижче.</string>

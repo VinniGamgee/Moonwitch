@@ -240,7 +240,7 @@
     <string name="open_user_folder">Buka folder Moonwitch</string>
     <string name="open_user_folder_description">Kelola file internal Moonwitch\'s</string>
     <string name="no_file_manager">Tidak menemukan file manager</string>
-    <string name="notification_no_directory_link">Tidak bisa membuka direktori Eden</string>
+    <string name="notification_no_directory_link">Tidak bisa membuka direktori Moonwitch</string>
     <string name="notification_no_directory_link_description">Silakan cari folder pengguna dengan panel samping manajer file secara manual.</string>
     <string name="manage_save_data">Kelola save data</string>
     <string name="manage_save_data_description">Data simpanan ditemukan. Silakan pilih opsi di bawah.</string>

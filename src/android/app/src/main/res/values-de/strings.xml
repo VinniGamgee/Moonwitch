@@ -298,7 +298,7 @@
     <string name="open_user_folder_description">Moonwitch\'s interne Dateien verwalten</string>
     <string name="app_settings_description">Verhalten und Aussehen der App verändern</string>
     <string name="no_file_manager">Kein Datei-Manager gefunden</string>
-    <string name="notification_no_directory_link">Eden-Verzeichnis konnte nicht geöffnet werden</string>
+    <string name="notification_no_directory_link">Moonwitch-Verzeichnis konnte nicht geöffnet werden</string>
     <string name="notification_no_directory_link_description">Bitte suche den Benutzerordner manuell über die Seitenleiste des Datei-Managers.</string>
     <string name="manage_save_data">Speicherdaten verwalten</string>
     <string name="manage_save_data_description">Speicherdaten gefunden. Bitte wähle unten eine Option aus.</string>

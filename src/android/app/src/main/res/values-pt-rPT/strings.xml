@@ -214,7 +214,7 @@
     <string name="open_user_folder">Abre a pasta Moonwitch</string>
     <string name="open_user_folder_description">Gere os ficheiro internos do Moonwitch</string>
     <string name="no_file_manager">Nenhum gestor de ficheiros encontrado</string>
-    <string name="notification_no_directory_link">Impossível abrir pasta Eden</string>
+    <string name="notification_no_directory_link">Impossível abrir pasta Moonwitch</string>
     <string name="notification_no_directory_link_description">Localiza a pasta de utilizador manualmente com o painel lateral do gestor de ficheiros.</string>
     <string name="manage_save_data">Gerir dados guardados</string>
     <string name="manage_save_data_description">Dados não encontrados. Por favor seleciona uma opção abaixo.</string>

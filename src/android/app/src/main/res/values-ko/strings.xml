@@ -214,7 +214,7 @@
     <string name="open_user_folder">Moonwitch 폴더 열기</string>
     <string name="open_user_folder_description">Moonwitch의 내부 파일 관리</string>
     <string name="no_file_manager">파일 관리자를 찾을 수 없음</string>
-    <string name="notification_no_directory_link">Eden 디렉터리를 열 수 없음</string>
+    <string name="notification_no_directory_link">Moonwitch 디렉터리를 열 수 없음</string>
     <string name="notification_no_directory_link_description">파일 관리자의 사이드 패널에서 사용자 폴더를 수동으로 찾아주세요.</string>
     <string name="manage_save_data">세이브 데이터 관리</string>
     <string name="manage_save_data_description">세이브 데이터를 발견했습니다. 아래에서 옵션을 선택하세요.</string>

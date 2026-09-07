@@ -299,7 +299,7 @@
     <string name="open_user_folder_description">管理 Moonwitch 的內部檔案</string>
     <string name="app_settings_description">自訂Moonwitch的主題與介面</string>
     <string name="no_file_manager">找不到檔案管理員</string>
-    <string name="notification_no_directory_link">無法開啟 Eden 目錄</string>
+    <string name="notification_no_directory_link">無法開啟 Moonwitch 目錄</string>
     <string name="notification_no_directory_link_description">請使用檔案管理員的側邊面板手動定位到使用者資料夾</string>
     <string name="manage_save_data">管理儲存資料</string>
     <string name="manage_save_data_description">導入/導出遊戲的儲存資料\n壓縮檔必須為.zip格式\n壓縮檔中首個子資料夾名稱必須為遊戲 ID</string>

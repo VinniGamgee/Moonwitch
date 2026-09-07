@@ -213,7 +213,7 @@
     <string name="open_user_folder">Moonwitch mappa megnyitása</string>
     <string name="open_user_folder_description">Moonwitch belső fájljainak kezelése</string>
     <string name="no_file_manager">Nem található fájlkezelő</string>
-    <string name="notification_no_directory_link">Nem sikerült megnyitni a Eden könyvtárat</string>
+    <string name="notification_no_directory_link">Nem sikerült megnyitni a Moonwitch könyvtárat</string>
     <string name="notification_no_directory_link_description">Kérjük, manuálisan keresd meg a felhasználói mappát a fájlkezelő oldalsó paneljével.</string>
     <string name="manage_save_data">Mentésadatok kezelése</string>
     <string name="manage_save_data_description">Mentés található. Kérjük, válassz egyet az alábbi opciók közül.</string>

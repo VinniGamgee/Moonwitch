@@ -407,7 +407,7 @@
     <string name="open_user_folder_description">Manage Moonwitch\'s internal files</string>
     <string name="app_settings_description">Modify the behavior and look of the app</string>
     <string name="no_file_manager">No file manager found</string>
-    <string name="notification_no_directory_link">Could not open Eden directory</string>
+    <string name="notification_no_directory_link">Could not open Moonwitch directory</string>
     <string name="notification_no_directory_link_description">Please locate the user folder with the file manager\'s side panel manually.</string>
     <string name="manage_save_data">Manage save data</string>
     <string name="manage_save_data_description">Save data found. Please select an option below.</string>

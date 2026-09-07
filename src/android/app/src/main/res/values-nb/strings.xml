@@ -209,7 +209,7 @@
     <string name="open_user_folder">Åpne Moonwitch-mappen</string>
     <string name="open_user_folder_description">Administrere Moonwitchs interne filer</string>
     <string name="no_file_manager">Ingen filbehandler funnet</string>
-    <string name="notification_no_directory_link">Kunne ikke åpne Eden-katalogen</string>
+    <string name="notification_no_directory_link">Kunne ikke åpne Moonwitch-katalogen</string>
     <string name="notification_no_directory_link_description">Finn brukermappen manuelt med filbehandlingens sidepanel.</string>
     <string name="manage_save_data">Administrere lagringsdata</string>
     <string name="manage_save_data_description">Lagringsdata funnet. Velg et alternativ nedenfor.</string>

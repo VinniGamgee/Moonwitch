@@ -316,7 +316,7 @@
     <string name="open_user_folder_description">Administrar los archivos internos de Moonwitch</string>
     <string name="app_settings_description">Modificar el comportamiento y la apariencia de la aplicación.</string>
     <string name="no_file_manager">Explorador de archivos no encontrado</string>
-    <string name="notification_no_directory_link">No se pudo abrir la carpeta Eden</string>
+    <string name="notification_no_directory_link">No se pudo abrir la carpeta Moonwitch</string>
     <string name="notification_no_directory_link_description">Por favor, busque la carpeta user con el panel lateral del explorador de archivos de forma manual.</string>
     <string name="manage_save_data">Administrar datos de guardado</string>
     <string name="manage_save_data_description">Guardar los datos encontrados. Por favor, seleccione una opción de abajo.</string>

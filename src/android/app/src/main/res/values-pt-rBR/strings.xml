@@ -310,7 +310,7 @@
     <string name="open_user_folder_description">Gerencie os arquivos internos do Moonwitch</string>
     <string name="app_settings_description">Alterar o comportamento e aparência do aplicativo</string>
     <string name="no_file_manager">Nenhum gerenciador de arquivos encontrado</string>
-    <string name="notification_no_directory_link">Não foi possível abrir a pasta do Eden</string>
+    <string name="notification_no_directory_link">Não foi possível abrir a pasta do Moonwitch</string>
     <string name="notification_no_directory_link_description">Localize manualmente a pasta do usuário usando o gerenciador de arquivos.</string>
     <string name="manage_save_data">Gerenciar dados salvos</string>
     <string name="manage_save_data_description">Dados salvos encontrados. Por favor, escolha uma opção abaixo.</string>

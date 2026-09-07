@@ -286,7 +286,7 @@
     <string name="open_user_folder">باز کردن پوشه Moonwitch</string>
     <string name="open_user_folder_description">مدیریت فایل‌های داخلی Moonwitch</string>
     <string name="no_file_manager">هیچ برنامه مدیریت فایلی پیدا نشد</string>
-    <string name="notification_no_directory_link">پوشه Eden باز نشد</string>
+    <string name="notification_no_directory_link">پوشه Moonwitch باز نشد</string>
     <string name="notification_no_directory_link_description">لطفاً پوشه کاربری را با استفاده از پنل کناری برنامه مدیریت فایل به صورت دستی پیدا کنید.</string>
     <string name="manage_save_data">مدیریت ذخیره داده‌ها</string>
     <string name="manage_save_data_description">ذخیره داده یافت شد. لطفاً یکی از گزینه‌های زیر را انتخاب کنید.</string>

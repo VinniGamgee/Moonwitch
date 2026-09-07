@@ -299,7 +299,7 @@
     <string name="open_user_folder_description">管理 Moonwitch 内部文件</string>
     <string name="app_settings_description">更改 app 的外观</string>
     <string name="no_file_manager">找不到可用的文件管理器</string>
-    <string name="notification_no_directory_link">无法打开 Eden 文件夹</string>
+    <string name="notification_no_directory_link">无法打开 Moonwitch 文件夹</string>
     <string name="notification_no_directory_link_description">请使用文件管理器侧边栏中的内部存储手动定位用户文件夹。</string>
     <string name="manage_save_data">管理存档数据</string>
     <string name="manage_save_data_description">已找到存档数据，请选择下方的选项。</string>

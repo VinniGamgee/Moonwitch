@@ -209,7 +209,7 @@
     <string name="open_user_folder">Mở thư mục Moonwitch</string>
     <string name="open_user_folder_description">Quản lý file nội bộ của Moonwitch</string>
     <string name="no_file_manager">Không tìm thấy trình quản lý tệp</string>
-    <string name="notification_no_directory_link">Không thể mở thư mục Eden</string>
+    <string name="notification_no_directory_link">Không thể mở thư mục Moonwitch</string>
     <string name="notification_no_directory_link_description">Vui lòng xác định thư mục người dùng với bảng điều khiển bên của trình quản lý tệp thủ công.</string>
     <string name="manage_save_data">Quản lý dữ liệu save</string>
     <string name="manage_save_data_description">Đã tìm thấy dữ liệu save. Vui lòng chọn một tuỳ chọn bên dưới.</string>
