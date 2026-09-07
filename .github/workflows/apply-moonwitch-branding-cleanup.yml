@@ -1,0 +1,286 @@
+name: Apply Moonwitch branding cleanup
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-moonwitch-branding-cleanup.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: exp/moonwitch-reference-layout-build200
+          fetch-depth: 1
+
+      - name: Apply user-visible Moonwitch branding
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('.')
+
+          # 1) Replace the visible Eden proper name inside Android string values only.
+          # Resource names, paths, keys, SPDX attribution and internal IDs stay untouched.
+          string_tag = re.compile(r'(<string\b[^>]*\bname="([^"]+)"[^>]*>)(.*?)(</string>)', re.S)
+          for path in sorted((root / 'src/android/app/src/main/res').glob('values*/strings.xml')):
+              text = path.read_text(encoding='utf-8')
+
+              def replace_visible_string(match):
+                  prefix, name, body, suffix = match.groups()
+                  # Keep persistent/internal identifiers and link resources separate.
+                  if name == 'app_notification_channel_id' or name.endswith('_link'):
+                      return match.group(0)
+                  body = body.replace('Eden', 'Moonwitch')
+                  body = re.sub(r'\beden\b', 'Moonwitch', body)
+                  return prefix + body + suffix
+
+              updated = string_tag.sub(replace_visible_string, text)
+              if updated != text:
+                  path.write_text(updated, encoding='utf-8')
+
+          base_strings = root / 'src/android/app/src/main/res/values/strings.xml'
+          text = base_strings.read_text(encoding='utf-8')
+          # Remove obsolete Eden social/external links from the About surface.
+          for name in ('contributors_link', 'discord_link', 'stoat_link', 'x_link', 'website_link'):
+              text = re.sub(
+                  rf'^\s*<string\s+name="{name}"[^>]*>.*?</string>\s*\n',
+                  '', text, flags=re.M
+              )
+          text, count = re.subn(
+              r'(<string\s+name="github_link"[^>]*>).*?(</string>)',
+              r'\1https://github.com/VinniGamgee/Moonwitch\2',
+              text,
+              count=1,
+          )
+          if count != 1:
+              raise SystemExit('Could not update github_link')
+          base_strings.write_text(text, encoding='utf-8')
+
+          # Improve the two About descriptions in Brazilian Portuguese instead of falling back
+          # to the old English wording.
+          pt = root / 'src/android/app/src/main/res/values-pt-rBR/strings.xml'
+          text = pt.read_text(encoding='utf-8')
+          if 'name="contributors_description"' in text:
+              text = re.sub(
+                  r'(<string\s+name="contributors_description"[^>]*>).*?(</string>)',
+                  r'\1Pessoas que contribuíram para o Moonwitch no Android\2', text, count=1
+              )
+          else:
+              marker = '</resources>'
+              text = text.replace(
+                  marker,
+                  '    <string name="contributors_description">Pessoas que contribuíram para o Moonwitch no Android</string>\n' + marker,
+                  1,
+              )
+          text = re.sub(
+              r'(<string\s+name="licenses_description"[^>]*>).*?(</string>)',
+              r'\1Projetos de código aberto usados pelo Moonwitch\2', text, count=1
+          )
+          pt.write_text(text, encoding='utf-8')
+
+          # 2) About: only Moonwitch GitHub remains as an external link.
+          about = root / 'src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/AboutFragment.kt'
+          text = about.read_text(encoding='utf-8')
+          contributor_block = '''        binding.buttonContributors.setOnClickListener {\n            openLink("https://github.com/VinniGamgee/Moonwitch/graphs/contributors")\n        }\n'''
+          if contributor_block not in text:
+              raise SystemExit('Contributors click block not found')
+          text = text.replace(contributor_block, '')
+          for line in (
+              '        binding.buttonDiscord.setOnClickListener { openLink(getString(R.string.discord_link)) }\n',
+              '        binding.buttonStoat.setOnClickListener { openLink(getString(R.string.stoat_link)) }\n',
+              '        binding.buttonX.setOnClickListener { openLink(getString(R.string.x_link)) }\n',
+              '        binding.buttonWebsite.setOnClickListener { openLink(getString(R.string.website_link)) }\n',
+          ):
+              if line not in text:
+                  raise SystemExit(f'About listener not found: {line.strip()}')
+              text = text.replace(line, '')
+          text = text.replace(
+              '            openLink("https://github.com/VinniGamgee/Moonwitch")',
+              '            openLink(getString(R.string.github_link))',
+              1,
+          )
+          about.write_text(text, encoding='utf-8')
+
+          # Remove Discord/Stoat/X/website buttons from both phone/tablet About layouts.
+          targets = ('button_discord', 'button_stoat', 'button_x', 'button_website')
+          for rel in (
+              'src/android/app/src/main/res/layout/fragment_about.xml',
+              'src/android/app/src/main/res/layout-w600dp/fragment_about.xml',
+          ):
+              path = root / rel
+              lines = path.read_text(encoding='utf-8').splitlines(keepends=True)
+              out = []
+              i = 0
+              removed = set()
+              while i < len(lines):
+                  if '<com.google.android.material.button.MaterialButton' in lines[i]:
+                      block = [lines[i]]
+                      i += 1
+                      while i < len(lines):
+                          block.append(lines[i])
+                          i += 1
+                          if '/>' in block[-1]:
+                              break
+                      joined = ''.join(block)
+                      hit = next((button for button in targets if f'@+id/{button}' in joined), None)
+                      if hit:
+                          removed.add(hit)
+                          continue
+                      if '@+id/button_github' in joined:
+                          joined = joined.replace('android:layout_width="0dp"', 'android:layout_width="56dp"')
+                          joined = re.sub(r'^\s*android:layout_weight="1"\s*\n', '', joined, flags=re.M)
+                          joined = re.sub(r'^\s*android:layout_margin(Start|End)="8dp"\s*\n', '', joined, flags=re.M)
+                      out.append(joined)
+                      continue
+                  out.append(lines[i])
+                  i += 1
+              if removed != set(targets):
+                  raise SystemExit(f'{rel}: expected four removed buttons, got {sorted(removed)}')
+              updated = ''.join(out)
+              # Center the sole GitHub button on tablet layout too.
+              if 'layout-w600dp' in rel:
+                  updated = updated.replace(
+                      'android:layout_marginTop="12dp"\n                    android:gravity="start"\n                    android:orientation="horizontal">',
+                      'android:layout_marginTop="12dp"\n                    android:gravity="center_horizontal"\n                    android:orientation="horizontal">',
+                      1,
+                  )
+              path.write_text(updated, encoding='utf-8')
+
+          # 3) New defaults use Moonwitch, while keeping compatibility setting keys intact.
+          settings = root / 'src/common/settings.h'
+          text = settings.read_text(encoding='utf-8')
+          replacements = {
+              'linkage, "Eden", "device_name"': 'linkage, "Moonwitch", "device_name"',
+              'eden_username{linkage, "Eden", "eden_username"': 'eden_username{linkage, "Moonwitch", "eden_username"',
+          }
+          for old, new in replacements.items():
+              if old not in text:
+                  raise SystemExit(f'Settings default not found: {old}')
+              text = text.replace(old, new, 1)
+          settings.write_text(text, encoding='utf-8')
+
+          # Migrate already-saved legacy device/web names once global config is loaded.
+          native_config = root / 'src/android/app/src/main/jni/native_config.cpp'
+          text = native_config.read_text(encoding='utf-8')
+          old = '''void Java_org_yuzu_yuzu_1emu_utils_NativeConfig_initializeGlobalConfig(JNIEnv* env, jobject obj) {\n    global_config = std::make_unique<AndroidConfig>();\n    FrontendCommon::GenerateSettings();\n}\n'''
+          new = '''void Java_org_yuzu_yuzu_1emu_utils_NativeConfig_initializeGlobalConfig(JNIEnv* env, jobject obj) {\n    global_config = std::make_unique<AndroidConfig>();\n    FrontendCommon::GenerateSettings();\n\n    // Migrate user-visible defaults inherited from Eden without changing compatibility keys.\n    bool migrated_legacy_branding = false;\n    if (Settings::values.device_name.GetValue() == "Eden") {\n        Settings::values.device_name = "Moonwitch";\n        migrated_legacy_branding = true;\n    }\n    if (Settings::values.eden_username.GetValue() == "Eden") {\n        Settings::values.eden_username = "Moonwitch";\n        migrated_legacy_branding = true;\n    }\n    if (migrated_legacy_branding) {\n        global_config->AndroidConfig::SaveAllValues();\n    }\n}\n'''
+          if old not in text:
+              raise SystemExit('initializeGlobalConfig block not found')
+          native_config.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          # Existing profile named exactly like the inherited default is migrated when profiles load.
+          profiles = root / 'src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/ProfileManagerFragment.kt'
+          text = profiles.read_text(encoding='utf-8')
+          old = '''                val username = NativeLibrary.getUserUsername(uuid)\n                if (!username.isNullOrEmpty()) {\n                    val imagePath = NativeLibrary.getUserImagePath(uuid) ?: ""\n                    profiles.add(UserProfile(uuid, username, imagePath))\n                }\n'''
+          new = '''                var username = NativeLibrary.getUserUsername(uuid)\n                if (username == "Eden" && NativeLibrary.updateUserUsername(uuid, "Moonwitch")) {\n                    username = "Moonwitch"\n                }\n                if (!username.isNullOrEmpty()) {\n                    val imagePath = NativeLibrary.getUserImagePath(uuid) ?: ""\n                    profiles.add(UserProfile(uuid, username, imagePath))\n                }\n'''
+          if old not in text:
+              raise SystemExit('Profile loading block not found')
+          profiles.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          # New Android profiles and core fallback profiles should also be Moonwitch.
+          native = root / 'src/android/app/src/main/jni/native.cpp'
+          text = native.read_text(encoding='utf-8')
+          expected = text.count('manager.CreateNewUser(Common::UUID::MakeRandom(), "Eden");')
+          if expected != 2:
+              raise SystemExit(f'Expected 2 Android default profiles, found {expected}')
+          text = text.replace(
+              'manager.CreateNewUser(Common::UUID::MakeRandom(), "Eden");',
+              'manager.CreateNewUser(Common::UUID::MakeRandom(), "Moonwitch");'
+          )
+          text = text.replace('LOG_INFO(Frontend, "eden Version: {}-{}",', 'LOG_INFO(Frontend, "Moonwitch Version: {}-{}",')
+          native.write_text(text, encoding='utf-8')
+
+          for rel, old, new in (
+              ('src/core/hle/service/acc/acc.cpp', 'profile_manager->CreateNewUser(user_id, "Eden");', 'profile_manager->CreateNewUser(user_id, "Moonwitch");'),
+              ('src/core/hle/service/acc/profile_manager.cpp', 'CreateNewUser(UUID::MakeRandom(), "Eden");', 'CreateNewUser(UUID::MakeRandom(), "Moonwitch");'),
+          ):
+              path = root / rel
+              text = path.read_text(encoding='utf-8')
+              if old not in text:
+                  raise SystemExit(f'Legacy profile default not found in {rel}')
+              path.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          # User-visible fallback/display strings outside Android resources.
+          path = root / 'src/core/frontend/applets/software_keyboard.cpp'
+          text = path.read_text(encoding='utf-8')
+          text = text.replace('SubmitNormalText(u"Eden");', 'SubmitNormalText(u"Moonwitch");')
+          text = text.replace('SubmitInlineText(u"Eden");', 'SubmitInlineText(u"Moonwitch");')
+          path.write_text(text, encoding='utf-8')
+
+          path = root / 'src/core/hle/service/bcat/news/builtin_news.cpp'
+          text = path.read_text(encoding='utf-8')
+          text = text.replace('std::string author = "Eden";', 'std::string author = "Moonwitch";')
+          text = text.replace('w.WriteString("Eden");', 'w.WriteString("Moonwitch");')
+          path.write_text(text, encoding='utf-8')
+
+          path = root / 'src/android/app/src/main/jni/native_freedreno.cpp'
+          text = path.read_text(encoding='utf-8').replace(
+              '# Auto-generated by Eden Emulator', '# Auto-generated by Moonwitch'
+          )
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Validate cleanup
+        shell: bash
+        run: |
+          git diff --check
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+          root = Path('.')
+          tag = re.compile(r'<string\b[^>]*\bname="([^"]+)"[^>]*>(.*?)</string>', re.S)
+          leftovers = []
+          for path in sorted((root / 'src/android/app/src/main/res').glob('values*/strings.xml')):
+              for name, body in tag.findall(path.read_text(encoding='utf-8')):
+                  if name == 'app_notification_channel_id' or name.endswith('_link'):
+                      continue
+                  if 'Eden' in body or re.search(r'\beden\b', body):
+                      leftovers.append(f'{path}:{name}:{body.strip()}')
+          if leftovers:
+              raise SystemExit('Visible Eden string leftovers:\n' + '\n'.join(leftovers[:50]))
+
+          about = (root / 'src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/AboutFragment.kt').read_text(encoding='utf-8')
+          for forbidden in ('buttonDiscord', 'buttonStoat', 'buttonX', 'buttonWebsite', '/graphs/contributors'):
+              if forbidden in about:
+                  raise SystemExit(f'About still references {forbidden}')
+          if 'getString(R.string.github_link)' not in about:
+              raise SystemExit('Moonwitch GitHub handler missing')
+
+          for rel in ('src/android/app/src/main/res/layout/fragment_about.xml', 'src/android/app/src/main/res/layout-w600dp/fragment_about.xml'):
+              text = (root / rel).read_text(encoding='utf-8')
+              for forbidden in ('button_discord', 'button_stoat', 'button_x', 'button_website'):
+                  if forbidden in text:
+                      raise SystemExit(f'{rel} still contains {forbidden}')
+              if 'button_github' not in text:
+                  raise SystemExit(f'{rel} lost GitHub button')
+
+          base = (root / 'src/android/app/src/main/res/values/strings.xml').read_text(encoding='utf-8')
+          for old_link in ('discord_link', 'stoat_link', 'x_link', 'website_link', 'contributors_link'):
+              if f'name="{old_link}"' in base:
+                  raise SystemExit(f'Obsolete About link still present: {old_link}')
+          if '>https://github.com/VinniGamgee/Moonwitch</string>' not in base:
+              raise SystemExit('Official Moonwitch GitHub resource missing')
+          PY
+
+          echo '===== USER-VISIBLE EDEN CHECK ====='
+          git grep -n -E '"Eden"|Eden is Running|Eden está em execução' -- \
+            src/android/app/src/main/res src/android/app/src/main/java src/android/app/src/main/jni/native.cpp \
+            src/android/app/src/main/jni/native_config.cpp src/common/settings.h \
+            src/core/hle/service/acc src/core/frontend/applets/software_keyboard.cpp || true
+
+      - name: Commit patch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/android/app/src/main src/common/settings.h src/core/frontend/applets/software_keyboard.cpp src/core/hle/service/acc src/core/hle/service/bcat/news/builtin_news.cpp
+          git commit -m "ui: finish Moonwitch branding cleanup"
+          git push origin HEAD:exp/moonwitch-reference-layout-build200
