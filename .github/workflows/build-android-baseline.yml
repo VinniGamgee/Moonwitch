@@ -29,6 +29,15 @@ jobs:
         run: |
           python3 .github/scripts/apply_moonwitch_transparent_overlay.py
 
+      - name: Apply Vulkan vertex binding optimization
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_vulkan_vertex_binding_perf.py
+          grep -q "SetVertexInputDynamicState" src/video_core/renderer_vulkan/vk_buffer_cache.h
+          grep -q "vertex_input_dynamic_state_active" src/video_core/renderer_vulkan/vk_buffer_cache.h
+          grep -q "!vertex_input_dynamic_state_active" src/video_core/renderer_vulkan/vk_buffer_cache.cpp
+          grep -q "SetVertexInputDynamicState(HasDynamicVertexInput())" src/video_core/renderer_vulkan/vk_graphics_pipeline.h
+
       - name: Guard Moonwitch core features
         shell: bash
         run: |
