@@ -3,8 +3,6 @@
 
 package org.yuzu.yuzu_emu.ui.splash
 
-import android.animation.Animator
-import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
 import android.content.Context
 import android.content.Intent
@@ -29,10 +27,11 @@ import org.yuzu.yuzu_emu.ui.main.MainActivity
 import org.yuzu.yuzu_emu.utils.DirectoryInitialization
 
 /**
- * Moonwitch-owned startup animation.
+ * Moonwitch-owned startup screen.
  *
- * Android's mandatory splash is kept blank. The visible logo is drawn here directly on
- * Canvas, so there is no bitmap rectangle or adaptive-icon mask that can turn it square.
+ * Android 12+ always draws a system splash before the first Activity. The manifest theme
+ * makes that system layer blank; this Activity owns the visible branding so Android never
+ * gets a chance to square/crop the Moonwitch logo.
  */
 class MoonwitchSplashActivity : AppCompatActivity() {
     private val handler = Handler(Looper.getMainLooper())
@@ -58,7 +57,7 @@ class MoonwitchSplashActivity : AppCompatActivity() {
     }
 
     private fun continueWhenReady() {
-        if (launchedMain || !animationFinished || isFinishing || isDestroyed) return
+        if (launchedMain || !animationFinished) return
 
         if (!DirectoryInitialization.areDirectoriesReady) {
             handler.postDelayed(::continueWhenReady, 40L)
@@ -66,10 +65,11 @@ class MoonwitchSplashActivity : AppCompatActivity() {
         }
 
         launchedMain = true
-        val destination = Intent(intent).apply {
-            setClass(this@MoonwitchSplashActivity, MainActivity::class.java)
-            removeCategory(Intent.CATEGORY_LAUNCHER)
-        }
+
+        // Never forward the launcher Intent itself. Launcher/Game Booster flags such as
+        // NEW_TASK/RESET_TASK_IF_NEEDED can reset the task when the splash finishes.
+        // MainActivity must receive a clean in-app Intent.
+        val destination = Intent(this, MainActivity::class.java)
 
         startActivity(destination)
         overridePendingTransition(0, 0)
@@ -83,9 +83,18 @@ class MoonwitchSplashActivity : AppCompatActivity() {
     }
 }
 
+/**
+ * Draws the Moonwitch mark piece-by-piece.
+ *
+ * Everything is vector geometry drawn directly to Canvas:
+ * - no bitmap rectangle
+ * - no ImageView crop
+ * - no adaptive-icon mask
+ * - transparent outside the circular logo
+ */
 private class MoonwitchSplashView(context: Context) : View(context) {
     private val density = resources.displayMetrics.density
-    private val backgroundColor = context.getColor(R.color.eden_background)
+    private val backgroundColor = context.getColor(R.color.ic_launcher_background)
 
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
@@ -98,7 +107,6 @@ private class MoonwitchSplashView(context: Context) : View(context) {
 
     private var progress = 0f
     private var animator: ValueAnimator? = null
-    private var completion: (() -> Unit)? = null
 
     private val moonPath = Path().apply {
         moveTo(59f, 26f)
@@ -156,34 +164,20 @@ private class MoonwitchSplashView(context: Context) : View(context) {
     }
 
     fun startAnimation(onFinished: () -> Unit) {
-        cancelAnimation()
-        completion = onFinished
+        animator?.cancel()
         animator = ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 1200L
-            interpolator = DecelerateInterpolator(1.35f)
+            duration = 1150L
+            interpolator = DecelerateInterpolator(1.4f)
             addUpdateListener {
                 progress = it.animatedValue as Float
                 invalidate()
             }
-            addListener(object : AnimatorListenerAdapter() {
-                private var cancelled = false
-
-                override fun onAnimationCancel(animation: Animator) {
-                    cancelled = true
-                }
-
-                override fun onAnimationEnd(animation: Animator) {
-                    val callback = completion
-                    completion = null
-                    if (!cancelled) callback?.invoke()
-                }
-            })
+            doOnEndCompat(onFinished)
             start()
         }
     }
 
     fun cancelAnimation() {
-        completion = null
         animator?.cancel()
         animator = null
     }
@@ -192,8 +186,8 @@ private class MoonwitchSplashView(context: Context) : View(context) {
         super.onDraw(canvas)
         canvas.drawColor(backgroundColor)
 
-        val maxSize = 164f * density
-        val iconSize = min(maxSize, min(width, height) * 0.44f)
+        val maxByDp = 156f * density
+        val iconSize = min(maxByDp, min(width, height) * 0.42f)
         val left = (width - iconSize) / 2f
         val top = (height - iconSize) / 2f
 
@@ -201,47 +195,45 @@ private class MoonwitchSplashView(context: Context) : View(context) {
         canvas.translate(left, top)
         val scale = iconSize / 108f
         canvas.scale(scale, scale)
+
         drawLogo(canvas)
+
         canvas.restore()
     }
 
     private fun drawLogo(canvas: Canvas) {
-        val body = phase(0.00f, 0.16f)
-        val ring = phase(0.00f, 0.31f)
-        val moon = phase(0.14f, 0.56f)
-        val dpad = phase(0.34f, 0.70f)
-        val red = phase(0.46f, 0.67f)
-        val blue = phase(0.52f, 0.73f)
-        val green = phase(0.58f, 0.79f)
-        val yellow = phase(0.64f, 0.85f)
-        val sparkle = phase(0.75f, 1.00f)
+        val ring = phase(0.00f, 0.30f)
+        val moon = phase(0.15f, 0.56f)
+        val dpad = phase(0.34f, 0.69f)
+        val redButton = phase(0.47f, 0.68f)
+        val blueButton = phase(0.53f, 0.74f)
+        val greenButton = phase(0.59f, 0.80f)
+        val yellowButton = phase(0.65f, 0.86f)
+        val sparkle = phase(0.76f, 1.00f)
 
-        // Circular body only — there is deliberately no square backing layer.
+        // Circular body only. There is intentionally no square backing layer.
         fillPaint.shader = null
         fillPaint.color = Color.rgb(9, 10, 18)
-        fillPaint.alpha = (255f * body).toInt()
+        fillPaint.alpha = (255f * phase(0f, 0.18f)).toInt()
         canvas.drawCircle(54f, 54f, 50f, fillPaint)
 
-        // The border assembles from the top in opposite directions.
+        // Ring grows from the top in two directions.
         strokePaint.strokeWidth = 4.5f
         strokePaint.alpha = (255f * ring).toInt()
-        val bounds = RectF(5f, 5f, 103f, 103f)
+        val ringBounds = RectF(5f, 5f, 103f, 103f)
 
         strokePaint.color = Color.rgb(225, 59, 255)
-        canvas.drawArc(bounds, -90f, -180f * ring, false, strokePaint)
-        strokePaint.color = Color.rgb(49, 215, 255)
-        canvas.drawArc(bounds, -90f, 180f * ring, false, strokePaint)
+        canvas.drawArc(ringBounds, -90f, -180f * ring, false, strokePaint)
 
-        // Crescent grows into the center.
+        strokePaint.color = Color.rgb(49, 215, 255)
+        canvas.drawArc(ringBounds, -90f, 180f * ring, false, strokePaint)
+
+        // Crescent scales into place.
         canvas.save()
-        val moonScale = lerp(0.72f, 1f, easeOutBack(moon))
-        canvas.scale(moonScale, moonScale, 58f, 57f)
+        canvas.scale(lerp(0.72f, 1f, easeOutBack(moon)), lerp(0.72f, 1f, easeOutBack(moon)), 58f, 57f)
         fillPaint.alpha = (255f * moon).toInt()
         fillPaint.shader = LinearGradient(
-            28f,
-            82f,
-            80f,
-            29f,
+            28f, 82f, 80f, 29f,
             intArrayOf(
                 Color.rgb(241, 60, 255),
                 Color.rgb(140, 103, 255),
@@ -254,7 +246,7 @@ private class MoonwitchSplashView(context: Context) : View(context) {
         fillPaint.shader = null
         canvas.restore()
 
-        // D-pad slides in from the left.
+        // D-pad enters from the left.
         canvas.save()
         canvas.translate(-18f * (1f - smooth(dpad)), 0f)
         fillPaint.alpha = (255f * dpad).toInt()
@@ -264,22 +256,18 @@ private class MoonwitchSplashView(context: Context) : View(context) {
         canvas.drawPath(dpadInnerPath, fillPaint)
         canvas.restore()
 
-        // Switch-style action buttons pop in one after another.
-        drawPopButton(canvas, 78f, 31f, Color.rgb(197, 45, 75), red)
-        drawPopButton(canvas, 69f, 40f, Color.rgb(23, 102, 202), blue)
-        drawPopButton(canvas, 87f, 40f, Color.rgb(20, 122, 104), green)
-        drawPopButton(canvas, 78f, 49f, Color.rgb(168, 139, 36), yellow)
+        drawPopButton(canvas, 78f, 31f, Color.rgb(197, 45, 75), redButton)
+        drawPopButton(canvas, 69f, 40f, Color.rgb(23, 102, 202), blueButton)
+        drawPopButton(canvas, 87f, 40f, Color.rgb(20, 122, 104), greenButton)
+        drawPopButton(canvas, 78f, 49f, Color.rgb(168, 139, 36), yellowButton)
 
-        // Final sparkle locks the complete Moonwitch mark together.
+        // Final sparkle locks the whole mark together.
         canvas.save()
         val sparkleScale = lerp(0.25f, 1f, easeOutBack(sparkle))
         canvas.scale(sparkleScale, sparkleScale, 68f, 54f)
         fillPaint.alpha = (255f * sparkle).toInt()
         fillPaint.shader = LinearGradient(
-            60f,
-            61f,
-            76f,
-            47f,
+            60f, 61f, 76f, 47f,
             Color.rgb(225, 59, 255),
             Color.rgb(67, 217, 255),
             Shader.TileMode.CLAMP
@@ -291,11 +279,10 @@ private class MoonwitchSplashView(context: Context) : View(context) {
 
     private fun drawPopButton(canvas: Canvas, x: Float, y: Float, color: Int, amount: Float) {
         if (amount <= 0f) return
-        val visibleAmount = amount.coerceIn(0f, 1f)
-        val scale = easeOutBack(visibleAmount).coerceAtLeast(0f)
+        val scale = easeOutBack(amount).coerceAtLeast(0f)
         fillPaint.shader = null
         fillPaint.color = color
-        fillPaint.alpha = (255f * visibleAmount).toInt()
+        fillPaint.alpha = (255f * amount.coerceIn(0f, 1f)).toInt()
         canvas.drawCircle(x, y, 5f * scale, fillPaint)
     }
 
@@ -317,5 +304,16 @@ private class MoonwitchSplashView(context: Context) : View(context) {
 
     private fun lerp(from: Float, to: Float, amount: Float): Float {
         return from + (to - from) * amount
+    }
+
+    /**
+     * Small local helper so the patch doesn't depend on animation-ktx extension imports.
+     */
+    private fun ValueAnimator.doOnEndCompat(block: () -> Unit) {
+        addListener(object : android.animation.AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: android.animation.Animator) {
+                block()
+            }
+        })
     }
 }
