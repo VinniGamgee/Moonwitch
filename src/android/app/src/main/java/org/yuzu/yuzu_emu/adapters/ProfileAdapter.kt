@@ -65,14 +65,21 @@ class ProfileAdapter(
             binding.textUsername.text = profile.username
             binding.textUuid.text = formatUUID(profile.uuid)
 
-            val imageFile = File(profile.imagePath)
-            if (imageFile.exists()) {
-                val bitmap = BitmapFactory.decodeFile(profile.imagePath)
-                binding.imageAvatar.setImageBitmap(bitmap)
+            // The legacy bundled account was renamed from Eden to Moonwitch, but its
+            // old avatar was left behind. Keep that branded profile visually consistent
+            // without changing the underlying Switch account image on disk.
+            if (profile.username.equals("Moonwitch", ignoreCase = true)) {
+                binding.imageAvatar.setImageResource(R.drawable.moonwitch_app_icon)
             } else {
+                val imageFile = File(profile.imagePath)
+                if (imageFile.exists()) {
+                    val bitmap = BitmapFactory.decodeFile(profile.imagePath)
+                    binding.imageAvatar.setImageBitmap(bitmap)
+                } else {
                     val jpegData = NativeLibrary.getDefaultAccountBackupJpeg()
                     val bitmap = BitmapFactory.decodeByteArray(jpegData, 0, jpegData.size)
                     binding.imageAvatar.setImageBitmap(bitmap)
+                }
             }
 
             if (profile.uuid == currentUserUUID) {

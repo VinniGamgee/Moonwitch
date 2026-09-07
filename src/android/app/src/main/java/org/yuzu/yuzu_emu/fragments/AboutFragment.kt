@@ -7,12 +7,15 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -54,6 +57,20 @@ class AboutFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         homeViewModel.setStatusBarShadeVisibility(visible = false)
+
+        // Keep every in-app Moonwitch mark on the same artwork as the launcher icon.
+        // The source artwork is square, so clip it to an oval here to avoid visible
+        // black corners on the About screen.
+        binding.imageLogo.apply {
+            setImageResource(R.drawable.moonwitch_app_icon)
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(Color.BLACK)
+            }
+            clipToOutline = true
+            scaleType = ImageView.ScaleType.CENTER_CROP
+        }
+
         binding.toolbarAbout.setNavigationOnClickListener {
             requireActivity().onBackPressedDispatcher.onBackPressed()
         }
