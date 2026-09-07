@@ -98,7 +98,10 @@ class ProfileManagerFragment : Fragment() {
 
         for (uuid in userUUIDs) {
             if (uuid.isNotEmpty()) {
-                val username = NativeLibrary.getUserUsername(uuid)
+                var username = NativeLibrary.getUserUsername(uuid)
+                if (username == "Eden" && NativeLibrary.updateUserUsername(uuid, "Moonwitch")) {
+                    username = "Moonwitch"
+                }
                 if (!username.isNullOrEmpty()) {
                     val imagePath = NativeLibrary.getUserImagePath(uuid) ?: ""
                     profiles.add(UserProfile(uuid, username, imagePath))

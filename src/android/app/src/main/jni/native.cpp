@@ -1297,7 +1297,7 @@ void Java_org_yuzu_yuzu_1emu_NativeLibrary_run(JNIEnv* env, jobject jobj, jstrin
 }
 
 void Java_org_yuzu_yuzu_1emu_NativeLibrary_logDeviceInfo(JNIEnv* env, jclass clazz) {
-    LOG_INFO(Frontend, "eden Version: {}-{}", Common::g_scm_branch, Common::g_scm_desc);
+    LOG_INFO(Frontend, "Moonwitch Version: {}-{}", Common::g_scm_branch, Common::g_scm_desc);
     LOG_INFO(Frontend, "Host OS: Android API level {}", android_get_device_api_level());
 }
 
@@ -1890,7 +1890,7 @@ JNIEXPORT jobjectArray JNICALL Java_org_yuzu_yuzu_1emu_NativeLibrary_getAllUsers
     manager.ResetUserSaveFile();
 
     if (manager.GetUserCount() == 0) {
-        manager.CreateNewUser(Common::UUID::MakeRandom(), "Eden");
+        manager.CreateNewUser(Common::UUID::MakeRandom(), "Moonwitch");
         manager.WriteUserSaveFile();
     }
 
@@ -2107,7 +2107,7 @@ JNIEXPORT void JNICALL Java_org_yuzu_yuzu_1emu_NativeLibrary_reloadProfiles(
 
     // create a default user if non exist
     if (manager.GetUserCount() == 0) {
-        manager.CreateNewUser(Common::UUID::MakeRandom(), "Eden");
+        manager.CreateNewUser(Common::UUID::MakeRandom(), "Moonwitch");
         manager.WriteUserSaveFile();
     }
 

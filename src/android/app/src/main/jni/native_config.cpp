@@ -39,6 +39,20 @@ extern "C" {
 void Java_org_yuzu_yuzu_1emu_utils_NativeConfig_initializeGlobalConfig(JNIEnv* env, jobject obj) {
     global_config = std::make_unique<AndroidConfig>();
     FrontendCommon::GenerateSettings();
+
+    // Migrate user-visible defaults inherited from Eden without changing compatibility keys.
+    bool migrated_legacy_branding = false;
+    if (Settings::values.device_name.GetValue() == "Eden") {
+        Settings::values.device_name = "Moonwitch";
+        migrated_legacy_branding = true;
+    }
+    if (Settings::values.eden_username.GetValue() == "Eden") {
+        Settings::values.eden_username = "Moonwitch";
+        migrated_legacy_branding = true;
+    }
+    if (migrated_legacy_branding) {
+        global_config->AndroidConfig::SaveAllValues();
+    }
 }
 
 void Java_org_yuzu_yuzu_1emu_utils_NativeConfig_unloadGlobalConfig(JNIEnv* env, jobject obj) {

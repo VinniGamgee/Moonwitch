@@ -67,9 +67,6 @@ class AboutFragment : Fragment() {
             true
         }
 
-        binding.buttonContributors.setOnClickListener {
-            openLink("https://github.com/VinniGamgee/Moonwitch/graphs/contributors")
-        }
         binding.buttonLicenses.setOnClickListener {
             val action = HomeNavigationDirections.actionGlobalSettingsSubscreenActivity(
                 SettingsSubscreen.LICENSES,
@@ -98,12 +95,8 @@ class AboutFragment : Fragment() {
             }
         }
 
-        binding.buttonDiscord.setOnClickListener { openLink(getString(R.string.discord_link)) }
-        binding.buttonStoat.setOnClickListener { openLink(getString(R.string.stoat_link)) }
-        binding.buttonX.setOnClickListener { openLink(getString(R.string.x_link)) }
-        binding.buttonWebsite.setOnClickListener { openLink(getString(R.string.website_link)) }
         binding.buttonGithub.setOnClickListener {
-            openLink("https://github.com/VinniGamgee/Moonwitch")
+            openLink(getString(R.string.github_link))
         }
 
         setInsets()
