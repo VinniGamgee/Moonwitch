@@ -7,8 +7,6 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -25,12 +23,12 @@ import androidx.fragment.app.activityViewModels
 import androidx.navigation.findNavController
 import com.google.android.material.transition.MaterialSharedAxis
 import org.yuzu.yuzu_emu.HomeNavigationDirections
+import org.yuzu.yuzu_emu.NativeLibrary
 import org.yuzu.yuzu_emu.R
 import org.yuzu.yuzu_emu.databinding.FragmentAboutBinding
 import org.yuzu.yuzu_emu.features.settings.ui.SettingsSubscreen
 import org.yuzu.yuzu_emu.model.HomeViewModel
 import org.yuzu.yuzu_emu.utils.ViewUtils.updateMargins
-import org.yuzu.yuzu_emu.NativeLibrary
 
 class AboutFragment : Fragment() {
     private var _binding: FragmentAboutBinding? = null
@@ -58,17 +56,11 @@ class AboutFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         homeViewModel.setStatusBarShadeVisibility(visible = false)
 
-        // Keep every in-app Moonwitch mark on the same artwork as the launcher icon.
-        // The source artwork is square, so clip it to an oval here to avoid visible
-        // black corners on the About screen.
+        // Use the real circular Moonwitch mark instead of the square source artwork.
+        // Transparent corners are part of the drawable itself, so no black square can leak out.
         binding.imageLogo.apply {
-            setImageResource(R.drawable.moonwitch_app_icon)
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
-                setColor(Color.BLACK)
-            }
-            clipToOutline = true
-            scaleType = ImageView.ScaleType.CENTER_CROP
+            setImageResource(R.drawable.ic_moonwitch_mark)
+            scaleType = ImageView.ScaleType.FIT_CENTER
         }
 
         binding.toolbarAbout.setNavigationOnClickListener {

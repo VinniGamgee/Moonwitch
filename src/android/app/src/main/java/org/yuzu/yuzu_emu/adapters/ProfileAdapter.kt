@@ -10,11 +10,11 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.AsyncListDiffer
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
+import org.yuzu.yuzu_emu.NativeLibrary
 import org.yuzu.yuzu_emu.R
 import org.yuzu.yuzu_emu.databinding.ListItemProfileBinding
 import org.yuzu.yuzu_emu.model.UserProfile
 import java.io.File
-import org.yuzu.yuzu_emu.NativeLibrary
 
 class ProfileAdapter(
     private val onProfileClick: (UserProfile) -> Unit,
@@ -65,11 +65,10 @@ class ProfileAdapter(
             binding.textUsername.text = profile.username
             binding.textUuid.text = formatUUID(profile.uuid)
 
-            // The legacy bundled account was renamed from Eden to Moonwitch, but its
-            // old avatar was left behind. Keep that branded profile visually consistent
-            // without changing the underlying Switch account image on disk.
+            // Keep the built-in Moonwitch account on the same circular brand mark used
+            // everywhere else, without modifying the underlying Switch account image.
             if (profile.username.equals("Moonwitch", ignoreCase = true)) {
-                binding.imageAvatar.setImageResource(R.drawable.moonwitch_app_icon)
+                binding.imageAvatar.setImageResource(R.drawable.ic_moonwitch_mark)
             } else {
                 val imageFile = File(profile.imagePath)
                 if (imageFile.exists()) {
