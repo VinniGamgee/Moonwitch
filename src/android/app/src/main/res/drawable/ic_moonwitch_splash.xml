@@ -1,96 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-
-    <!--
-        Splash-only Moonwitch mark.
-        Keep the artwork well inside Android 12+'s splash safe zone and leave the
-        area outside the circle fully transparent. Do not wrap this in a bitmap or
-        layer-list: the system splash screen can otherwise expose a square bound.
-    -->
-    <group
-        android:pivotX="54"
-        android:pivotY="54"
-        android:scaleX="0.78"
-        android:scaleY="0.78">
-
-        <!-- True circular background: two 180-degree arcs avoid the near-closed
-             single-arc trick that rendered inconsistently on some devices. -->
-        <path
-            android:fillColor="#090A12"
-            android:pathData="M54,4 A50,50 0,1 1,54,104 A50,50 0,1 1,54,4 Z" />
-
-        <!-- Split neon ring. -->
-        <path
-            android:fillColor="@android:color/transparent"
-            android:pathData="M54,5 A49,49 0,0 0,54,103"
-            android:strokeColor="#E13BFF"
-            android:strokeLineCap="round"
-            android:strokeWidth="4.5" />
-        <path
-            android:fillColor="@android:color/transparent"
-            android:pathData="M54,5 A49,49 0,0 1,54,103"
-            android:strokeColor="#31D7FF"
-            android:strokeLineCap="round"
-            android:strokeWidth="4.5" />
-
-        <!-- Moonwitch crescent. -->
-        <path
-            android:pathData="M59,26 C41,26 27,40 27,58 C27,76 42,89 60,87 C72,86 82,79 88,68 C82,73 75,76 67,76 C54,76 44,66 44,53 C44,41 50,31 59,26 Z">
-            <aapt:attr name="android:fillColor">
-                <gradient
-                    android:startX="28"
-                    android:startY="82"
-                    android:endX="80"
-                    android:endY="29"
-                    android:type="linear">
-                    <item android:color="#FFF13CFF" android:offset="0" />
-                    <item android:color="#FF8C67FF" android:offset="0.48" />
-                    <item android:color="#FF35D8FF" android:offset="1" />
-                </gradient>
-            </aapt:attr>
-        </path>
-
-        <!-- D-pad. -->
-        <path
-            android:fillColor="#292944"
-            android:pathData="M17,69 L23,69 L23,63 L31,63 L31,69 L37,69 L37,77 L31,77 L31,83 L23,83 L23,77 L17,77 Z" />
-        <path
-            android:fillColor="#353653"
-            android:pathData="M24.5,66 L29.5,66 L29.5,71 L34.5,71 L34.5,75 L29.5,75 L29.5,80 L24.5,80 L24.5,75 L19.5,75 L19.5,71 L24.5,71 Z" />
-
-        <!-- Switch-style action buttons: true closed circles. -->
-        <path
-            android:fillColor="#C52D4B"
-            android:pathData="M78,21 A5,5 0,1 1,78,31 A5,5 0,1 1,78,21 Z" />
-        <path
-            android:fillColor="#1766CA"
-            android:pathData="M69,30 A5,5 0,1 1,69,40 A5,5 0,1 1,69,30 Z" />
-        <path
-            android:fillColor="#147A68"
-            android:pathData="M87,30 A5,5 0,1 1,87,40 A5,5 0,1 1,87,30 Z" />
-        <path
-            android:fillColor="#A88B24"
-            android:pathData="M78,39 A5,5 0,1 1,78,49 A5,5 0,1 1,78,39 Z" />
-
-        <!-- Sparkle. -->
-        <path
-            android:pathData="M68,45 L71.5,50.5 L77,54 L71.5,57.5 L68,63 L64.5,57.5 L59,54 L64.5,50.5 Z">
-            <aapt:attr name="android:fillColor">
-                <gradient
-                    android:startX="60"
-                    android:startY="61"
-                    android:endX="76"
-                    android:endY="47"
-                    android:type="linear">
-                    <item android:color="#FFE13BFF" android:offset="0" />
-                    <item android:color="#FF43D9FF" android:offset="1" />
-                </gradient>
-            </aapt:attr>
-        </path>
-    </group>
+    android:width="1dp"
+    android:height="1dp"
+    android:viewportWidth="1"
+    android:viewportHeight="1">
+    <!-- Intentionally transparent: Android's mandatory system splash stays visually blank. -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,0 H1 V1 H0 Z" />
 </vector>
