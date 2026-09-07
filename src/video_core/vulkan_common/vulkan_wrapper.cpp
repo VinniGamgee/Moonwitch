@@ -12,6 +12,7 @@
 
 #include "common/common_types.h"
 #include "common/logging.h"
+#include "common/settings.h"
 #include "video_core/vulkan_common/vk_enum_string_helper.h"
 #include "video_core/vulkan_common/vma.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
@@ -19,6 +20,19 @@
 namespace Vulkan::vk {
 
 namespace {
+
+constexpr u64 TotkProgramId = 0x0100F2C0115B6000ULL;
+
+[[nodiscard]] const char* GetVulkanApplicationName() {
+    // Keep the legacy application name for every other title so existing driver
+    // workarounds continue to match exactly as before. TOTK gets an explicit name so
+    // Turnip drivers can opt into Zelda-specific profiles without affecting other games.
+    if (Settings::GetCurrentProgramID() == TotkProgramId) {
+        LOG_INFO(Render_Vulkan, "Using TOTK Vulkan application profile");
+        return "totk";
+    }
+    return "yuzu Emulator";
+}
 
 template <typename Func>
 void SortPhysicalDevices(std::vector<VkPhysicalDevice>& devices, const InstanceDispatch& dld,
@@ -464,7 +478,7 @@ Instance Instance::Create(u32 version, Span<const char*> layers, Span<const char
     const VkApplicationInfo application_info{
         .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
         .pNext = nullptr,
-        .pApplicationName = "yuzu Emulator",
+        .pApplicationName = GetVulkanApplicationName(),
         .applicationVersion = VK_MAKE_VERSION(1, 3, 0),
         .pEngineName = "yuzu Emulator",
         .engineVersion = VK_MAKE_VERSION(1, 3, 0),
