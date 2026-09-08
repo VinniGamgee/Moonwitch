@@ -37,6 +37,7 @@ buffer_cpp = root / "src/video_core/renderer_vulkan/vk_buffer_cache.cpp"
 graphics_h = root / "src/video_core/renderer_vulkan/vk_graphics_pipeline.h"
 texture_h = root / "src/video_core/texture_cache/texture_cache.h"
 texture_base_h = root / "src/video_core/texture_cache/texture_cache_base.h"
+shader_cache_h = root / "src/video_core/shader_cache.h"
 
 replace_once(
     buffer_h,
@@ -174,4 +175,25 @@ replace_once(
     "texture page-table unregister callback",
 )
 
-print("Applied Vulkan vertex binding and texture-cache flat-container optimizations.")
+# Generic shader-cache lookups are on the gameplay path for every renderer/game. Migrate the
+# address lookup and invalidation-page tables to the same flat-map abstraction used upstream.
+replace_once(
+    shader_cache_h,
+    "#include <ankerl/unordered_dense.h>",
+    "#include \"common/container/unordered_map.h\"",
+    "shader-cache flat-map include",
+)
+replace_once(
+    shader_cache_h,
+    "    ankerl::unordered_dense::map<u64, std::unique_ptr<Entry>> lookup_cache;",
+    "    ::Common::unordered_map<u64, std::unique_ptr<Entry>> lookup_cache;",
+    "shader lookup cache map",
+)
+replace_once(
+    shader_cache_h,
+    "    ankerl::unordered_dense::map<u64, std::vector<Entry*>> invalidation_cache;",
+    "    ::Common::unordered_map<u64, std::vector<Entry*>> invalidation_cache;",
+    "shader invalidation cache map",
+)
+
+print("Applied Vulkan vertex binding, texture-cache, and shader-cache flat-container optimizations.")
