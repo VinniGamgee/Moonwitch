@@ -55,3 +55,11 @@ if text.count(old) != 1:
 
 layer_cpp.write_text(text.replace(old, new, 1), encoding="utf-8")
 print("Applied Moonwitch Reconstruction Stage 2 spatial edge reconstruction.")
+
+# Stage 3 intentionally layers on top of the proven Stage 2 call site. Keeping the orchestration
+# here means the existing workflow still validates the Stage 2 wiring before the full Android build.
+stage3_script = Path(".github/scripts/apply_moonwitch_reconstruction_stage3.py")
+if not stage3_script.is_file():
+    raise SystemExit("Moonwitch Reconstruction Stage 3 script is missing")
+exec(compile(stage3_script.read_text(encoding="utf-8"), str(stage3_script), "exec"),
+     {"__name__": "__main__"})
