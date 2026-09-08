@@ -92,13 +92,13 @@ replace_once(
     "graphics pipeline dynamic vertex-input wiring",
 )
 
-# Texture-cache hot maps. Keep std::unordered_map entries that require stable iterators and
-# keep ankerl available for the two small join-cache sets; only migrate lookup-heavy maps.
+# Texture-cache hot containers. Keep std::unordered_map entries that require stable iterators;
+# migrate the lookup-heavy maps plus the small join-cache membership sets to Common flat containers.
 replace_once(
     texture_base_h,
     "#include <ankerl/unordered_dense.h>\n#include <vector>",
-    "#include <ankerl/unordered_dense.h>\n#include \"common/container/unordered_map.h\"\n#include <vector>",
-    "texture-cache flat-map include",
+    "#include <ankerl/unordered_dense.h>\n#include \"common/container/unordered_map.h\"\n#include \"common/container/unordered_set.h\"\n#include <vector>",
+    "texture-cache flat-container includes",
 )
 replace_once(
     texture_h,
@@ -152,6 +152,21 @@ map_replacements = [
 for old, new, label in map_replacements:
     replace_once(texture_base_h, old, new, label)
 
+set_replacements = [
+    (
+        "    ankerl::unordered_dense::set<ImageId> join_overlaps_found;",
+        "    ::Common::unordered_set<ImageId> join_overlaps_found;",
+        "join overlap membership set",
+    ),
+    (
+        "    ankerl::unordered_dense::set<ImageId> join_ignore_textures;",
+        "    ::Common::unordered_set<ImageId> join_ignore_textures;",
+        "join ignore membership set",
+    ),
+]
+for old, new, label in set_replacements:
+    replace_once(texture_base_h, old, new, label)
+
 replace_once(
     texture_h,
     "        [image_id](u64 page, ankerl::unordered_dense::map<u64, std::vector<ImageId>, Common::IdentityHash<u64>>& selected_page_table) {",
@@ -159,4 +174,4 @@ replace_once(
     "texture page-table unregister callback",
 )
 
-print("Applied Vulkan vertex binding and texture-cache flat-map optimizations.")
+print("Applied Vulkan vertex binding and texture-cache flat-container optimizations.")
