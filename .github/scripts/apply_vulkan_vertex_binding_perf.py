@@ -35,6 +35,8 @@ root = Path(__file__).resolve().parents[2]
 buffer_h = root / "src/video_core/renderer_vulkan/vk_buffer_cache.h"
 buffer_cpp = root / "src/video_core/renderer_vulkan/vk_buffer_cache.cpp"
 graphics_h = root / "src/video_core/renderer_vulkan/vk_graphics_pipeline.h"
+texture_h = root / "src/video_core/texture_cache/texture_cache.h"
+texture_base_h = root / "src/video_core/texture_cache/texture_cache_base.h"
 
 replace_once(
     buffer_h,
@@ -90,4 +92,71 @@ replace_once(
     "graphics pipeline dynamic vertex-input wiring",
 )
 
-print("Applied Vulkan dynamic vertex-input redundant binding optimization.")
+# Texture-cache hot maps. Keep std::unordered_map entries that require stable iterators and
+# keep ankerl available for the two small join-cache sets; only migrate lookup-heavy maps.
+replace_once(
+    texture_base_h,
+    "#include <ankerl/unordered_dense.h>\n#include <vector>",
+    "#include <ankerl/unordered_dense.h>\n#include \"common/container/unordered_map.h\"\n#include <vector>",
+    "texture-cache flat-map include",
+)
+replace_once(
+    texture_h,
+    "#include <ankerl/unordered_dense.h>\n#include <boost/container/small_vector.hpp>",
+    "#include <ankerl/unordered_dense.h>\n#include \"common/container/unordered_map.h\"\n#include <boost/container/small_vector.hpp>",
+    "texture-cache impl flat-map include",
+)
+
+map_replacements = [
+    (
+        "using TextureCacheGPUMap = ankerl::unordered_dense::map<u64, std::vector<ImageId>, Common::IdentityHash<u64>>;",
+        "using TextureCacheGPUMap = ::Common::unordered_map<u64, std::vector<ImageId>, Common::IdentityHash<u64>>;",
+        "texture GPU page map",
+    ),
+    (
+        "    ankerl::unordered_dense::map<u32, SamplerId> sampler_ids;",
+        "    ::Common::unordered_map<u32, SamplerId> sampler_ids;",
+        "sampler id map",
+    ),
+    (
+        "    ankerl::unordered_dense::map<u32, ImageViewId> image_view_ids;",
+        "    ::Common::unordered_map<u32, ImageViewId> image_view_ids;",
+        "image-view id map",
+    ),
+    (
+        "    ankerl::unordered_dense::map<RenderTargets, FramebufferId> framebuffers;",
+        "    ::Common::unordered_map<RenderTargets, FramebufferId> framebuffers;",
+        "framebuffer lookup map",
+    ),
+    (
+        "    ankerl::unordered_dense::map<u64, std::vector<ImageMapId>, Common::IdentityHash<u64>> page_table;",
+        "    ::Common::unordered_map<u64, std::vector<ImageMapId>, Common::IdentityHash<u64>> page_table;",
+        "texture CPU page table",
+    ),
+    (
+        "    ankerl::unordered_dense::map<ImageId, boost::container::small_vector<ImageViewId, 16>> sparse_views;",
+        "    ::Common::unordered_map<ImageId, boost::container::small_vector<ImageViewId, 16>> sparse_views;",
+        "sparse image-view map",
+    ),
+    (
+        "    ankerl::unordered_dense::map<GPUVAddr, ImageAllocId> image_allocs_table;",
+        "    ::Common::unordered_map<GPUVAddr, ImageAllocId> image_allocs_table;",
+        "image allocation lookup map",
+    ),
+    (
+        "    ankerl::unordered_dense::map<ImageId, size_t> join_alias_indices;",
+        "    ::Common::unordered_map<ImageId, size_t> join_alias_indices;",
+        "join alias index map",
+    ),
+]
+for old, new, label in map_replacements:
+    replace_once(texture_base_h, old, new, label)
+
+replace_once(
+    texture_h,
+    "        [image_id](u64 page, ankerl::unordered_dense::map<u64, std::vector<ImageId>, Common::IdentityHash<u64>>& selected_page_table) {",
+    "        [image_id](u64 page, ::Common::unordered_map<u64, std::vector<ImageId>, Common::IdentityHash<u64>>& selected_page_table) {",
+    "texture page-table unregister callback",
+)
+
+print("Applied Vulkan vertex binding and texture-cache flat-map optimizations.")
