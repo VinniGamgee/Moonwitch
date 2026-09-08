@@ -38,6 +38,15 @@ jobs:
           grep -q "!vertex_input_dynamic_state_active" src/video_core/renderer_vulkan/vk_buffer_cache.cpp
           grep -q "SetVertexInputDynamicState(HasDynamicVertexInput())" src/video_core/renderer_vulkan/vk_graphics_pipeline.h
 
+      - name: Apply Moonwitch Reconstruction Stage 2
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_moonwitch_reconstruction_stage2.py
+          grep -q "Moonwitch Reconstruction Stage 2" src/video_core/renderer_vulkan/present/layer.cpp
+          grep -q "target_scale > render_scale" src/video_core/renderer_vulkan/present/layer.cpp
+          grep -q "sr_filter.emplace<SGSR>(device, memory_allocator, image_count, output_size, true)" src/video_core/renderer_vulkan/present/layer.cpp
+          git diff --check
+
       - name: Guard Moonwitch core features
         shell: bash
         run: |
