@@ -111,3 +111,11 @@ if not totk_visibility_script.is_file():
     raise SystemExit("TOTK compute visibility v2 script is missing")
 exec(compile(totk_visibility_script.read_text(encoding="utf-8"), str(totk_visibility_script), "exec"),
      {"__name__": "__main__"})
+
+# NIS is a separate presentation feature. Reuse this pre-build hook so its official NVIDIA SDK
+# sources are pinned/verified before CMake generates the host shader headers.
+nis_script = Path(".github/scripts/apply_nvidia_image_scaling.py")
+if not nis_script.is_file():
+    raise SystemExit("NVIDIA Image Scaling integration script is missing")
+exec(compile(nis_script.read_text(encoding="utf-8"), str(nis_script), "exec"),
+     {"__name__": "__main__"})
