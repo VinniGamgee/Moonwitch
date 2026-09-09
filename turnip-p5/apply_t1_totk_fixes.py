@@ -45,31 +45,43 @@ def main() -> None:
     # TOTK driver, so normalize guest DONT_CARE load ops unconditionally.
     # This replaces only the public option-gated block; no GMEM scheduling,
     # barriers, resolves or cache policy are changed.
-    replace_exact_once(
-        render_pass,
-        """   if (unlikely(device->instance->drirc.debug.dont_care_as_load)) {\n"
+    old_gmem = (
+        "   if (unlikely(device->instance->drirc.debug.dont_care_as_load)) {\n"
         "      if (load_op == VK_ATTACHMENT_LOAD_OP_DONT_CARE)\n"
         "         load_op = VK_ATTACHMENT_LOAD_OP_LOAD;\n"
         "      if (stencil_load_op == VK_ATTACHMENT_LOAD_OP_DONT_CARE)\n"
         "         stencil_load_op = VK_ATTACHMENT_LOAD_OP_LOAD;\n"
-        "   }\n""",
-        """   /* Moonwitch P5-T1: dedicated TOTK GMEM correctness path. */\n"
+        "   }\n"
+    )
+    new_gmem = (
+        "   /* Moonwitch P5-T1: dedicated TOTK GMEM correctness path. */\n"
         "   if (load_op == VK_ATTACHMENT_LOAD_OP_DONT_CARE)\n"
         "      load_op = VK_ATTACHMENT_LOAD_OP_LOAD;\n"
         "   if (stencil_load_op == VK_ATTACHMENT_LOAD_OP_DONT_CARE)\n"
-        "      stencil_load_op = VK_ATTACHMENT_LOAD_OP_LOAD;\n""",
+        "      stencil_load_op = VK_ATTACHMENT_LOAD_OP_LOAD;\n"
+    )
+    replace_exact_once(
+        render_pass,
+        old_gmem,
+        new_gmem,
         "GMEM DONT_CARE-as-LOAD",
     )
 
     # 2) Zelda shader correctness: the same snapshot copies the modern drirc
     # field into the IR3 compiler options. Force only this compiler option for
     # the dedicated P5-T1 package.
+    old_ubo = (
+        "   device->compiler_options.allow_oob_indirect_ubo_loads =\n"
+        "      device->instance->drirc.misc.allow_oob_indirect_ubo_loads;\n"
+    )
+    new_ubo = (
+        "   /* Moonwitch P5-T1: dedicated TOTK indirect-UBO correctness path. */\n"
+        "   device->compiler_options.allow_oob_indirect_ubo_loads = true;\n"
+    )
     replace_exact_once(
         device,
-        """   device->compiler_options.allow_oob_indirect_ubo_loads =\n"
-        "      device->instance->drirc.misc.allow_oob_indirect_ubo_loads;\n""",
-        """   /* Moonwitch P5-T1: dedicated TOTK indirect-UBO correctness path. */\n"
-        "   device->compiler_options.allow_oob_indirect_ubo_loads = true;\n""",
+        old_ubo,
+        new_ubo,
         "OOB indirect UBO loads",
     )
 
