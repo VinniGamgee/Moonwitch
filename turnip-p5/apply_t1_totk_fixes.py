@@ -1,27 +1,31 @@
 #!/usr/bin/env python3
 """Apply the deliberately small P5-T1 TOTK correctness delta.
 
-P5-T1 is an A/B baseline.  It intentionally does NOT import Apex's broader
-GCM/cache/suballocator/scheduling changes.  This package is meant to be picked
-as a per-game driver for TOTK, so the two known Zelda workarounds are made the
-Turnip defaults inside this dedicated build.
+P5-T1 is an A/B baseline. It intentionally does NOT import Apex's broader
+GCM/cache/suballocator/scheduling changes. The public Mesa snapshot used for
+T1 has already moved these settings away from the old DRI_CONF_* declarations
+that earlier versions of this script expected, so patch the two real runtime
+consumers instead of relying on brittle config-macro spelling.
 """
 
 from pathlib import Path
 import sys
 
 
-def replace_once(text: str, old: str, new: str, label: str) -> str:
+def replace_exact_once(path: Path, old: str, new: str, label: str) -> None:
+    text = path.read_text(encoding="utf-8")
     if new in text:
-        print(f"[p5-t1] {label}: already enabled")
-        return text
+        print(f"[p5-t1] {label}: already applied")
+        return
+
     count = text.count(old)
     if count != 1:
         raise SystemExit(
-            f"[p5-t1] {label}: expected exactly one source default {old!r}, found {count}"
+            f"[p5-t1] {label}: expected exactly one runtime source pattern, found {count}"
         )
-    print(f"[p5-t1] {label}: enabling")
-    return text.replace(old, new, 1)
+
+    path.write_text(text.replace(old, new, 1), encoding="utf-8")
+    print(f"[p5-t1] {label}: forced at runtime")
 
 
 def main() -> None:
@@ -30,45 +34,79 @@ def main() -> None:
 
     root = Path(sys.argv[1]).resolve()
     device = root / "src/freedreno/vulkan/tu_device.cc"
-    if not device.is_file():
-        raise SystemExit(f"[p5-t1] missing {device}")
+    render_pass = root / "src/freedreno/vulkan/tu_pass.cc"
 
-    text = device.read_text(encoding="utf-8")
-    text = replace_once(
-        text,
-        "DRI_CONF_TU_DONT_CARE_AS_LOAD(false)",
-        "DRI_CONF_TU_DONT_CARE_AS_LOAD(true)",
+    for path in (device, render_pass):
+        if not path.is_file():
+            raise SystemExit(f"[p5-t1] missing {path}")
+
+    # 1) Zelda/GMEM correctness: the 2026-08-17 Mesa snapshot consumes the
+    # option directly in attachment_set_ops(). P5-T1 is a dedicated per-game
+    # TOTK driver, so normalize guest DONT_CARE load ops unconditionally.
+    # This replaces only the public option-gated block; no GMEM scheduling,
+    # barriers, resolves or cache policy are changed.
+    replace_exact_once(
+        render_pass,
+        """   if (unlikely(device->instance->drirc.debug.dont_care_as_load)) {\n"
+        "      if (load_op == VK_ATTACHMENT_LOAD_OP_DONT_CARE)\n"
+        "         load_op = VK_ATTACHMENT_LOAD_OP_LOAD;\n"
+        "      if (stencil_load_op == VK_ATTACHMENT_LOAD_OP_DONT_CARE)\n"
+        "         stencil_load_op = VK_ATTACHMENT_LOAD_OP_LOAD;\n"
+        "   }\n""",
+        """   /* Moonwitch P5-T1: dedicated TOTK GMEM correctness path. */\n"
+        "   if (load_op == VK_ATTACHMENT_LOAD_OP_DONT_CARE)\n"
+        "      load_op = VK_ATTACHMENT_LOAD_OP_LOAD;\n"
+        "   if (stencil_load_op == VK_ATTACHMENT_LOAD_OP_DONT_CARE)\n"
+        "      stencil_load_op = VK_ATTACHMENT_LOAD_OP_LOAD;\n""",
         "GMEM DONT_CARE-as-LOAD",
     )
-    text = replace_once(
-        text,
-        "DRI_CONF_TU_ALLOW_OOB_INDIRECT_UBO_LOADS(false)",
-        "DRI_CONF_TU_ALLOW_OOB_INDIRECT_UBO_LOADS(true)",
+
+    # 2) Zelda shader correctness: the same snapshot copies the modern drirc
+    # field into the IR3 compiler options. Force only this compiler option for
+    # the dedicated P5-T1 package.
+    replace_exact_once(
+        device,
+        """   device->compiler_options.allow_oob_indirect_ubo_loads =\n"
+        "      device->instance->drirc.misc.allow_oob_indirect_ubo_loads;\n""",
+        """   /* Moonwitch P5-T1: dedicated TOTK indirect-UBO correctness path. */\n"
+        "   device->compiler_options.allow_oob_indirect_ubo_loads = true;\n""",
         "OOB indirect UBO loads",
     )
-    device.write_text(text, encoding="utf-8")
 
-    # Hard guards: P5-T1 must keep the A725 command-buffer quirk from the base
-    # and must contain both correctness switches in their enabled form.
-    if not any(
+    # Hard guard: keep the real A725 command-buffer workaround from the base.
+    a725_found = any(
         "cmdbuf_start_a725_quirk" in p.read_text(encoding="utf-8", errors="ignore")
-        for p in (root / "src/freedreno").rglob("*.[ch]")
-    ) and not any(
-        "cmdbuf_start_a725_quirk" in p.read_text(encoding="utf-8", errors="ignore")
-        for p in (root / "src/freedreno").rglob("*.cc")
-    ):
-        raise SystemExit("[p5-t1] A725 quirk guard failed: cmdbuf_start_a725_quirk not found")
-
-    final = device.read_text(encoding="utf-8")
-    required = (
-        "DRI_CONF_TU_DONT_CARE_AS_LOAD(true)",
-        "DRI_CONF_TU_ALLOW_OOB_INDIRECT_UBO_LOADS(true)",
+        for pattern in ("*.c", "*.cc", "*.h")
+        for p in (root / "src/freedreno").rglob(pattern)
     )
-    for marker in required:
-        if marker not in final:
+    if not a725_found:
+        raise SystemExit(
+            "[p5-t1] A725 quirk guard failed: cmdbuf_start_a725_quirk not found"
+        )
+
+    final_device = device.read_text(encoding="utf-8")
+    final_pass = render_pass.read_text(encoding="utf-8")
+    guards = (
+        (
+            "Moonwitch P5-T1: dedicated TOTK GMEM correctness path.",
+            final_pass,
+        ),
+        (
+            "Moonwitch P5-T1: dedicated TOTK indirect-UBO correctness path.",
+            final_device,
+        ),
+        ("device->compiler_options.allow_oob_indirect_ubo_loads = true;", final_device),
+    )
+    for marker, text in guards:
+        if marker not in text:
             raise SystemExit(f"[p5-t1] final guard failed: {marker}")
 
-    print("[p5-t1] PASS: A725 base retained; only the two dedicated TOTK correctness defaults were changed.")
+    if "unlikely(device->instance->drirc.debug.dont_care_as_load)" in final_pass:
+        raise SystemExit("[p5-t1] final guard failed: GMEM workaround is still option-gated")
+
+    print(
+        "[p5-t1] PASS: A725 base retained; the two TOTK correctness paths are forced at their runtime consumers."
+    )
 
 
 if __name__ == "__main__":
