@@ -7,12 +7,16 @@ WORK="$LAB/work"
 OUT="$LAB/out"
 MESA="$WORK/mesa"
 
-# The user's T30 binary reports:
+# The supplied MrPurple T30 binary identifies itself as:
 #   PurpleVK 26.3.0-devel (git-62ac221a33)
-#   Android 35 / NDK r28b
-# and its ZIP timestamp is 2026-08-16. P5-T1 deliberately stays close to that
-# baseline and adds only the two Zelda correctness switches.
-MESA_COMMIT="62ac221a33"
+# That SHA is not present in upstream Mesa history, even after deepening the
+# public main branch by 12k commits, so it is a fork/private-tree identifier.
+# T30 was published at 2026-08-17 12:38 UTC. The closest independently logged
+# public Mesa snapshot before that release is dd daef6... (07:44 UTC), still
+# Vulkan 1.4.359. P5-T1 uses that reproducible source base and records the
+# private T30 SHA separately instead of pretending it is upstream.
+T30_PRIVATE_SHA="62ac221a33"
+MESA_COMMIT="dddaef6f8c970770cc60f6bab6ab5392f54e7679"
 NDK_NAME="android-ndk-r28b"
 NDK_URL="https://dl.google.com/android/repository/${NDK_NAME}-linux.zip"
 ANDROID_API="35"
@@ -27,52 +31,46 @@ curl -fL --retry 3 --retry-delay 2 "$NDK_URL" -o "$WORK/ndk.zip"
 unzip -q "$WORK/ndk.zip" -d "$WORK"
 NDK="$WORK/$NDK_NAME/toolchains/llvm/prebuilt/linux-x86_64/bin"
 
-# A short SHA is an object name, not a remote ref, so `git fetch origin
-# 62ac221a33` is invalid on GitLab. Fetch the surrounding Mesa history first,
-# then resolve the short SHA locally. Blob filtering keeps this much lighter
-# than a full Mesa clone; checkout lazily downloads the required source blobs.
-printf '[p5-t1] Resolving exact T30 Mesa base %s from upstream history...\n' "$MESA_COMMIT"
+printf '[p5-t1] Fetching reproducible public Mesa base %s...\n' "$MESA_COMMIT"
 git clone \
   --filter=blob:none \
   --no-checkout \
-  --shallow-since=2026-08-01 \
+  --shallow-since=2026-08-16 \
   --branch main \
   https://gitlab.freedesktop.org/mesa/mesa.git \
   "$MESA"
 
-BASE_FULL="$(git -C "$MESA" rev-list --all | grep -E "^${MESA_COMMIT}[0-9a-f]*$" | head -n1 || true)"
-if [[ -z "$BASE_FULL" ]]; then
-  echo '[p5-t1] Short SHA not found in the August shallow window; deepening history...'
-  git -C "$MESA" fetch --filter=blob:none --deepen=12000 origin main
-  BASE_FULL="$(git -C "$MESA" rev-list --all | grep -E "^${MESA_COMMIT}[0-9a-f]*$" | head -n1 || true)"
+if ! git -C "$MESA" cat-file -e "${MESA_COMMIT}^{commit}" 2>/dev/null; then
+  echo '[p5-t1] Public base not in shallow window; deepening Mesa history...'
+  git -C "$MESA" fetch --filter=blob:none --deepen=2000 origin main
 fi
 
-if [[ -z "$BASE_FULL" ]]; then
-  echo "[p5-t1] ERROR: Mesa upstream history does not contain ${MESA_COMMIT}." >&2
-  echo '[p5-t1] The T30 short SHA may come from a private/fork-only commit; refusing to silently substitute another base.' >&2
+if ! git -C "$MESA" cat-file -e "${MESA_COMMIT}^{commit}" 2>/dev/null; then
+  echo "[p5-t1] ERROR: public Mesa base ${MESA_COMMIT} is unavailable." >&2
   exit 2
 fi
 
-if [[ "$BASE_FULL" != ${MESA_COMMIT}* ]]; then
-  echo "[p5-t1] ERROR: resolved SHA ${BASE_FULL} does not match requested prefix ${MESA_COMMIT}." >&2
-  exit 2
-fi
-
-git -C "$MESA" checkout -q --detach "$BASE_FULL"
+git -C "$MESA" checkout -q --detach "$MESA_COMMIT"
+BASE_FULL="$(git -C "$MESA" rev-parse HEAD)"
 BASE_DATE="$(git -C "$MESA" show -s --format=%ci HEAD)"
-printf '[p5-t1] Mesa base: %s (%s)\n' "$BASE_FULL" "$BASE_DATE"
+if [[ "$BASE_FULL" != "$MESA_COMMIT" ]]; then
+  echo "[p5-t1] ERROR: checked out ${BASE_FULL}, expected ${MESA_COMMIT}." >&2
+  exit 2
+fi
+printf '[p5-t1] Public Mesa base: %s (%s)\n' "$BASE_FULL" "$BASE_DATE"
+printf '[p5-t1] T30 fork/private reference: %s\n' "$T30_PRIVATE_SHA"
 
-# The T30 binary contains this A725 path. We require the matching source path
-# before touching any Zelda options; no generic A7xx fallback is accepted.
-if ! grep -Rqs --include='*.c' --include='*.cc' --include='*.h' \
+# A725 is non-negotiable for this project. Upstream Mesa has a dedicated
+# command-buffer-start workaround for A725; fail rather than silently build a
+# generic A7xx path if that support is missing from the selected snapshot.
+if ! grep -Rqs --include='*.c' --include='*.cc' --include='*.h' --include='*.py' \
   'cmdbuf_start_a725_quirk' "$MESA/src/freedreno"; then
-  echo '[p5-t1] ERROR: exact base does not contain cmdbuf_start_a725_quirk.' >&2
+  echo '[p5-t1] ERROR: public base does not contain cmdbuf_start_a725_quirk.' >&2
   exit 3
 fi
 
-# Android/NDK compatibility edits only. These are not renderer/performance
-# changes and are conditional so the script works if upstream already fixed
-# the forms.
+# Android/NDK compatibility edits only. These are conditional build scaffolding,
+# not renderer/performance changes.
 sed -i 's/typedef const native_handle_t\* buffer_handle_t;/typedef void\* buffer_handle_t;/g' \
   "$MESA/include/android_stub/cutils/native_handle.h" 2>/dev/null || true
 sed -i 's/, hnd->handle/, (void *)hnd->handle/g' \
@@ -80,6 +78,7 @@ sed -i 's/, hnd->handle/, (void *)hnd->handle/g' \
 sed -i -E 's/([a-z_]+)->handle->/((const native_handle_t *)\1->handle)->/g' \
   "$MESA/src/vulkan/runtime/vk_android.c" 2>/dev/null || true
 
+# T1 intentionally imports only the two Zelda-facing correctness switches.
 python3 "$LAB/apply_t1_totk_fixes.py" "$MESA"
 git -C "$MESA" diff -- src/freedreno/vulkan/tu_device.cc | tee "$OUT/P5-T1-TOTK.patch"
 
@@ -121,8 +120,8 @@ export RANLIB=llvm-ranlib
 export STRIP=llvm-strip
 export PATH="$NDK:$PATH"
 
-# No Apex GCM/cache/suballocator/scheduling bundle in T1. Release/O3 only;
-# this isolates the correctness delta for the first phone A/B test.
+# P5-T1 is the clean A/B baseline: release/O3 only. No Apex GCM, giant cache,
+# suballocator, scheduler, fence or CPU-microarchitecture bundle yet.
 printf '[p5-t1] Configuring Mesa...\n'
 cd "$MESA"
 meson setup build-android-aarch64 \
@@ -153,11 +152,13 @@ if [[ ! -f "$SRC_SO" ]]; then
   exit 4
 fi
 
-# Keep the unstripped twin for crash address -> symbol analysis. The phone gets
-# a stripped copy only. The A725 symbol guard runs against the debug twin,
-# because stripping is allowed to remove local function names.
+# Keep an unstripped twin for address-to-symbol crash analysis. The phone gets
+# a stripped package. Validate the A725 path before stripping local symbols.
 cp "$SRC_SO" "$OUT/vulkan.moonwitch_p5.debug.so"
-strings -a "$OUT/vulkan.moonwitch_p5.debug.so" | grep -q 'cmdbuf_start_a725_quirk'
+if ! strings -a "$OUT/vulkan.moonwitch_p5.debug.so" | grep -q 'cmdbuf_start_a725_quirk'; then
+  echo '[p5-t1] ERROR: A725 quirk did not survive into the debug binary.' >&2
+  exit 5
+fi
 
 cp "$SRC_SO" "$OUT/$DRIVER_NAME"
 patchelf --set-soname "$DRIVER_NAME" "$OUT/$DRIVER_NAME"
@@ -177,11 +178,11 @@ cat > "$OUT/meta.json" <<EOF
 {
   "schemaVersion": 1,
   "name": "Moonwitch Turnip P5-T1 · Poco F5 / A725 / TOTK",
-  "description": "P5-T1 baseline: exact T30 Mesa git ${MESA_COMMIT}, NDK r28b/API 35, A725 quirk retained, Zelda GMEM DONT_CARE-as-LOAD + OOB indirect UBO correctness defaults. No Apex GCM/cache/suballocator/scheduling bundle.",
+  "description": "P5-T1: closest reproducible public Mesa snapshot before MrPurple T30 release, NDK r28b/API 35, A725 path required, Zelda GMEM DONT_CARE-as-LOAD + OOB indirect UBO correctness defaults. T30 fork SHA ${T30_PRIVATE_SHA} tracked for reference; no Apex tuning bundle.",
   "author": "Moonwitch",
   "packageVersion": "P5-T1",
   "vendor": "Mesa / Moonwitch P5",
-  "driverVersion": "${VERSION}-P5-T1-${MESA_COMMIT}",
+  "driverVersion": "${VERSION}-P5-T1-${MESA_COMMIT:0:10}",
   "minApi": 35,
   "libraryName": "${DRIVER_NAME}"
 }
@@ -194,13 +195,14 @@ Target phone: Poco F5
 SoC/GPU: Snapdragon 7+ Gen 2 / Adreno 725
 OS target: HyperOS 3 / Android API 35
 Primary workload: Moonwitch + Zelda TOTK
-Mesa base requested: ${MESA_COMMIT}
-Mesa base resolved: ${BASE_FULL}
-Mesa commit date: ${BASE_DATE}
+MrPurple T30 binary reference: ${T30_PRIVATE_SHA} (fork/private-tree SHA; not upstream Mesa)
+Public reconstruction base: ${BASE_FULL}
+Public base date: ${BASE_DATE}
+Why this base: closest independently logged public Mesa snapshot before T30's 2026-08-17 12:38 UTC release
 Mesa VERSION: ${VERSION}
 Android NDK: r28b
 Optimization policy: Meson release/O3; no extra CPU/GCM/cache tuning in T1
-A725 guard: cmdbuf_start_a725_quirk present in exact base and debug binary
+A725 guard: cmdbuf_start_a725_quirk required in source and debug binary
 TOTK correctness defaults:
   tu_dont_care_as_load=true
   tu_allow_oob_indirect_ubo_loads=true
