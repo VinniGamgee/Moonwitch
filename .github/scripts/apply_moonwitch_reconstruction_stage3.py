@@ -102,3 +102,12 @@ replace_once(
 )
 
 print("Applied Moonwitch Reconstruction Stage 3 adaptive spatial reconstruction.")
+
+# Reuse the existing workflow hook to apply an independent renderer correctness/performance pass.
+# The implementation lives in its own script so reconstruction and TOTK synchronization remain
+# logically separate even though both are invoked from the same build step for now.
+totk_visibility_script = Path(".github/scripts/apply_totk_compute_visibility_v2.py")
+if not totk_visibility_script.is_file():
+    raise SystemExit("TOTK compute visibility v2 script is missing")
+exec(compile(totk_visibility_script.read_text(encoding="utf-8"), str(totk_visibility_script), "exec"),
+     {"__name__": "__main__"})
