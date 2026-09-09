@@ -65,10 +65,10 @@ exec(compile(stage3_script.read_text(encoding="utf-8"), str(stage3_script), "exe
      {"__name__": "__main__"})
 
 # Pure NIS scaling must run after Stage 3 because Stage 3 invokes the pinned official NVScaler.
-# V2 propagates NVIDIA's exact 85/77/67/59/50% ratios through every renderer consumer before
-# allowing CI to proceed.
-nis_pure_script = Path(".github/scripts/apply_nis_pure_scaling_v2.py")
+# V3 propagates NVIDIA's exact 85/77/67/59/50% ratios through every renderer consumer and refuses
+# to proceed while any direct legacy ratio path remains.
+nis_pure_script = Path(".github/scripts/apply_nis_pure_scaling_v3.py")
 if not nis_pure_script.is_file():
-    raise SystemExit("Pure NVIDIA Image Scaling v2 integration script is missing")
+    raise SystemExit("Pure NVIDIA Image Scaling v3 integration script is missing")
 exec(compile(nis_pure_script.read_text(encoding="utf-8"), str(nis_pure_script), "exec"),
      {"__name__": "__main__"})
