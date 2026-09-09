@@ -63,3 +63,12 @@ if not stage3_script.is_file():
     raise SystemExit("Moonwitch Reconstruction Stage 3 script is missing")
 exec(compile(stage3_script.read_text(encoding="utf-8"), str(stage3_script), "exec"),
      {"__name__": "__main__"})
+
+# Pure NIS scaling must run after Stage 3 because Stage 3 invokes the pinned official NVScaler
+# integration. This second pass wires NVIDIA's 85/77/67/59/50% presets into the emulator's
+# real internal render scale rather than downscaling an already-rendered frame.
+nis_pure_script = Path(".github/scripts/apply_nis_pure_scaling.py")
+if not nis_pure_script.is_file():
+    raise SystemExit("Pure NVIDIA Image Scaling integration script is missing")
+exec(compile(nis_pure_script.read_text(encoding="utf-8"), str(nis_pure_script), "exec"),
+     {"__name__": "__main__"})
