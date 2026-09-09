@@ -1,0 +1,66 @@
+name: Build Turnip P5
+
+on:
+  push:
+    branches:
+      - driver/poco-f5-turnip-p5
+    paths:
+      - 'turnip-p5/**'
+      - '.github/workflows/build-turnip-p5.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: turnip-p5-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: P5-T1 / Poco F5 / A725 / TOTK
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout Moonwitch driver lab
+        uses: actions/checkout@v4
+        with:
+          ref: driver/poco-f5-turnip-p5
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            ninja-build patchelf unzip flex bison git perl python3-pip \
+            glslang-tools curl zip patch ccache pkg-config zlib1g-dev
+          python3 -m pip install --break-system-packages meson mako packaging pyyaml
+
+      - name: Build P5-T1
+        run: |
+          chmod +x turnip-p5/build_turnip_p5.sh
+          turnip-p5/build_turnip_p5.sh
+
+      - name: Validate package
+        run: |
+          test -f turnip-p5/out/Moonwitch-Turnip-P5-T1.zip
+          test -f turnip-p5/out/vulkan.moonwitch_p5.debug.so
+          unzip -l turnip-p5/out/Moonwitch-Turnip-P5-T1.zip
+          sha256sum turnip-p5/out/Moonwitch-Turnip-P5-T1.zip \
+                    turnip-p5/out/vulkan.moonwitch_p5.debug.so
+
+      - name: Upload installable driver
+        uses: actions/upload-artifact@v4
+        with:
+          name: MOONWITCH-TURNIP-P5-T1
+          path: turnip-p5/out/Moonwitch-Turnip-P5-T1.zip
+          if-no-files-found: error
+
+      - name: Upload debug symbols and manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: MOONWITCH-TURNIP-P5-T1-DEBUG
+          path: |
+            turnip-p5/out/vulkan.moonwitch_p5.debug.so
+            turnip-p5/out/BUILD-MANIFEST.txt
+          if-no-files-found: error
