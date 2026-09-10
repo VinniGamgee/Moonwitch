@@ -58,6 +58,11 @@ jobs:
           grep -q "reconstruction_bias" src/video_core/renderer_vulkan/vk_texture_cache.cpp
           grep -q "MOONWITCH_RECONSTRUCTION" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/BooleanSetting.kt
           grep -q "MOONWITCH_RECONSTRUCTION_TARGET" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/IntSetting.kt
+          grep -q "enum class ThreadWorkerPriority" src/common/thread_worker.h
+          grep -q "ThreadWorkerPriority::Foreground" src/video_core/renderer_vulkan/vk_graphics_pipeline.cpp
+          grep -q "ThreadWorkerPriority::Foreground" src/video_core/renderer_vulkan/vk_compute_pipeline.cpp
+          grep -q "ThreadWorkerPriority::Background" src/video_core/renderer_vulkan/vk_pipeline_cache.cpp
+          grep -q "Smart Shader Pipeline v2" src/video_core/renderer_vulkan/vk_pipeline_cache.cpp
           grep -q "moonwitchHomeListener" src/android/app/src/main/java/org/yuzu/yuzu_emu/overlay/InputOverlay.kt
           grep -q "Moonwitch Glass preserves the authored cyan/graphite palette" src/android/app/src/main/java/org/yuzu/yuzu_emu/overlay/InputOverlay.kt
           if grep -q "setTint(Color.WHITE)" src/android/app/src/main/java/org/yuzu/yuzu_emu/overlay/InputOverlay.kt; then

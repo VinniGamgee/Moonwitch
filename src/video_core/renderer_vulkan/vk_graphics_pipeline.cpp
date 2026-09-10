@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
+#include <chrono>
 #include <cstring>
 #include <iostream>
 #include <span>
@@ -20,6 +21,7 @@
 #include "video_core/renderer_vulkan/pipeline_statistics.h"
 #include "video_core/renderer_vulkan/vk_buffer_cache.h"
 #include "video_core/renderer_vulkan/vk_graphics_pipeline.h"
+#include "video_core/renderer_vulkan/vk_pipeline_cache.h"
 #include "video_core/renderer_vulkan/vk_render_pass_cache.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_texture_cache.h"
@@ -253,7 +255,8 @@ GraphicsPipeline::GraphicsPipeline(
     const Device& device_, DescriptorPool& descriptor_pool,
     GuestDescriptorQueue& guest_descriptor_queue_, DescriptorBufferRing& descriptor_buffer_ring_,
     Common::ThreadWorker* worker_thread,
-    PipelineStatistics* pipeline_statistics, RenderPassCache& render_pass_cache,
+    PipelineStatistics* pipeline_statistics, PipelineBuildMonitor* pipeline_build_monitor,
+    RenderPassCache& render_pass_cache,
     const GraphicsPipelineCacheKey& key_, std::array<vk::ShaderModule, NUM_STAGES> stages,
     const std::array<const Shader::Info*, NUM_STAGES>& infos)
     : key{key_}, device{device_}, texture_cache{texture_cache_}, buffer_cache{buffer_cache_},
@@ -309,34 +312,47 @@ GraphicsPipeline::GraphicsPipeline(
         }
     }
 
-    auto func{[this, shader_notify, &render_pass_cache, pipeline_statistics] {
+    const auto queued_at = std::chrono::steady_clock::now();
+    if (pipeline_build_monitor) {
+        pipeline_build_monitor->RecordBuildQueued();
+    }
+    auto func{[this, shader_notify, &render_pass_cache, pipeline_statistics,
+               pipeline_build_monitor, queued_at] {
+        const auto build_started = std::chrono::steady_clock::now();
+        const auto mark_complete = [this, shader_notify, pipeline_build_monitor, queued_at,
+                                    build_started] {
+            const auto build_completed = std::chrono::steady_clock::now();
+            if (pipeline_build_monitor) {
+                pipeline_build_monitor->RecordBuildComplete(
+                    std::chrono::duration_cast<std::chrono::nanoseconds>(build_started - queued_at),
+                    std::chrono::duration_cast<std::chrono::nanoseconds>(build_completed -
+                                                                         build_started));
+            }
+            {
+                std::scoped_lock lock{build_mutex};
+                is_built = true;
+            }
+            build_condvar.notify_one();
+            if (shader_notify) {
+                shader_notify->MarkShaderComplete();
+            }
+        };
         const VkRenderPass render_pass{render_pass_cache.Get(MakeRenderPassKey(key.state, device))};
         Validate();
         try {
             MakePipeline(render_pass);
         } catch (const vk::Exception& exception) {
             LOG_CRITICAL(Render_Vulkan, "Graphics pipeline build failed: {}", exception.what());
-            std::scoped_lock lock{build_mutex};
-            is_built = true;
-            build_condvar.notify_one();
-            if (shader_notify) {
-                shader_notify->MarkShaderComplete();
-            }
+            mark_complete();
             return;
         }
         if (pipeline_statistics) {
             pipeline_statistics->Collect(device, *pipeline);
         }
-
-        std::scoped_lock lock{build_mutex};
-        is_built = true;
-        build_condvar.notify_one();
-        if (shader_notify) {
-            shader_notify->MarkShaderComplete();
-        }
+        mark_complete();
     }};
     if (worker_thread) {
-        worker_thread->QueueWork(std::move(func));
+        worker_thread->QueueWork(std::move(func), Common::ThreadWorkerPriority::Foreground);
     } else {
         func();
     }

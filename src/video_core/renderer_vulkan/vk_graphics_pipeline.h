@@ -66,6 +66,7 @@ struct hash<Vulkan::GraphicsPipelineCacheKey> {
 namespace Vulkan {
 
 class Device;
+class PipelineBuildMonitor;
 class PipelineStatistics;
 class RenderPassCache;
 class RescalingPushConstant;
@@ -82,7 +83,8 @@ public:
         const Device& device, DescriptorPool& descriptor_pool,
         GuestDescriptorQueue& guest_descriptor_queue,
         DescriptorBufferRing& descriptor_buffer_ring, Common::ThreadWorker* worker_thread,
-        PipelineStatistics* pipeline_statistics, RenderPassCache& render_pass_cache,
+        PipelineStatistics* pipeline_statistics, PipelineBuildMonitor* pipeline_build_monitor,
+        RenderPassCache& render_pass_cache,
         const GraphicsPipelineCacheKey& key, std::array<vk::ShaderModule, NUM_STAGES> stages,
         const std::array<const Shader::Info*, NUM_STAGES>& infos);
 

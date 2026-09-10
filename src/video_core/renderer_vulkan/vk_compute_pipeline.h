@@ -28,6 +28,7 @@ class ShaderNotify;
 namespace Vulkan {
 
 class Device;
+class PipelineBuildMonitor;
 class PipelineStatistics;
 class Scheduler;
 
@@ -39,6 +40,7 @@ public:
                              DescriptorBufferRing& descriptor_buffer_ring,
                              Common::ThreadWorker* thread_worker,
                              PipelineStatistics* pipeline_statistics,
+                             PipelineBuildMonitor* pipeline_build_monitor,
                              VideoCore::ShaderNotify* shader_notify, const Shader::Info& info,
                              vk::ShaderModule spv_module, u64 shader_hash);
 

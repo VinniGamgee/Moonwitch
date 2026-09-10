@@ -102,6 +102,73 @@ struct ShaderPools {
     Shader::ObjectPool<Shader::Maxwell::Flow::Block> flow_block{32};
 };
 
+struct PipelineBuildMetricsSnapshot {
+    u64 cache_hits{};
+    u64 cache_misses{};
+    u64 frontend_compiles{};
+    u64 builds_queued{};
+    u64 builds_completed{};
+    u64 frontend_compile_ns{};
+    u64 queue_wait_ns{};
+    u64 driver_build_ns{};
+};
+
+// Low-overhead counters used to validate the Smart Shader Pipeline scheduler without exposing a
+// user-facing setting or adding work to the renderer's per-draw fast path.
+class PipelineBuildMonitor {
+public:
+    void RecordCacheHit() noexcept {
+        cache_hits.fetch_add(1, std::memory_order_relaxed);
+    }
+
+    void RecordCacheMiss() noexcept {
+        cache_misses.fetch_add(1, std::memory_order_relaxed);
+    }
+
+    void RecordFrontendCompile(std::chrono::nanoseconds duration) noexcept {
+        frontend_compiles.fetch_add(1, std::memory_order_relaxed);
+        frontend_compile_ns.fetch_add(PositiveNanoseconds(duration), std::memory_order_relaxed);
+    }
+
+    void RecordBuildQueued() noexcept {
+        builds_queued.fetch_add(1, std::memory_order_relaxed);
+    }
+
+    void RecordBuildComplete(std::chrono::nanoseconds queue_wait,
+                             std::chrono::nanoseconds driver_build) noexcept {
+        queue_wait_ns.fetch_add(PositiveNanoseconds(queue_wait), std::memory_order_relaxed);
+        driver_build_ns.fetch_add(PositiveNanoseconds(driver_build), std::memory_order_relaxed);
+        builds_completed.fetch_add(1, std::memory_order_release);
+    }
+
+    [[nodiscard]] PipelineBuildMetricsSnapshot Snapshot() const noexcept {
+        return {
+            .cache_hits = cache_hits.load(std::memory_order_relaxed),
+            .cache_misses = cache_misses.load(std::memory_order_relaxed),
+            .frontend_compiles = frontend_compiles.load(std::memory_order_relaxed),
+            .builds_queued = builds_queued.load(std::memory_order_relaxed),
+            .builds_completed = builds_completed.load(std::memory_order_acquire),
+            .frontend_compile_ns = frontend_compile_ns.load(std::memory_order_relaxed),
+            .queue_wait_ns = queue_wait_ns.load(std::memory_order_relaxed),
+            .driver_build_ns = driver_build_ns.load(std::memory_order_relaxed),
+        };
+    }
+
+private:
+    static u64 PositiveNanoseconds(std::chrono::nanoseconds duration) noexcept {
+        return duration.count() > 0 ? static_cast<u64>(duration.count()) : 0;
+    }
+
+    std::atomic<u64> cache_hits{};
+    std::atomic<u64> cache_misses{};
+    std::atomic<u64> frontend_compiles{};
+    std::atomic<u64> builds_queued{};
+    std::atomic<u64> builds_completed{};
+    std::atomic<u64> frontend_compile_ns{};
+    std::atomic<u64> queue_wait_ns{};
+    std::atomic<u64> driver_build_ns{};
+};
+
 class PipelineCache : public VideoCommon::ShaderCache {
 public:
     explicit PipelineCache(Tegra::MaxwellDeviceMemoryManager& device_memory_, const Device& device,
@@ -148,6 +215,10 @@ private:
 
     void QueueVulkanPipelineCacheFlush();
 
+    void RecordPipelineCacheResult(bool hit);
+
+    void ReportPipelineBuildMetrics();
+
     const Device& device;
     Scheduler& scheduler;
     DescriptorPool& descriptor_pool;
@@ -162,6 +233,7 @@ private:
 
     GraphicsPipelineCacheKey graphics_key{};
     GraphicsPipeline* current_pipeline{};
+    ComputePipeline* current_compute_pipeline{};
 
     ::Common::unordered_map<ComputePipelineCacheKey, std::unique_ptr<ComputePipeline>> compute_cache;
     ::Common::unordered_map<GraphicsPipelineCacheKey, std::unique_ptr<GraphicsPipeline>> graphics_cache;
@@ -180,6 +252,8 @@ private:
     std::atomic<size_t> last_cache_size{};
     std::atomic_bool flush_in_flight{};
 
+    PipelineBuildMonitor pipeline_build_monitor;
+    u64 next_pipeline_metrics_report{64};
     Common::ThreadWorker workers;
     Common::ThreadWorker serialization_thread;
     DynamicFeatures dynamic_features;

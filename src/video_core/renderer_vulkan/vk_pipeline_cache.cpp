@@ -544,6 +544,7 @@ PipelineCache::PipelineCache(Tegra::MaxwellDeviceMemoryManager& device_memory_,
 }
 
 PipelineCache::~PipelineCache() {
+    ReportPipelineBuildMetrics();
     if (use_vulkan_pipeline_cache && !vulkan_pipeline_cache_filename.empty()) {
         SerializeVulkanPipelineCache(vulkan_pipeline_cache_filename, vulkan_pipeline_cache,
                                      CACHE_VERSION);
@@ -561,6 +562,9 @@ GraphicsPipeline* PipelineCache::CurrentGraphicsPipeline() {
     if (current_pipeline) {
         GraphicsPipeline* const next{current_pipeline->Next(graphics_key)};
         if (next) {
+            if (next != current_pipeline) {
+                RecordPipelineCacheResult(true);
+            }
             current_pipeline = next;
             return BuiltPipeline(current_pipeline);
         }
@@ -572,6 +576,7 @@ ComputePipeline* PipelineCache::CurrentComputePipeline() {
 
     const ShaderInfo* const shader{ComputeShader()};
     if (!shader) {
+        current_compute_pipeline = nullptr;
         return nullptr;
     }
     const auto& qmd{kepler_compute->launch_description};
@@ -583,9 +588,15 @@ ComputePipeline* PipelineCache::CurrentComputePipeline() {
     const auto [pair, is_new]{compute_cache.try_emplace(key)};
     auto& pipeline{pair->second};
     if (!is_new) {
+        if (pipeline.get() != current_compute_pipeline) {
+            RecordPipelineCacheResult(true);
+        }
+        current_compute_pipeline = pipeline.get();
         return pipeline.get();
     }
     pipeline = CreateComputePipeline(key, shader);
+    current_compute_pipeline = pipeline.get();
+    RecordPipelineCacheResult(false);
     return pipeline.get();
 }
 
@@ -623,18 +634,21 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
         ComputePipelineCacheKey key;
         file.read(reinterpret_cast<char*>(&key), sizeof(key));
 
-        workers.QueueWork([this, key, env_ = std::move(env), &state, &callback]() mutable {
-            ShaderPools pools;
-            auto pipeline{CreateComputePipeline(pools, key, env_, state.statistics.get(), false)};
-            std::scoped_lock lock{state.mutex};
-            if (pipeline) {
-                compute_cache.emplace(key, std::move(pipeline));
-            }
-            ++state.built;
-            if (state.has_loaded) {
-                callback(VideoCore::LoadCallbackStage::Build, state.built, state.total);
-            }
-        });
+        workers.QueueWork(
+            [this, key, env_ = std::move(env), &state, &callback]() mutable {
+                ShaderPools pools;
+                auto pipeline{
+                    CreateComputePipeline(pools, key, env_, state.statistics.get(), false)};
+                std::scoped_lock lock{state.mutex};
+                if (pipeline) {
+                    compute_cache.emplace(key, std::move(pipeline));
+                }
+                ++state.built;
+                if (state.has_loaded) {
+                    callback(VideoCore::LoadCallbackStage::Build, state.built, state.total);
+                }
+            },
+            Common::ThreadWorkerPriority::Background);
         ++state.total;
     }};
     const auto load_graphics{[&](std::ifstream& file, std::vector<FileEnvironment> envs) {
@@ -669,24 +683,26 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
             return;
         }
 
-        workers.QueueWork([this, key, envs_ = std::move(envs), &state, &callback]() mutable {
-            ShaderPools pools;
-            boost::container::static_vector<Shader::Environment*, 5> env_ptrs;
-            for (auto& env : envs_) {
-                env_ptrs.push_back(&env);
-            }
-            auto pipeline{CreateGraphicsPipeline(pools, key, MakeSpan(env_ptrs),
-                                                 state.statistics.get(), false)};
+        workers.QueueWork(
+            [this, key, envs_ = std::move(envs), &state, &callback]() mutable {
+                ShaderPools pools;
+                boost::container::static_vector<Shader::Environment*, 5> env_ptrs;
+                for (auto& env : envs_) {
+                    env_ptrs.push_back(&env);
+                }
+                auto pipeline{CreateGraphicsPipeline(pools, key, MakeSpan(env_ptrs),
+                                                     state.statistics.get(), false)};
 
-            std::scoped_lock lock{state.mutex};
-            if (pipeline) {
-                graphics_cache.emplace(key, std::move(pipeline));
-            }
-            ++state.built;
-            if (state.has_loaded) {
-                callback(VideoCore::LoadCallbackStage::Build, state.built, state.total);
-            }
-        });
+                std::scoped_lock lock{state.mutex};
+                if (pipeline) {
+                    graphics_cache.emplace(key, std::move(pipeline));
+                }
+                ++state.built;
+                if (state.has_loaded) {
+                    callback(VideoCore::LoadCallbackStage::Build, state.built, state.total);
+                }
+            },
+            Common::ThreadWorkerPriority::Background);
         ++state.total;
     }};
     VideoCommon::LoadPipelines(stop_loading, pipeline_cache_filename, CACHE_VERSION, load_compute,
@@ -744,11 +760,69 @@ void PipelineCache::QueueVulkanPipelineCacheFlush() {
     });
 }
 
+void PipelineCache::RecordPipelineCacheResult(bool hit) {
+    if (hit) {
+        pipeline_build_monitor.RecordCacheHit();
+    } else {
+        pipeline_build_monitor.RecordCacheMiss();
+    }
+
+    const auto metrics = pipeline_build_monitor.Snapshot();
+    const u64 cache_lookups = metrics.cache_hits + metrics.cache_misses;
+    if (cache_lookups >= next_pipeline_metrics_report) {
+        next_pipeline_metrics_report = cache_lookups + 64;
+        ReportPipelineBuildMetrics();
+    }
+}
+
+void PipelineCache::ReportPipelineBuildMetrics() {
+    const auto metrics = pipeline_build_monitor.Snapshot();
+    const u64 cache_lookups = metrics.cache_hits + metrics.cache_misses;
+    if (cache_lookups == 0) {
+        return;
+    }
+
+    constexpr double NanosecondsPerMillisecond = 1'000'000.0;
+    const double hit_rate =
+        100.0 * static_cast<double>(metrics.cache_hits) / static_cast<double>(cache_lookups);
+    const double average_frontend_ms =
+        metrics.frontend_compiles == 0
+            ? 0.0
+            : static_cast<double>(metrics.frontend_compile_ns) /
+                  static_cast<double>(metrics.frontend_compiles) / NanosecondsPerMillisecond;
+    const double average_queue_ms =
+        metrics.builds_completed == 0
+            ? 0.0
+            : static_cast<double>(metrics.queue_wait_ns) /
+                  static_cast<double>(metrics.builds_completed) / NanosecondsPerMillisecond;
+    const double average_driver_ms =
+        metrics.builds_completed == 0
+            ? 0.0
+            : static_cast<double>(metrics.driver_build_ns) /
+                  static_cast<double>(metrics.builds_completed) / NanosecondsPerMillisecond;
+    const auto queue = workers.GetQueueSnapshot();
+    const auto pending = [&queue](Common::ThreadWorkerPriority priority) {
+        return queue.pending[static_cast<size_t>(priority)];
+    };
+
+    LOG_INFO(Render_Vulkan,
+             "Smart Shader Pipeline v2: cache={}/{} ({:.1f}% hit), live builds={}/{}, "
+             "avg frontend={:.2f} ms, queue={:.2f} ms, driver={:.2f} ms, waiting F/N/B={}/{}/{}",
+             metrics.cache_hits, metrics.cache_misses, hit_rate, metrics.builds_completed,
+             metrics.builds_queued, average_frontend_ms, average_queue_ms, average_driver_ms,
+             pending(Common::ThreadWorkerPriority::Foreground),
+             pending(Common::ThreadWorkerPriority::Normal),
+             pending(Common::ThreadWorkerPriority::Background));
+}
+
 GraphicsPipeline* PipelineCache::CurrentGraphicsPipelineSlowPath() {
     const auto [pair, is_new]{graphics_cache.try_emplace(graphics_key)};
     auto& pipeline{pair->second};
     if (is_new) {
         pipeline = CreateGraphicsPipeline();
+        RecordPipelineCacheResult(false);
+    } else {
+        RecordPipelineCacheResult(true);
     }
     if (!pipeline) {
         return nullptr;
@@ -875,10 +949,12 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
         previous_stage = &program;
     }
     Common::ThreadWorker* const thread_worker{build_in_parallel ? &workers : nullptr};
+    PipelineBuildMonitor* const pipeline_build_monitor_ptr{
+        build_in_parallel ? &pipeline_build_monitor : nullptr};
     return std::make_unique<GraphicsPipeline>(
         scheduler, buffer_cache, texture_cache, vulkan_pipeline_cache, &shader_notify, device,
         descriptor_pool, guest_descriptor_queue, descriptor_buffer_ring, thread_worker, statistics,
-        render_pass_cache, key, std::move(modules), infos);
+        pipeline_build_monitor_ptr, render_pass_cache, key, std::move(modules), infos);
 
 } catch (const Shader::Exception& exception) {
     auto hash = key.Hash();
@@ -899,12 +975,16 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
 }
 
 std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline() {
+    const auto frontend_started = std::chrono::steady_clock::now();
     GraphicsEnvironments environments;
     GetGraphicsEnvironments(environments, graphics_key.unique_hashes);
 
     main_pools.ReleaseContents();
     auto pipeline{
         CreateGraphicsPipeline(main_pools, graphics_key, environments.Span(), nullptr, true)};
+    pipeline_build_monitor.RecordFrontendCompile(
+        std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() -
+                                                             frontend_started));
     if (!pipeline || pipeline_cache_filename.empty()) {
         return pipeline;
     }
@@ -924,6 +1004,7 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline() {
 
 std::unique_ptr<ComputePipeline> PipelineCache::CreateComputePipeline(
     const ComputePipelineCacheKey& key, const ShaderInfo* shader) {
+    const auto frontend_started = std::chrono::steady_clock::now();
     const GPUVAddr program_base{kepler_compute->regs.code_loc.Address()};
     const auto& qmd{kepler_compute->launch_description};
     ComputeEnvironment env{*kepler_compute, *gpu_memory, program_base, qmd.program_start};
@@ -931,6 +1012,9 @@ std::unique_ptr<ComputePipeline> PipelineCache::CreateComputePipeline(
 
     main_pools.ReleaseContents();
     auto pipeline{CreateComputePipeline(main_pools, key, env, nullptr, true)};
+    pipeline_build_monitor.RecordFrontendCompile(
+        std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() -
+                                                             frontend_started));
     if (!pipeline || pipeline_cache_filename.empty()) {
         return pipeline;
     }
@@ -999,9 +1083,11 @@ std::unique_ptr<ComputePipeline> PipelineCache::CreateComputePipeline(
         spv_module.SetObjectNameEXT(name.c_str());
     }
     Common::ThreadWorker* const thread_worker{build_in_parallel ? &workers : nullptr};
+    PipelineBuildMonitor* const pipeline_build_monitor_ptr{
+        build_in_parallel ? &pipeline_build_monitor : nullptr};
     return std::make_unique<ComputePipeline>(device, scheduler, vulkan_pipeline_cache, descriptor_pool,
                                              guest_descriptor_queue, descriptor_buffer_ring,
-                                             thread_worker, statistics,
+                                             thread_worker, statistics, pipeline_build_monitor_ptr,
                                              &shader_notify, program.info, std::move(spv_module),
                                              key.unique_hash);
 

@@ -6,21 +6,37 @@
 
 #pragma once
 
+#include <array>
 #include <atomic>
 #include <condition_variable>
 #include <functional>
 #include <mutex>
+#include <queue>
 #include <string>
 #include <thread>
 #include <type_traits>
 #include <vector>
-#include <queue>
 
 #include "common/polyfill_thread.h"
 #include "common/thread.h"
 #include "common/unique_function.h"
 
 namespace Common {
+
+// Queue priority is independent from the operating-system thread priority. Tasks remain FIFO
+// within a class, while workers always drain latency-sensitive work before background work.
+enum class ThreadWorkerPriority : size_t {
+    Background,
+    Normal,
+    Foreground,
+    Count,
+};
+
+struct ThreadWorkerQueueSnapshot {
+    std::array<size_t, static_cast<size_t>(ThreadWorkerPriority::Count)> pending{};
+    size_t scheduled{};
+    size_t completed{};
+};
 
 template <class StateType = void>
 class StatefulThreadWorker {
@@ -62,16 +78,14 @@ public:
                     Task task;
                     {
                         std::unique_lock lock{queue_mutex};
-                        if (requests.empty()) {
+                        if (!HasPendingWork()) {
                             wait_condition.notify_all();
                         }
-                        condition.wait(lock, stop_token,
-                                       [this] { return !requests.empty(); });
+                        condition.wait(lock, stop_token, [this] { return HasPendingWork(); });
                         if (stop_token.stop_requested()) {
                             break;
                         }
-                        task = std::move(requests.front());
-                        requests.pop();
+                        task = PopNextTask();
                     }
                     if constexpr (with_state) {
                         task(&state);
@@ -96,13 +110,25 @@ public:
     StatefulThreadWorker& operator=(StatefulThreadWorker&&) = delete;
     StatefulThreadWorker(StatefulThreadWorker&&) = delete;
 
-    void QueueWork(Task work) {
+    void QueueWork(Task work, ThreadWorkerPriority priority = ThreadWorkerPriority::Normal) {
         {
             std::unique_lock lock{queue_mutex};
-            requests.emplace(std::move(work));
+            requests[static_cast<size_t>(priority)].emplace(std::move(work));
             ++work_scheduled;
         }
         condition.notify_one();
+    }
+
+    [[nodiscard]] ThreadWorkerQueueSnapshot GetQueueSnapshot() const {
+        std::scoped_lock lock{queue_mutex};
+        ThreadWorkerQueueSnapshot snapshot{
+            .scheduled = work_scheduled.load(std::memory_order_relaxed),
+            .completed = work_done.load(std::memory_order_relaxed),
+        };
+        for (size_t index = 0; index < requests.size(); ++index) {
+            snapshot.pending[index] = requests[index].size();
+        }
+        return snapshot;
     }
 
     void WaitForRequests(std::stop_token stop_token = {}) {
@@ -118,8 +144,31 @@ public:
     }
 
 private:
-    std::queue<Task> requests;
-    std::mutex queue_mutex;
+    static constexpr size_t PriorityCount = static_cast<size_t>(ThreadWorkerPriority::Count);
+
+    [[nodiscard]] bool HasPendingWork() const noexcept {
+        for (const auto& queue : requests) {
+            if (!queue.empty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    [[nodiscard]] Task PopNextTask() {
+        for (size_t priority = PriorityCount; priority > 0; --priority) {
+            auto& queue = requests[priority - 1];
+            if (!queue.empty()) {
+                Task task{std::move(queue.front())};
+                queue.pop();
+                return task;
+            }
+        }
+        return {};
+    }
+
+    std::array<std::queue<Task>, PriorityCount> requests;
+    mutable std::mutex queue_mutex;
     std::condition_variable_any condition;
     std::condition_variable wait_condition;
     std::atomic<size_t> work_scheduled{};

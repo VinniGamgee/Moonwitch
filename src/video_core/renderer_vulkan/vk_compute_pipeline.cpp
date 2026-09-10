@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
+#include <chrono>
 #include <vector>
 
 #include <boost/container/small_vector.hpp>
@@ -37,6 +38,7 @@ ComputePipeline::ComputePipeline(const Device& device_, Scheduler& scheduler, vk
                                  DescriptorBufferRing& descriptor_buffer_ring_,
                                  Common::ThreadWorker* thread_worker,
                                  PipelineStatistics* pipeline_statistics,
+                                 PipelineBuildMonitor* pipeline_build_monitor,
                                  VideoCore::ShaderNotify* shader_notify, const Shader::Info& info_,
                                  vk::ShaderModule spv_module_, u64 shader_hash_)
     : device{device_},
@@ -79,7 +81,30 @@ ComputePipeline::ComputePipeline(const Device& device_, Scheduler& scheduler, vk
         }
     }
 
-    auto func{[this, shader_notify, pipeline_statistics] {
+    const auto queued_at = std::chrono::steady_clock::now();
+    if (pipeline_build_monitor) {
+        pipeline_build_monitor->RecordBuildQueued();
+    }
+    auto func{[this, shader_notify, pipeline_statistics, pipeline_build_monitor, queued_at] {
+        const auto build_started = std::chrono::steady_clock::now();
+        const auto mark_complete = [this, shader_notify, pipeline_build_monitor, queued_at,
+                                    build_started] {
+            const auto build_completed = std::chrono::steady_clock::now();
+            if (pipeline_build_monitor) {
+                pipeline_build_monitor->RecordBuildComplete(
+                    std::chrono::duration_cast<std::chrono::nanoseconds>(build_started - queued_at),
+                    std::chrono::duration_cast<std::chrono::nanoseconds>(build_completed -
+                                                                         build_started));
+            }
+            {
+                std::scoped_lock lock{build_mutex};
+                is_built = true;
+            }
+            build_condvar.notify_one();
+            if (shader_notify) {
+                shader_notify->MarkShaderComplete();
+            }
+        };
         const VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT subgroup_size_ci{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO_EXT,
             .pNext = nullptr,
@@ -115,12 +140,7 @@ ComputePipeline::ComputePipeline(const Device& device_, Scheduler& scheduler, vk
         } catch (const vk::Exception& exception) {
             LOG_CRITICAL(Render_Vulkan, "Adreno rejected compute shader {:016X}: {}", shader_hash,
                          exception.what());
-            std::scoped_lock lock{build_mutex};
-            is_built = true;
-            build_condvar.notify_one();
-            if (shader_notify) {
-                shader_notify->MarkShaderComplete();
-            }
+            mark_complete();
             return;
         }
 
@@ -134,15 +154,10 @@ ComputePipeline::ComputePipeline(const Device& device_, Scheduler& scheduler, vk
         if (pipeline_statistics) {
             pipeline_statistics->Collect(device, *pipeline);
         }
-        std::scoped_lock lock{build_mutex};
-        is_built = true;
-        build_condvar.notify_one();
-        if (shader_notify) {
-            shader_notify->MarkShaderComplete();
-        }
+        mark_complete();
     }};
     if (thread_worker) {
-        thread_worker->QueueWork(std::move(func));
+        thread_worker->QueueWork(std::move(func), Common::ThreadWorkerPriority::Foreground);
     } else {
         func();
     }
