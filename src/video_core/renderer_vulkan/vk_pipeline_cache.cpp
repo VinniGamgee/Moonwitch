@@ -763,14 +763,13 @@ void PipelineCache::QueueVulkanPipelineCacheFlush() {
 void PipelineCache::RecordPipelineCacheResult(bool hit) {
     if (hit) {
         pipeline_build_monitor.RecordCacheHit();
-    } else {
-        pipeline_build_monitor.RecordCacheMiss();
+        return;
     }
 
+    pipeline_build_monitor.RecordCacheMiss();
     const auto metrics = pipeline_build_monitor.Snapshot();
-    const u64 cache_lookups = metrics.cache_hits + metrics.cache_misses;
-    if (cache_lookups >= next_pipeline_metrics_report) {
-        next_pipeline_metrics_report = cache_lookups + 64;
+    if (metrics.cache_misses >= next_pipeline_metrics_report) {
+        next_pipeline_metrics_report = metrics.cache_misses + 64;
         ReportPipelineBuildMetrics();
     }
 }

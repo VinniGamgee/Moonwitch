@@ -114,15 +114,15 @@ struct PipelineBuildMetricsSnapshot {
 };
 
 // Low-overhead counters used to validate the Smart Shader Pipeline scheduler without exposing a
-// user-facing setting or adding work to the renderer's per-draw fast path.
+// user-facing setting. Cache hits stay thread-local and never trigger logging on the hot path.
 class PipelineBuildMonitor {
 public:
     void RecordCacheHit() noexcept {
-        cache_hits.fetch_add(1, std::memory_order_relaxed);
+        ++cache_hits;
     }
 
     void RecordCacheMiss() noexcept {
-        cache_misses.fetch_add(1, std::memory_order_relaxed);
+        ++cache_misses;
     }
 
     void RecordFrontendCompile(std::chrono::nanoseconds duration) noexcept {
@@ -143,8 +143,8 @@ public:
 
     [[nodiscard]] PipelineBuildMetricsSnapshot Snapshot() const noexcept {
         return {
-            .cache_hits = cache_hits.load(std::memory_order_relaxed),
-            .cache_misses = cache_misses.load(std::memory_order_relaxed),
+            .cache_hits = cache_hits,
+            .cache_misses = cache_misses,
             .frontend_compiles = frontend_compiles.load(std::memory_order_relaxed),
             .builds_queued = builds_queued.load(std::memory_order_relaxed),
             .builds_completed = builds_completed.load(std::memory_order_acquire),
@@ -159,8 +159,8 @@ private:
         return duration.count() > 0 ? static_cast<u64>(duration.count()) : 0;
     }
 
-    std::atomic<u64> cache_hits{};
-    std::atomic<u64> cache_misses{};
+    u64 cache_hits{};
+    u64 cache_misses{};
     std::atomic<u64> frontend_compiles{};
     std::atomic<u64> builds_queued{};
     std::atomic<u64> builds_completed{};
