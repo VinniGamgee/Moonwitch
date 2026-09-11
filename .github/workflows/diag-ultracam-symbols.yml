@@ -1,0 +1,67 @@
+name: TOTK UltraCam Symbol Inspection
+
+on:
+  push:
+    branches:
+      - diag/totk-ultracam-symbols
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Inspect public UltraCam package
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -L --fail --retry 3 \
+            'https://raw.githubusercontent.com/MaxLastBreath/nx-optimizer/c41e68439ccd0c19bffc8a5bab08ffdf0b81b992/scripts/Mods/UltraCam/UltraCam.zip' \
+            -o /tmp/UltraCam.zip
+          rm -rf /tmp/uc
+          mkdir -p /tmp/uc
+          unzip -q /tmp/UltraCam.zip -d /tmp/uc
+
+          echo '===== PACKAGE TREE ====='
+          find /tmp/uc -type f -printf '%p | %s bytes\n' | sort
+
+          echo '===== FILE TYPES ====='
+          find /tmp/uc -type f -print0 | while IFS= read -r -d '' f; do
+            echo "--- $f ---"
+            file "$f" || true
+          done
+
+          echo '===== TEXT CONFIGS ====='
+          find /tmp/uc -type f \( \
+            -iname '*.ini' -o -iname '*.json' -o -iname '*.txt' -o \
+            -iname '*.toml' -o -iname '*.yaml' -o -iname '*.yml' -o \
+            -iname '*.pchtxt' -o -iname '*.asm' -o -iname '*.cfg' \
+          \) -print0 | while IFS= read -r -d '' f; do
+            echo "--- $f ---"
+            sed -n '1,500p' "$f" || true
+          done
+
+          echo '===== RELEVANT STRINGS ====='
+          find /tmp/uc -type f -print0 | while IFS= read -r -d '' f; do
+            echo "--- $f ---"
+            strings -a -t x "$f" | grep -Ei \
+              '1\.4\.[0-9]|5CB42B1CF25469FB|277178B7DBA1B6D4|camera|freecam|lookat|camalpha|gamecamera|build.?id|version|0100F2C0115B6000' \
+              | head -n 1000 || true
+          done
+
+          echo '===== HEX AROUND KNOWN CAMERA TOKENS ====='
+          find /tmp/uc -type f -print0 | while IFS= read -r -d '' f; do
+            if strings -a "$f" | grep -Eqi 'camera|freecam|lookat'; then
+              echo "--- $f ---"
+              sha256sum "$f"
+              readelf -h "$f" 2>/dev/null || true
+              readelf -S "$f" 2>/dev/null || true
+              readelf -sW "$f" 2>/dev/null | grep -Ei 'camera|freecam|lookat' | head -n 300 || true
+            fi
+          done
