@@ -4,46 +4,97 @@
 package org.yuzu.yuzu_emu.overlay
 
 /**
- * Stage 1 Touch Camera controller.
+ * Converts relative finger movement into camera-axis samples.
  *
- * Converts raw finger movement into right-stick camera input.
- * This is not a virtual joystick: the finger movement itself is the input.
+ * Unlike a virtual joystick, the initial touch position is never used as a stick centre. Only the
+ * distance moved since the previous sample affects the output.
  */
-class TouchCameraController {
-    private var activePointerId = -1
+class TouchCameraController(
+    private val sensitivity: Float = DEFAULT_SENSITIVITY
+) {
+    private var activePointerId = INVALID_POINTER_ID
     private var lastX = 0f
     private var lastY = 0f
+    private var lastEventTime = 0L
 
-    var enabled = true
+    var xAxis = 0f
+        private set
+    var yAxis = 0f
+        private set
 
-    private val sensitivity = 0.0045f
+    val isActive: Boolean
+        get() = activePointerId != INVALID_POINTER_ID
 
-    fun begin(pointerId: Int, x: Float, y: Float) {
+    fun begin(pointerId: Int, x: Float, y: Float, eventTime: Long): Boolean {
+        if (isActive) {
+            return false
+        }
         activePointerId = pointerId
         lastX = x
         lastY = y
+        lastEventTime = eventTime
+        xAxis = 0f
+        yAxis = 0f
+        return true
     }
 
-    fun move(pointerId: Int, x: Float, y: Float): FloatArray? {
-        if (!enabled || pointerId != activePointerId) {
-            return null
+    fun owns(pointerId: Int): Boolean = pointerId == activePointerId
+
+    fun move(pointerId: Int, x: Float, y: Float, eventTime: Long): Boolean {
+        if (!owns(pointerId)) {
+            return false
         }
 
         val deltaX = x - lastX
         val deltaY = y - lastY
+        val elapsedMillis = (eventTime - lastEventTime).coerceIn(
+            MIN_SAMPLE_INTERVAL_MILLIS,
+            MAX_SAMPLE_INTERVAL_MILLIS
+        )
 
         lastX = x
         lastY = y
+        lastEventTime = eventTime
 
-        return floatArrayOf(
-            (deltaX * sensitivity).coerceIn(-1f, 1f),
-            (-deltaY * sensitivity).coerceIn(-1f, 1f)
-        )
+        if (deltaX == 0f && deltaY == 0f) {
+            return false
+        }
+
+        // Normalise against a 60 Hz reference so camera speed does not change with touch sampling
+        // rate (60/120/240 Hz panels otherwise produce very different axis magnitudes).
+        val sampleScale = REFERENCE_SAMPLE_MILLIS / elapsedMillis.toFloat()
+        xAxis = (deltaX * sensitivity * sampleScale).coerceIn(-1f, 1f)
+        yAxis = (-deltaY * sensitivity * sampleScale).coerceIn(-1f, 1f)
+        return true
     }
 
-    fun end(pointerId: Int) {
-        if (pointerId == activePointerId) {
-            activePointerId = -1
+    fun end(pointerId: Int): Boolean {
+        if (!owns(pointerId)) {
+            return false
         }
+        activePointerId = INVALID_POINTER_ID
+        return true
+    }
+
+    fun recenter() {
+        xAxis = 0f
+        yAxis = 0f
+    }
+
+    fun cancel(): Boolean {
+        if (!isActive) {
+            return false
+        }
+        activePointerId = INVALID_POINTER_ID
+        recenter()
+        return true
+    }
+
+    companion object {
+        private const val INVALID_POINTER_ID = -1
+        private const val DEFAULT_SENSITIVITY = 0.012f
+        private const val REFERENCE_SAMPLE_MILLIS = 16f
+        private const val MIN_SAMPLE_INTERVAL_MILLIS = 4L
+        private const val MAX_SAMPLE_INTERVAL_MILLIS = 32L
     }
 }

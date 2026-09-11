@@ -26,6 +26,8 @@
     <!-- Input Overlay -->
     <string name="show_input_overlay">Show Input Overlay</string>
     <string name="show_input_overlay_description">Display touch controls overlay during emulation</string>
+    <string name="touch_camera">Touch camera</string>
+    <string name="touch_camera_description">Drag on the free right half of the screen to move the camera. The right stick is hidden; finger movement, rather than a virtual-stick position, drives the camera.</string>
     <string name="overlay_snap_to_grid">Snap to Grid</string>
     <string name="overlay_snap_to_grid_description">Snap overlay controls to a grid when editing</string>
     <string name="overlay_grid_size">Grid Size</string>

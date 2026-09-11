@@ -1992,6 +1992,7 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
                 BooleanSetting.OVERLAY_SNAP_TO_GRID.getBoolean()
             findItem(R.id.menu_haptics).isChecked = BooleanSetting.HAPTIC_FEEDBACK.getBoolean()
             findItem(R.id.menu_touchscreen).isChecked = BooleanSetting.TOUCHSCREEN.getBoolean()
+            findItem(R.id.menu_touch_camera).isChecked = BooleanSetting.TOUCH_CAMERA.getBoolean()
         }
 
         popup.setOnDismissListener { NativeConfig.saveGlobalConfig() }
@@ -2098,6 +2099,14 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
                 R.id.menu_touchscreen -> {
                     it.isChecked = !it.isChecked
                     BooleanSetting.TOUCHSCREEN.setBoolean(it.isChecked)
+                    true
+                }
+
+                R.id.menu_touch_camera -> {
+                    it.isChecked = !it.isChecked
+                    BooleanSetting.TOUCH_CAMERA.setBoolean(it.isChecked)
+                    binding.surfaceInputOverlay.cancelTouchCamera()
+                    binding.surfaceInputOverlay.refreshControls()
                     true
                 }
 

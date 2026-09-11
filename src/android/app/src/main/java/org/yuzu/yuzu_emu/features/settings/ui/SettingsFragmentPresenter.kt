@@ -386,6 +386,7 @@ class SettingsFragmentPresenter(
     private fun addInputOverlaySettings(sl: ArrayList<SettingsItem>) {
         sl.apply {
             add(BooleanSetting.SHOW_INPUT_OVERLAY.key)
+            add(BooleanSetting.TOUCH_CAMERA.key)
             add(BooleanSetting.OVERLAY_SNAP_TO_GRID.key)
             add(IntSetting.OVERLAY_GRID_SIZE.key)
             add(

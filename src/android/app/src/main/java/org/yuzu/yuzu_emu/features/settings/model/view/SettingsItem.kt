@@ -416,6 +416,13 @@ abstract class SettingsItem(
             )
             put(
                 SwitchSetting(
+                    BooleanSetting.TOUCH_CAMERA,
+                    titleId = R.string.touch_camera,
+                    descriptionId = R.string.touch_camera_description
+                )
+            )
+            put(
+                SwitchSetting(
                     BooleanSetting.OVERLAY_SNAP_TO_GRID,
                     titleId = R.string.overlay_snap_to_grid,
                     descriptionId = R.string.overlay_snap_to_grid_description

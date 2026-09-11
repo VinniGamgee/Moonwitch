@@ -54,6 +54,11 @@
         android:checkable="true" />
 
     <item
+        android:id="@+id/menu_touch_camera"
+        android:title="@string/touch_camera"
+        android:checkable="true" />
+
+    <item
         android:id="@+id/menu_reset_overlay"
         android:title="@string/emulation_touch_overlay_reset" />
 

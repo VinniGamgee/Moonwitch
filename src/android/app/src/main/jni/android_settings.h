@@ -160,6 +160,8 @@ namespace AndroidSettings {
                                                      Settings::Category::Overlay};
         Settings::Setting<s32> overlay_grid_size{linkage, 32, "overlay_grid_size",
                                                  Settings::Category::Overlay};
+        Settings::Setting<bool> touch_camera{linkage, false, "touch_camera",
+                                             Settings::Category::Overlay};
         Settings::Setting<bool> touchscreen{linkage, true, "touchscreen",
                                             Settings::Category::Overlay};
         Settings::Setting<s32> lock_drawer{linkage, false, "lock_drawer",

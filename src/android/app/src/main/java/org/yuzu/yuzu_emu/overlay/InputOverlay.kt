@@ -57,6 +57,19 @@ class InputOverlay(context: Context, attrs: AttributeSet?) :
     private val overlayDpads: MutableSet<InputOverlayDrawableDpad> = HashSet()
     private val overlayJoysticks: MutableSet<InputOverlayDrawableJoystick> = HashSet()
     private val imeEditable = Editable.Factory.getInstance().newEditable("")
+    private val touchCameraController = TouchCameraController()
+    private val touchscreenPointerIds = mutableSetOf<Int>()
+    private val touchCameraHandler = Handler(Looper.getMainLooper())
+    private var touchCameraPlayerIndex = NativeInput.Player1Device
+    private val recenterTouchCamera = Runnable {
+        touchCameraController.recenter()
+        NativeInput.onOverlayJoystickEvent(
+            touchCameraPlayerIndex,
+            NativeAnalog.RStick,
+            0f,
+            0f
+        )
+    }
 
     private var inEditMode = false
     private var gamelessMode = false
@@ -302,40 +315,131 @@ class InputOverlay(context: Context, attrs: AttributeSet?) :
             invalidate()
         }
 
-        if (!BooleanSetting.TOUCHSCREEN.getBoolean()) {
-            return true
-        }
-
         val pointerIndex = event.actionIndex
-        val xPosition = event.getX(pointerIndex).toInt()
-        val yPosition = event.getY(pointerIndex).toInt()
+        val xPosition = event.getX(pointerIndex)
+        val yPosition = event.getY(pointerIndex)
         val pointerId = event.getPointerId(pointerIndex)
-        val motionEvent = event.action and MotionEvent.ACTION_MASK
-        val isActionDown =
-            motionEvent == MotionEvent.ACTION_DOWN || motionEvent == MotionEvent.ACTION_POINTER_DOWN
-        val isActionMove = motionEvent == MotionEvent.ACTION_MOVE
-        val isActionUp =
-            motionEvent == MotionEvent.ACTION_UP || motionEvent == MotionEvent.ACTION_POINTER_UP
+        val touchCameraEnabled = BooleanSetting.TOUCH_CAMERA.getBoolean() && !gamelessMode
+        val touchscreenEnabled = BooleanSetting.TOUCHSCREEN.getBoolean()
 
-        if (isActionDown && !isTouchInputConsumed(pointerId)) {
-            NativeInput.onTouchPressed(pointerId, xPosition.toFloat(), yPosition.toFloat())
+        if (!touchCameraEnabled && touchCameraController.isActive) {
+            cancelTouchCamera()
+        }
+        if (!touchscreenEnabled && touchscreenPointerIds.isNotEmpty()) {
+            releaseTouchscreenPointers()
         }
 
-        if (isActionMove) {
-            for (i in 0 until event.pointerCount) {
-                val fingerId = event.getPointerId(i)
-                if (isTouchInputConsumed(fingerId)) {
-                    continue
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN,
+            MotionEvent.ACTION_POINTER_DOWN -> {
+                if (isTouchInputConsumed(pointerId)) {
+                    return true
                 }
-                NativeInput.onTouchMoved(fingerId, event.getX(i), event.getY(i))
+
+                if (touchCameraEnabled && xPosition >= width * TOUCH_CAMERA_REGION_START) {
+                    beginTouchCamera(pointerId, xPosition, yPosition, event.eventTime, playerIndex)
+                } else if (touchscreenEnabled) {
+                    touchscreenPointerIds.add(pointerId)
+                    NativeInput.onTouchPressed(pointerId, xPosition, yPosition)
+                }
+            }
+
+            MotionEvent.ACTION_MOVE -> {
+                for (i in 0 until event.pointerCount) {
+                    val fingerId = event.getPointerId(i)
+                    if (touchCameraController.owns(fingerId)) {
+                        moveTouchCamera(
+                            fingerId,
+                            event.getX(i),
+                            event.getY(i),
+                            event.eventTime,
+                            playerIndex
+                        )
+                    } else if (touchscreenEnabled && fingerId in touchscreenPointerIds) {
+                        NativeInput.onTouchMoved(fingerId, event.getX(i), event.getY(i))
+                    }
+                }
+            }
+
+            MotionEvent.ACTION_UP,
+            MotionEvent.ACTION_POINTER_UP -> {
+                // Keep the final camera sample alive until its scheduled recenter. Otherwise a
+                // quick flick can be released before the emulated game samples the axis.
+                if (!touchCameraController.end(pointerId) &&
+                    touchscreenPointerIds.remove(pointerId)
+                ) {
+                    NativeInput.onTouchReleased(pointerId)
+                }
+            }
+
+            MotionEvent.ACTION_CANCEL -> {
+                cancelTouchCamera()
+                releaseTouchscreenPointers()
             }
         }
 
-        if (isActionUp && !isTouchInputConsumed(pointerId)) {
-            NativeInput.onTouchReleased(pointerId)
+        return true
+    }
+
+    private fun beginTouchCamera(
+        pointerId: Int,
+        x: Float,
+        y: Float,
+        eventTime: Long,
+        playerIndex: Int
+    ) {
+        if (touchCameraController.isActive) {
+            return
         }
 
-        return true
+        touchCameraHandler.removeCallbacks(recenterTouchCamera)
+        touchCameraPlayerIndex = playerIndex
+        NativeInput.onOverlayJoystickEvent(playerIndex, NativeAnalog.RStick, 0f, 0f)
+        touchCameraController.begin(pointerId, x, y, eventTime)
+    }
+
+    private fun moveTouchCamera(
+        pointerId: Int,
+        x: Float,
+        y: Float,
+        eventTime: Long,
+        playerIndex: Int
+    ) {
+        if (!touchCameraController.move(pointerId, x, y, eventTime)) {
+            return
+        }
+
+        touchCameraPlayerIndex = playerIndex
+        NativeInput.onOverlayJoystickEvent(
+            playerIndex,
+            NativeAnalog.RStick,
+            touchCameraController.xAxis,
+            touchCameraController.yAxis
+        )
+        touchCameraHandler.removeCallbacks(recenterTouchCamera)
+        touchCameraHandler.postDelayed(recenterTouchCamera, TOUCH_CAMERA_RECENTER_DELAY_MILLIS)
+    }
+
+    fun cancelTouchCamera() {
+        touchCameraHandler.removeCallbacks(recenterTouchCamera)
+        touchCameraController.cancel()
+        NativeInput.onOverlayJoystickEvent(
+            touchCameraPlayerIndex,
+            NativeAnalog.RStick,
+            0f,
+            0f
+        )
+    }
+
+    private fun releaseTouchscreenPointers() {
+        touchscreenPointerIds.forEach(NativeInput::onTouchReleased)
+        touchscreenPointerIds.clear()
+    }
+
+    override fun onDetachedFromWindow() {
+        cancelTouchCamera()
+        releaseTouchscreenPointers()
+        super.onDetachedFromWindow()
     }
 
     private fun playHaptics(event: MotionEvent) {
@@ -544,6 +648,12 @@ class InputOverlay(context: Context, attrs: AttributeSet?) :
         val overlayControlData = NativeConfig.getOverlayControlData()
         for (data in overlayControlData) {
             if (!data.enabled) {
+                continue
+            }
+            if (data.id == OverlayControl.STICK_R.id &&
+                BooleanSetting.TOUCH_CAMERA.getBoolean() &&
+                !gamelessMode
+            ) {
                 continue
             }
 
@@ -838,6 +948,10 @@ class InputOverlay(context: Context, attrs: AttributeSet?) :
     }
 
     fun setIsInEditMode(editMode: Boolean) {
+        if (editMode) {
+            cancelTouchCamera()
+            releaseTouchscreenPointers()
+        }
         inEditMode = editMode
         if (!editMode) {
             scaleDialog?.dismiss()
@@ -1002,6 +1116,9 @@ class InputOverlay(context: Context, attrs: AttributeSet?) :
     }
 
     companion object {
+
+        private const val TOUCH_CAMERA_REGION_START = 0.5f
+        private const val TOUCH_CAMERA_RECENTER_DELAY_MILLIS = 32L
 
         // Increase this number every time there is a breaking change to every overlay layout
         const val OVERLAY_VERSION = 1

@@ -19,6 +19,8 @@
     <!-- Input Overlay -->
     <string name="show_input_overlay">Mostrar Controles na Tela</string>
     <string name="show_input_overlay_description">Mostra os controles na tela durante a emulação</string>
+    <string name="touch_camera">Câmera por toque</string>
+    <string name="touch_camera_description">Arraste na área livre da metade direita da tela para mover a câmera. O analógico direito deixa de ser exibido; a câmera segue o movimento do dedo, não a posição de um joystick virtual.</string>
     <string name="overlay_grid_size">Tamanho da Grade</string>
     <string name="input_overlay_behavior">Comportamento</string>
     <string name="overlay_auto_hide">Esconder Sobreposição Automaticamente</string>
