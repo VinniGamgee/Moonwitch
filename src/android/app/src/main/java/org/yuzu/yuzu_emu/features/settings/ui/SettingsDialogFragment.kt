@@ -137,12 +137,19 @@ class SettingsDialogFragment : DialogFragment(), DialogInterface.OnClickListener
             SettingsItem.TYPE_SLIDER -> {
                 sliderBinding = DialogSliderBinding.inflate(layoutInflater)
                 val item = settingsViewModel.clickedItem as SliderSetting
+                val effectiveMax = if (
+                    item.setting.key == IntSetting.TOUCH_CAMERA_SENSITIVITY.key
+                ) {
+                    100
+                } else {
+                    item.max
+                }
 
                 settingsViewModel.setSliderTextValue(item.getSelectedValue().toFloat(), item.units)
                 sliderBinding.slider.apply {
                     stepSize = 1.0f
                     valueFrom = item.min.toFloat()
-                    valueTo = item.max.toFloat()
+                    valueTo = effectiveMax.toFloat()
                     value = settingsViewModel.sliderProgress.value.toFloat()
                     addOnChangeListener { _: Slider, value: Float, _: Boolean ->
                         settingsViewModel.setSliderTextValue(value, item.units)
@@ -216,7 +223,6 @@ class SettingsDialogFragment : DialogFragment(), DialogInterface.OnClickListener
                                         val next = curr + delta
                                         spinboxBinding.editValue.setText(next.toString())
                                         updateValidity(next)
-                                        // accelerate
                                         delay = (delay * accelerationFactor).toLong().coerceAtLeast(minDelay)
                                         handler.postDelayed(this, delay)
                                     }
@@ -390,7 +396,6 @@ class SettingsDialogFragment : DialogFragment(), DialogInterface.OnClickListener
 
                 if (scSetting.setting.key == "app_language") {
                     settingsViewModel.setShouldRecreateForLanguageChange(true)
-                    // recreate page apply language change instantly
                     requireActivity().recreate()
                 }
             }
