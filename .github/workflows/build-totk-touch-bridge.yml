@@ -32,16 +32,34 @@ jobs:
           cat > /tmp/totk-touch-bridge/mod/source/program/main.cpp <<'CPP'
           #include "lib.hpp"
           #include "loggers.hpp"
-          #include "nn/hid.h"
           #include <cmath>
           #include <cstdint>
+
+          // Keep the bridge independent from the project's legacy nx/types.h include tree.
+          // These declarations match nn::hid::MouseState's ABI: 8-byte sample + eight 32-bit words.
+          namespace nn::hid {
+          struct MouseState {
+              std::uint64_t samplingNumber;
+              std::int32_t x;
+              std::int32_t y;
+              std::int32_t deltaX;
+              std::int32_t deltaY;
+              std::int32_t wheelDeltaX;
+              std::int32_t wheelDeltaY;
+              std::int32_t buttons;
+              std::int32_t attributes;
+          };
+          static_assert(sizeof(MouseState) == 40);
+          void InitializeMouse();
+          void GetMouseState(MouseState* state);
+          } // namespace nn::hid
 
           namespace MoonwitchTouchCamera {
           constexpr float SensitivityX = 0.0045f;
           constexpr float SensitivityY = 0.0045f;
           constexpr float PitchLimit = 1.45f;
 
-          static u64 last_mouse_sample = 0;
+          static std::uint64_t last_mouse_sample = 0;
           static bool mouse_initialized = false;
 
           static void InitializeMouseOnce() {
@@ -53,7 +71,6 @@ jobs:
 
           static bool ReadRelativeDelta(float& dx, float& dy) {
               InitializeMouseOnce();
-
               nn::hid::MouseState state{};
               nn::hid::GetMouseState(&state);
 
@@ -70,11 +87,11 @@ jobs:
           }
 
           static void ApplyRelativeLook(long* camera_ptr) {
-              if (camera_ptr == nullptr || reinterpret_cast<uintptr_t>(camera_ptr) < 0x1000) {
+              if (camera_ptr == nullptr || reinterpret_cast<std::uintptr_t>(camera_ptr) < 0x1000) {
                   return;
               }
 
-              const auto camera_data = static_cast<uintptr_t>(*camera_ptr);
+              const auto camera_data = static_cast<std::uintptr_t>(*camera_ptr);
               if (camera_data < 0x1000) {
                   return;
               }
@@ -107,8 +124,8 @@ jobs:
                   return;
               }
 
-              // Derive orientation from the camera that TOTK produced THIS frame. Touch therefore
-              // adds a true relative yaw/pitch delta instead of replacing camera input with a stick.
+              // Add the finger's relative delta to the camera TOTK generated this frame.
+              // No joystick center, radius, deadzone or analog magnitude exists in this path.
               float yaw = std::atan2(vx, vz);
               float pitch = std::asin(vy / radius);
               if (!std::isfinite(yaw) || !std::isfinite(pitch)) {
@@ -134,9 +151,9 @@ jobs:
           }
           } // namespace MoonwitchTouchCamera
 
-          // TOTK 1.4.2 camera update used by the public MouseCam implementation.
-          // Build ID target: 5CB42B1CF25469FB0635FD046453D843C18BC8AB
-          constexpr uintptr_t CAMERA_UPDATE_142 = 0x00A70604;
+          // TOTK 1.4.2 target used by the current public MouseCam camera hook.
+          // Build ID: 5CB42B1CF25469FB0635FD046453D843C18BC8AB
+          constexpr std::uintptr_t CAMERA_UPDATE_142 = 0x00A70604;
 
           HOOK_DEFINE_TRAMPOLINE(MoonwitchDirectTouchCameraHook) {
               static void Callback(float delta_time, long param2, long* camera_ptr) {
