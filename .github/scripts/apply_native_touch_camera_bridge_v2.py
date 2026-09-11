@@ -253,7 +253,7 @@ def validate():
         "MoonwitchFindTouchBridge",
         "MoonwitchPublishTouchBridge",
         "GetAliasCodeRegionStart",
-        "ApplicationMemory().WriteBlock",
+        "memory.WriteBlock",
         "AddMouseRelativeDelta",
     ]
     for token in required:
