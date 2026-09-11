@@ -12,33 +12,33 @@ def write(rel, text):
     (ROOT / rel).write_text(text, encoding="utf-8")
 
 
-def replace_once(rel, old, new, label):
-    text = read(rel)
-    if new in text:
-        return
-    count = text.count(old)
-    if count != 1:
-        raise RuntimeError(f"{label}: expected exactly one match in {rel}, found {count}")
-    write(rel, text.replace(old, new, 1))
-
-
 def patch_native_cpp():
     rel = "src/android/app/src/main/jni/native_input.cpp"
     text = read(rel)
 
-    include_anchor = "#include <cmath>\n"
-    include_block = '''#include <algorithm>\n#include <array>\n#include <cmath>\n#include <cstring>\n#include <optional>\n#include <vector>\n'''
     if "#include <optional>" not in text:
-        if include_anchor not in text:
+        anchor = "#include <cmath>\n"
+        includes = (
+            "#include <algorithm>\n#include <array>\n#include <cmath>\n#include <cstring>\n"
+            "#include <optional>\n#include <vector>\n"
+        )
+        if anchor not in text:
             raise RuntimeError("native_input.cpp: v1 cmath include not found")
-        text = text.replace(include_anchor, include_block, 1)
+        text = text.replace(anchor, includes, 1)
 
-    header_anchor = '#include "hid_core/frontend/emulated_devices.h"\n'
-    core_headers = '''#include "core/hle/kernel/k_memory_block.h"\n#include "core/hle/kernel/k_process.h"\n#include "core/hle/kernel/k_process_page_table.h"\n#include "core/hle/kernel/svc_types.h"\n#include "core/memory.h"\n#include "hid_core/frontend/emulated_devices.h"\n'''
     if '#include "core/hle/kernel/k_memory_block.h"' not in text:
-        if header_anchor not in text:
+        anchor = '#include "hid_core/frontend/emulated_devices.h"\n'
+        headers = (
+            '#include "core/hle/kernel/k_memory_block.h"\n'
+            '#include "core/hle/kernel/k_process.h"\n'
+            '#include "core/hle/kernel/k_process_page_table.h"\n'
+            '#include "core/hle/kernel/svc_types.h"\n'
+            '#include "core/memory.h"\n'
+            '#include "hid_core/frontend/emulated_devices.h"\n'
+        )
+        if anchor not in text:
             raise RuntimeError("native_input.cpp: v1 emulated_devices include not found")
-        text = text.replace(header_anchor, core_headers, 1)
+        text = text.replace(anchor, headers, 1)
 
     begin_marker = "// MOONWITCH_NATIVE_TOUCH_CAMERA_BEGIN\n"
     end_marker = "// MOONWITCH_NATIVE_TOUCH_CAMERA_END\n"
@@ -49,10 +49,9 @@ def patch_native_cpp():
     end += len(end_marker)
 
     block = r'''// MOONWITCH_NATIVE_TOUCH_CAMERA_BEGIN
-// Host-side TouchLook source. Android supplies only MotionEvent deltas. The global HID mouse
-// remains available for games that consume mouse natively. A guest adapter may additionally
-// expose the Moonwitch bridge packet below; this is still a relative pointer stream and never
-// passes through Npad, VirtualGamepad, an analog center, radius, deadzone, or stick magnitude.
+// Global host-side TouchLook source. Android supplies MotionEvent deltas only.
+// Guest adapters receive the same relative stream through a dedicated memory packet.
+// This path bypasses all controller-axis translation and positional joystick semantics.
 static bool moonwitch_native_touch_camera_active = false;
 
 namespace {
@@ -150,7 +149,6 @@ std::optional<Common::ProcessAddress> MoonwitchFindTouchBridge(Core::System& sys
         }
         query_address = next;
     }
-
     return std::nullopt;
 }
 
@@ -162,7 +160,6 @@ void MoonwitchPublishTouchBridge(bool enabled, f32 delta_x, f32 delta_y) {
 
     auto& system = EmulationSession::GetInstance().System();
     auto& memory = system.ApplicationMemory();
-
     moonwitch_touch_bridge_total_x += delta_x;
     moonwitch_touch_bridge_total_y += delta_y;
     ++moonwitch_touch_bridge_sequence;
@@ -209,8 +206,6 @@ void Java_org_yuzu_yuzu_1emu_features_input_NativeInput_onNativeTouchCameraDelta
         return;
     }
 
-    // Preserve the Android delta as floating point for guest adapters. HID mouse additionally
-    // receives the nearest integer because the Switch HID mouse ABI stores signed integer deltas.
     MoonwitchPublishTouchBridge(true, static_cast<f32>(j_delta_x), static_cast<f32>(j_delta_y));
 
     const auto delta_x = static_cast<s32>(std::lround(j_delta_x));
@@ -242,32 +237,23 @@ void Java_org_yuzu_yuzu_1emu_features_input_NativeInput_onNativeTouchCameraEnd(
 
 
 def validate():
-    rel = "src/android/app/src/main/jni/native_input.cpp"
-    text = read(rel)
+    text = read("src/android/app/src/main/jni/native_input.cpp")
     start = text.index("// MOONWITCH_NATIVE_TOUCH_CAMERA_BEGIN")
     end = text.index("// MOONWITCH_NATIVE_TOUCH_CAMERA_END")
     segment = text[start:end]
 
-    required = [
+    for token in [
         "MOONWITCH_TOUCH_BRIDGE_MAGIC_A",
         "MoonwitchFindTouchBridge",
         "MoonwitchPublishTouchBridge",
         "GetAliasCodeRegionStart",
         "memory.WriteBlock",
         "AddMouseRelativeDelta",
-    ]
-    for token in required:
+    ]:
         if token not in segment:
             raise RuntimeError(f"native bridge v2 missing required token: {token}")
 
-    forbidden = [
-        "VirtualGamepad",
-        "Npad",
-        "RightStick",
-        "SetStickPosition",
-        "AnalogStick",
-    ]
-    for token in forbidden:
+    for token in ["VirtualGamepad", "Npad", "RightStick", "SetStickPosition", "AnalogStick"]:
         if token in segment:
             raise RuntimeError(f"native bridge v2 accidentally contains gamepad token: {token}")
 
