@@ -27,27 +27,14 @@ jobs:
           rm -rf /tmp/uc
           mkdir -p /tmp/uc
           unzip -q /tmp/UltraCam.zip -d /tmp/uc
-
           echo '===== PACKAGE TREE ====='
           find /tmp/uc -type f -printf '%p | %s bytes\n' | sort
-
           echo '===== FILE TYPES ====='
           find /tmp/uc -type f -print0 | while IFS= read -r -d '' f; do
             echo "--- $f ---"
             file "$f" || true
           done
-
-          echo '===== TEXT CONFIGS ====='
-          find /tmp/uc -type f \( \
-            -iname '*.ini' -o -iname '*.json' -o -iname '*.txt' -o \
-            -iname '*.toml' -o -iname '*.yaml' -o -iname '*.yml' -o \
-            -iname '*.pchtxt' -o -iname '*.asm' -o -iname '*.cfg' \
-          \) -print0 | while IFS= read -r -d '' f; do
-            echo "--- $f ---"
-            sed -n '1,500p' "$f" || true
-          done
-
-          echo '===== RELEVANT STRINGS ====='
+          echo '===== RELEVANT RAW STRINGS ====='
           find /tmp/uc -type f -print0 | while IFS= read -r -d '' f; do
             echo "--- $f ---"
             strings -a -t x "$f" | grep -Ei \
@@ -55,13 +42,122 @@ jobs:
               | head -n 1000 || true
           done
 
-          echo '===== HEX AROUND KNOWN CAMERA TOKENS ====='
-          find /tmp/uc -type f -print0 | while IFS= read -r -d '' f; do
-            if strings -a "$f" | grep -Eqi 'camera|freecam|lookat'; then
-              echo "--- $f ---"
-              sha256sum "$f"
-              readelf -h "$f" 2>/dev/null || true
-              readelf -S "$f" 2>/dev/null || true
-              readelf -sW "$f" 2>/dev/null | grep -Ei 'camera|freecam|lookat' | head -n 300 || true
-            fi
-          done
+      - name: Decompress and inspect UltraCam NSO
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet lz4 capstone
+          cat > /tmp/inspect_nso.py <<'PY'
+          import collections
+          import struct
+          from pathlib import Path
+          import lz4.block
+          from capstone import Cs, CS_ARCH_ARM64, CS_MODE_ARM
+          from capstone.arm64 import ARM64_INS_MOVZ, ARM64_INS_MOVK
+
+          p = Path('/tmp/uc/UltraCam/exefs/subsdk3')
+          b = p.read_bytes()
+          assert b[:4] == b'NSO0', b[:4]
+          flags = struct.unpack_from('<I', b, 0x0c)[0]
+          build_id = b[0x40:0x60].hex().upper()
+          print('===== NSO HEADER =====')
+          print(f'flags=0x{flags:08X}')
+          print(f'build_id={build_id}')
+
+          names = ['text','rodata','data']
+          hdrs = [0x10,0x20,0x30]
+          comp_sizes = struct.unpack_from('<III', b, 0x60)
+          segs = {}
+          for i,(name,h) in enumerate(zip(names,hdrs)):
+              file_off, mem_off, dec_size = struct.unpack_from('<III', b, h)
+              comp_size = comp_sizes[i]
+              payload = b[file_off:file_off+comp_size]
+              compressed = bool(flags & (1 << i))
+              if compressed:
+                  payload = lz4.block.decompress(payload, uncompressed_size=dec_size)
+              else:
+                  payload = payload[:dec_size]
+              assert len(payload) == dec_size, (name, len(payload), dec_size)
+              segs[name] = (mem_off, payload)
+              Path(f'/tmp/uc_{name}.bin').write_bytes(payload)
+              print(f'{name}: file=0x{file_off:X} mem=0x{mem_off:X} size=0x{dec_size:X} compressed={compressed} stored=0x{comp_size:X}')
+
+          print('===== DECOMPRESSED RELEVANT STRINGS =====')
+          for name,(base,data) in segs.items():
+              import re
+              for m in re.finditer(rb'[ -~]{5,}', data):
+                  s=m.group().decode('ascii','ignore')
+                  if any(k in s.lower() for k in ['camera','freecam','lookat','version','build','ultra','hook']):
+                      print(f'{name}+0x{m.start():X}: {s[:300]}')
+
+          print('===== KNOWN OFFSET LITERAL SCAN =====')
+          known = [0x00A15D40,0x00A8B40C,0x00A2E4B0,0x00A70604,0x02B180A0,0x02B18130,0x02B18100,0x04728688]
+          for val in known:
+              hits=[]
+              for name,(base,data) in segs.items():
+                  for width,fmt in [(4,'<I'),(8,'<Q')]:
+                      needle=struct.pack(fmt,val)
+                      start=0
+                      while True:
+                          j=data.find(needle,start)
+                          if j<0: break
+                          hits.append(f'{name}+0x{j:X}/{width}')
+                          start=j+1
+              print(f'0x{val:08X}: {", ".join(hits) if hits else "none"}')
+
+          text_base,text = segs['text']
+          md=Cs(CS_ARCH_ARM64,CS_MODE_ARM)
+          md.detail=True
+          insns=list(md.disasm(text, text_base))
+          print(f'===== AARCH64 TEXT: {len(insns)} instructions =====')
+
+          # Reconstruct MOVZ/MOVK constants. This catches the common exlaunch
+          # InstallAtOffset codegen pattern without dumping the entire NSO.
+          regs={}
+          candidates=[]
+          for idx,ins in enumerate(insns):
+              if ins.id not in (ARM64_INS_MOVZ, ARM64_INS_MOVK):
+                  continue
+              ops=ins.operands
+              if len(ops)<2 or ops[0].type != 1 or ops[1].type != 2:
+                  continue
+              reg=ins.reg_name(ops[0].reg)
+              imm=ops[1].imm
+              shift=ops[1].shift.value if getattr(ops[1],'shift',None) else 0
+              if ins.id == ARM64_INS_MOVZ:
+                  val=(imm & 0xffff) << shift
+              else:
+                  old=regs.get(reg,0)
+                  mask=0xffff << shift
+                  val=(old & ~mask) | ((imm & 0xffff) << shift)
+              regs[reg]=val
+              if 0x00100000 <= val <= 0x08000000:
+                  candidates.append((val,idx,reg))
+
+          # Unique constants with a small instruction context.
+          seen=set()
+          print('===== OFFSET-LIKE CONSTANTS (MOVZ/MOVK) =====')
+          for val,idx,reg in candidates:
+              key=(val,insns[idx].address)
+              if key in seen: continue
+              seen.add(key)
+              # Prioritize values likely to be MAIN offsets.
+              if val < 0x00200000 and val not in known:
+                  continue
+              lo=max(0,idx-4); hi=min(len(insns),idx+6)
+              print(f'--- candidate 0x{val:08X} via {reg} @ text+0x{insns[idx].address-text_base:X} ---')
+              for x in insns[lo:hi]:
+                  print(f'  {x.address:08X}: {x.mnemonic:8s} {x.op_str}')
+
+          # Dump instruction windows around every literal-load/compare of exact known offsets
+          # if the compiler emitted them directly.
+          print('===== IMMEDIATE REFERENCES NEAR KNOWN VALUES =====')
+          for idx,ins in enumerate(insns):
+              textline=f'{ins.mnemonic} {ins.op_str}'.lower()
+              for val in known:
+                  if f'#0x{val:x}' in textline or f'0x{val:x}' in textline:
+                      print(f'--- 0x{val:X} @ 0x{ins.address:X} ---')
+                      for x in insns[max(0,idx-8):min(len(insns),idx+12)]:
+                          print(f'  {x.address:08X}: {x.mnemonic:8s} {x.op_str}')
+          PY
+          python3 /tmp/inspect_nso.py
