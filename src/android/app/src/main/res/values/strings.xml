@@ -53,6 +53,18 @@
     <!-- Input Overlay -->
     <string name="show_input_overlay">Show Input Overlay</string>
     <string name="show_input_overlay_description">Display touch controls overlay during emulation</string>
+    <string name="touch_camera">Touch Camera</string>
+    <string name="touch_camera_description">Drag on the free right half of the screen to move the camera with relative motion. Virtual controls keep touch priority and the visible right stick is hidden.</string>
+    <string name="touch_camera_sensitivity">Camera sensitivity</string>
+    <string name="touch_camera_sensitivity_description">Adjust drag response from 1 (slowest) to 10 (fastest). Level 5 matches the original touch-camera speed.</string>
+    <string name="touch_camera_acceleration">Gesture acceleration</string>
+    <string name="touch_camera_acceleration_description">Keep small movements precise while making fast swipes turn the camera farther.</string>
+    <string name="touch_camera_smoothing">Gesture smoothing</string>
+    <string name="touch_camera_smoothing_description">Filter small finger oscillations to reduce camera shake. This can add a slight weighted feel.</string>
+    <string name="touch_camera_invert_x">Invert X axis</string>
+    <string name="touch_camera_invert_x_description">Reverse horizontal touch-camera movement.</string>
+    <string name="touch_camera_invert_y">Invert Y axis</string>
+    <string name="touch_camera_invert_y_description">Reverse vertical touch-camera movement.</string>
     <string name="overlay_snap_to_grid">Snap to Grid</string>
     <string name="overlay_snap_to_grid_description">Snap overlay controls to a grid when editing</string>
     <string name="overlay_grid_size">Grid Size</string>

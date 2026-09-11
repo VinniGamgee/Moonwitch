@@ -73,6 +73,7 @@ enum class IntSetting(override val key: String) : AbstractIntSetting {
     MY_PAGE_APPLET("my_page_applet_mode"),
     INPUT_OVERLAY_AUTO_HIDE("input_overlay_auto_hide"),
     OVERLAY_GRID_SIZE("overlay_grid_size"),
+    TOUCH_CAMERA_SENSITIVITY("touch_camera_sensitivity"),
     GPU_LOG_RING_BUFFER_SIZE("gpu_log_ring_buffer_size"),
     ANDROID_PIPELINE_WORKERS("pipeline_worker_count")
     ;

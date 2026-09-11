@@ -166,6 +166,23 @@ namespace AndroidSettings {
                                                      Settings::Category::Overlay};
         Settings::Setting<s32> overlay_grid_size{linkage, 32, "overlay_grid_size",
                                                  Settings::Category::Overlay};
+        Settings::Setting<bool> touch_camera{linkage, false, "touch_camera",
+                                             Settings::Category::Overlay};
+        Settings::Setting<s32> touch_camera_sensitivity{
+            linkage, 5, "touch_camera_sensitivity", Settings::Category::Overlay,
+            Settings::Specialization::Default, true, true, &touch_camera};
+        Settings::Setting<bool> touch_camera_acceleration{
+            linkage, false, "touch_camera_acceleration", Settings::Category::Overlay,
+            Settings::Specialization::Default, true, true, &touch_camera};
+        Settings::Setting<bool> touch_camera_smoothing{
+            linkage, false, "touch_camera_smoothing", Settings::Category::Overlay,
+            Settings::Specialization::Default, true, true, &touch_camera};
+        Settings::Setting<bool> touch_camera_invert_x{
+            linkage, false, "touch_camera_invert_x", Settings::Category::Overlay,
+            Settings::Specialization::Default, true, true, &touch_camera};
+        Settings::Setting<bool> touch_camera_invert_y{
+            linkage, false, "touch_camera_invert_y", Settings::Category::Overlay,
+            Settings::Specialization::Default, true, true, &touch_camera};
         Settings::Setting<bool> touchscreen{linkage, true, "touchscreen",
                                             Settings::Category::Overlay};
         Settings::Setting<s32> lock_drawer{linkage, false, "lock_drawer",

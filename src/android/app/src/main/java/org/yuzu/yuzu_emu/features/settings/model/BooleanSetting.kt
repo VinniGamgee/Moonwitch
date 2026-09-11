@@ -59,6 +59,11 @@ enum class BooleanSetting(override val key: String) : AbstractBooleanSetting {
     HAPTIC_FEEDBACK("haptic_feedback"),
     SHOW_INPUT_OVERLAY("show_input_overlay"),
     OVERLAY_SNAP_TO_GRID("overlay_snap_to_grid"),
+    TOUCH_CAMERA("touch_camera"),
+    TOUCH_CAMERA_ACCELERATION("touch_camera_acceleration"),
+    TOUCH_CAMERA_SMOOTHING("touch_camera_smoothing"),
+    TOUCH_CAMERA_INVERT_X("touch_camera_invert_x"),
+    TOUCH_CAMERA_INVERT_Y("touch_camera_invert_y"),
     TOUCHSCREEN("touchscreen"),
     AIRPLANE_MODE("airplane_mode"),
 

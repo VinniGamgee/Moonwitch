@@ -58,6 +58,12 @@ jobs:
           grep -q "reconstruction_bias" src/video_core/renderer_vulkan/vk_texture_cache.cpp
           grep -q "MOONWITCH_RECONSTRUCTION" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/BooleanSetting.kt
           grep -q "MOONWITCH_RECONSTRUCTION_TARGET" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/IntSetting.kt
+          grep -q 'applicationId = "dev.moonwitch.emulator"' src/android/app/build.gradle.kts
+          grep -q 'appNameBase" to "Moonwitch"' src/android/app/build.gradle.kts
+          grep -q "TOUCH_CAMERA_SENSITIVITY" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/IntSetting.kt
+          grep -q "TOUCH_CAMERA_ACCELERATION" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/BooleanSetting.kt
+          grep -q "class TouchCameraController" src/android/app/src/main/java/org/yuzu/yuzu_emu/overlay/TouchCameraController.kt
+          grep -q "calculateAccelerationGain" src/android/app/src/main/java/org/yuzu/yuzu_emu/overlay/TouchCameraController.kt
           grep -q "enum class ThreadWorkerPriority" src/common/thread_worker.h
           grep -q "ThreadWorkerPriority::Foreground" src/video_core/renderer_vulkan/vk_graphics_pipeline.cpp
           grep -q "ThreadWorkerPriority::Foreground" src/video_core/renderer_vulkan/vk_compute_pipeline.cpp

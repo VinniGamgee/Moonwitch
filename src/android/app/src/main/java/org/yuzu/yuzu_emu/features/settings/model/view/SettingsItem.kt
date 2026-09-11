@@ -416,6 +416,50 @@ abstract class SettingsItem(
             )
             put(
                 SwitchSetting(
+                    BooleanSetting.TOUCH_CAMERA,
+                    titleId = R.string.touch_camera,
+                    descriptionId = R.string.touch_camera_description
+                )
+            )
+            put(
+                SliderSetting(
+                    IntSetting.TOUCH_CAMERA_SENSITIVITY,
+                    titleId = R.string.touch_camera_sensitivity,
+                    descriptionId = R.string.touch_camera_sensitivity_description,
+                    min = 1,
+                    max = 10
+                )
+            )
+            put(
+                SwitchSetting(
+                    BooleanSetting.TOUCH_CAMERA_ACCELERATION,
+                    titleId = R.string.touch_camera_acceleration,
+                    descriptionId = R.string.touch_camera_acceleration_description
+                )
+            )
+            put(
+                SwitchSetting(
+                    BooleanSetting.TOUCH_CAMERA_SMOOTHING,
+                    titleId = R.string.touch_camera_smoothing,
+                    descriptionId = R.string.touch_camera_smoothing_description
+                )
+            )
+            put(
+                SwitchSetting(
+                    BooleanSetting.TOUCH_CAMERA_INVERT_X,
+                    titleId = R.string.touch_camera_invert_x,
+                    descriptionId = R.string.touch_camera_invert_x_description
+                )
+            )
+            put(
+                SwitchSetting(
+                    BooleanSetting.TOUCH_CAMERA_INVERT_Y,
+                    titleId = R.string.touch_camera_invert_y,
+                    descriptionId = R.string.touch_camera_invert_y_description
+                )
+            )
+            put(
+                SwitchSetting(
                     BooleanSetting.OVERLAY_SNAP_TO_GRID,
                     titleId = R.string.overlay_snap_to_grid,
                     descriptionId = R.string.overlay_snap_to_grid_description

@@ -22,6 +22,18 @@
     <!-- Input Overlay -->
     <string name="show_input_overlay">Mostrar Controles na Tela</string>
     <string name="show_input_overlay_description">Mostra os controles na tela durante a emulação</string>
+    <string name="touch_camera">Câmera por toque</string>
+    <string name="touch_camera_description">Arraste na área livre da metade direita para mover a câmera por movimento relativo. Os controles virtuais mantêm prioridade e o analógico direito visível fica oculto.</string>
+    <string name="touch_camera_sensitivity">Sensibilidade da câmera</string>
+    <string name="touch_camera_sensitivity_description">Ajusta a resposta do arrasto de 1 (mais lenta) a 10 (mais rápida). O nível 5 mantém a velocidade original da câmera por toque.</string>
+    <string name="touch_camera_acceleration">Aceleração do gesto</string>
+    <string name="touch_camera_acceleration_description">Mantém movimentos pequenos precisos e faz deslizes rápidos virarem mais a câmera.</string>
+    <string name="touch_camera_smoothing">Suavização do gesto</string>
+    <string name="touch_camera_smoothing_description">Filtra pequenas oscilações do dedo para reduzir tremedeira. Pode adicionar uma leve sensação de peso.</string>
+    <string name="touch_camera_invert_x">Inverter eixo X</string>
+    <string name="touch_camera_invert_x_description">Inverte o movimento horizontal da câmera por toque.</string>
+    <string name="touch_camera_invert_y">Inverter eixo Y</string>
+    <string name="touch_camera_invert_y_description">Inverte o movimento vertical da câmera por toque.</string>
     <string name="overlay_grid_size">Tamanho da Grade</string>
     <string name="input_overlay_behavior">Comportamento</string>
     <string name="overlay_auto_hide">Esconder Sobreposição Automaticamente</string>
