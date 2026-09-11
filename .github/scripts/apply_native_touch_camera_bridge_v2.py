@@ -54,6 +54,9 @@ def patch_native_cpp():
 // This path bypasses all controller-axis translation and positional joystick semantics.
 static bool moonwitch_native_touch_camera_active = false;
 
+// native_input.cpp keeps its JNI exports inside an outer extern "C" block. The bridge helpers
+// use C++ library types (std::optional/std::vector), so explicitly restore C++ linkage here.
+extern "C++" {
 namespace {
 constexpr u64 MOONWITCH_TOUCH_BRIDGE_MAGIC_A = 0x3245474449524254ULL; // "TBRIDGE2"
 constexpr u64 MOONWITCH_TOUCH_BRIDGE_MAGIC_B = 0x324D41434354574DULL; // "MWTCCAM2"
@@ -188,6 +191,7 @@ void MoonwitchPublishTouchBridge(bool enabled, f32 delta_x, f32 delta_y) {
     memory.WriteBlock(*moonwitch_touch_bridge_address, &packet, sizeof(packet));
 }
 } // namespace
+} // extern "C++"
 
 void Java_org_yuzu_yuzu_1emu_features_input_NativeInput_onNativeTouchCameraBegin(
     JNIEnv* env, jobject j_obj) {
@@ -246,6 +250,7 @@ def validate():
         "MOONWITCH_TOUCH_BRIDGE_MAGIC_A",
         "MoonwitchFindTouchBridge",
         "MoonwitchPublishTouchBridge",
+        'extern "C++"',
         "GetAliasCodeRegionStart",
         "memory.WriteBlock",
         "AddMouseRelativeDelta",
