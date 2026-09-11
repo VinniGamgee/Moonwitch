@@ -103,6 +103,25 @@ jobs:
           grep -q 'reference_layout_1536x691_v1' src/android/app/src/main/java/org/yuzu/yuzu_emu/overlay/InputOverlay.kt
           git diff --check
 
+      - name: Apply native relative touch camera
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_native_touch_camera_v1.py
+          grep -q "onNativeTouchCameraDelta" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/input/NativeInput.kt
+          grep -q "AddMouseRelativeDelta" src/hid_core/frontend/emulated_devices.h
+          grep -q "ConsumeMouseRelativeDelta" src/hid_core/resources/mouse/mouse.cpp
+          grep -q "MOONWITCH_NATIVE_TOUCH_CAMERA_BEGIN" src/android/app/src/main/jni/native_input.cpp
+          grep -q "next_state.delta_x += relative_delta.x" src/hid_core/resources/mouse/mouse.cpp
+          if sed -n '/MOONWITCH_NATIVE_TOUCH_CAMERA_BEGIN/,/MOONWITCH_NATIVE_TOUCH_CAMERA_END/p' src/android/app/src/main/jni/native_input.cpp | grep -Eq 'VirtualGamepad|Npad|RightStick|SetStickPosition'; then
+            echo "Native touch camera touched a gamepad path; refusing to build."
+            exit 1
+          fi
+          if sed -n '/private fun handleNativeTouchCamera/,/private fun playHaptics/p' src/android/app/src/main/java/org/yuzu/yuzu_emu/overlay/InputOverlay.kt | grep -Eq 'onOverlayJoystickEvent|NativeAnalog.RStick|xAxis|yAxis'; then
+            echo "Android native touch camera contains analog-stick semantics; refusing to build."
+            exit 1
+          fi
+          git diff --check
+
       - name: Java 17
         uses: actions/setup-java@v4
         with:
