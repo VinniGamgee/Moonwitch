@@ -19,7 +19,7 @@ jobs:
     container:
       image: devkitpro/devkita64:latest
     steps:
-      - name: Build direct HID-to-camera bridge
+      - name: Build direct memory-to-camera bridge v2
         shell: bash
         run: |
           set -euo pipefail
@@ -35,54 +35,76 @@ jobs:
           #include <cmath>
           #include <cstdint>
 
-          // Keep the bridge independent from the project's legacy nx/types.h include tree.
-          // These declarations match nn::hid::MouseState's ABI: 8-byte sample + eight 32-bit words.
-          namespace nn::hid {
-          struct MouseState {
-              std::uint64_t samplingNumber;
-              std::int32_t x;
-              std::int32_t y;
-              std::int32_t deltaX;
-              std::int32_t deltaY;
-              std::int32_t wheelDeltaX;
-              std::int32_t wheelDeltaY;
-              std::int32_t buttons;
-              std::int32_t attributes;
-          };
-          static_assert(sizeof(MouseState) == 40);
-          void InitializeMouse();
-          void GetMouseState(MouseState* state);
-          } // namespace nn::hid
-
           namespace MoonwitchTouchCamera {
+          constexpr std::uint64_t MAGIC_A = 0x3245474449524254ULL; // "TBRIDGE2"
+          constexpr std::uint64_t MAGIC_B = 0x324D41434354574DULL; // "MWTCCAM2"
+          constexpr std::uint32_t VERSION = 2;
           constexpr float SensitivityX = 0.0045f;
           constexpr float SensitivityY = 0.0045f;
           constexpr float PitchLimit = 1.45f;
 
-          static std::uint64_t last_mouse_sample = 0;
-          static bool mouse_initialized = false;
+          #pragma pack(push, 1)
+          struct BridgePacket {
+              std::uint64_t magic_a;
+              std::uint64_t magic_b;
+              std::uint32_t version;
+              std::uint32_t sequence;
+              float total_x;
+              float total_y;
+              std::uint32_t enabled;
+              std::uint32_t reserved;
+          };
+          #pragma pack(pop)
+          static_assert(sizeof(BridgePacket) == 40);
 
-          static void InitializeMouseOnce() {
-              if (!mouse_initialized) {
-                  nn::hid::InitializeMouse();
-                  mouse_initialized = true;
-              }
-          }
+          // Moonwitch scans guest module-data pages for this unique packet and writes the raw
+          // cumulative MotionEvent deltas directly here. No HID activation and no gamepad path.
+          alignas(64) static volatile BridgePacket g_bridge = {
+              MAGIC_A, MAGIC_B, VERSION, 0, 0.0f, 0.0f, 0, 0
+          };
+
+          static bool first_read = true;
+          static float last_total_x = 0.0f;
+          static float last_total_y = 0.0f;
+          static std::uint32_t last_sequence = 0;
 
           static bool ReadRelativeDelta(float& dx, float& dy) {
-              InitializeMouseOnce();
-              nn::hid::MouseState state{};
-              nn::hid::GetMouseState(&state);
+              const std::uint64_t magic_a = g_bridge.magic_a;
+              const std::uint64_t magic_b = g_bridge.magic_b;
+              const std::uint32_t version = g_bridge.version;
+              const std::uint32_t sequence = g_bridge.sequence;
+              const float total_x = g_bridge.total_x;
+              const float total_y = g_bridge.total_y;
+              const std::uint32_t enabled = g_bridge.enabled;
 
-              if (state.samplingNumber == 0 || state.samplingNumber == last_mouse_sample) {
+              if (magic_a != MAGIC_A || magic_b != MAGIC_B || version != VERSION || enabled == 0) {
+                  first_read = true;
                   dx = 0.0f;
                   dy = 0.0f;
                   return false;
               }
 
-              last_mouse_sample = state.samplingNumber;
-              dx = static_cast<float>(state.deltaX);
-              dy = static_cast<float>(state.deltaY);
+              if (first_read) {
+                  first_read = false;
+                  last_total_x = total_x;
+                  last_total_y = total_y;
+                  last_sequence = sequence;
+                  dx = 0.0f;
+                  dy = 0.0f;
+                  return false;
+              }
+
+              if (sequence == last_sequence) {
+                  dx = 0.0f;
+                  dy = 0.0f;
+                  return false;
+              }
+
+              dx = total_x - last_total_x;
+              dy = total_y - last_total_y;
+              last_total_x = total_x;
+              last_total_y = total_y;
+              last_sequence = sequence;
               return dx != 0.0f || dy != 0.0f;
           }
 
@@ -119,41 +141,34 @@ jobs:
               const float vy = *pos_y - fy;
               const float vz = *pos_z - fz;
               const float radius = std::sqrt(vx * vx + vy * vy + vz * vz);
-
               if (!std::isfinite(radius) || radius < 0.10f) {
                   return;
               }
 
-              // Add the finger's relative delta to the camera TOTK generated this frame.
-              // No joystick center, radius, deadzone or analog magnitude exists in this path.
               float yaw = std::atan2(vx, vz);
               float pitch = std::asin(vy / radius);
               if (!std::isfinite(yaw) || !std::isfinite(pitch)) {
                   return;
               }
 
+              // True relative touch-look: every finger delta adds directly to yaw/pitch.
               yaw -= dx * SensitivityX;
               pitch += dy * SensitivityY;
               if (pitch > PitchLimit) pitch = PitchLimit;
               if (pitch < -PitchLimit) pitch = -PitchLimit;
 
               const float horizontal = radius * std::cos(pitch);
-              const float new_vx = horizontal * std::sin(yaw);
-              const float new_vy = radius * std::sin(pitch);
-              const float new_vz = horizontal * std::cos(yaw);
-
-              *pos_x = fx + new_vx;
-              *pos_y = fy + new_vy;
-              *pos_z = fz + new_vz;
+              *pos_x = fx + horizontal * std::sin(yaw);
+              *pos_y = fy + radius * std::sin(pitch);
+              *pos_z = fz + horizontal * std::cos(yaw);
               *up_x = 0.0f;
               *up_y = 1.0f;
               *up_z = 0.0f;
           }
           } // namespace MoonwitchTouchCamera
 
-          // TOTK 1.4.2 target used by the current public MouseCam camera hook.
-          // Build ID: 5CB42B1CF25469FB0635FD046453D843C18BC8AB
-          constexpr std::uintptr_t CAMERA_UPDATE_142 = 0x00A70604;
+          // Camera update used by the current MouseCam implementation for the 1.4.x target.
+          constexpr std::uintptr_t CAMERA_UPDATE = 0x00A70604;
 
           HOOK_DEFINE_TRAMPOLINE(MoonwitchDirectTouchCameraHook) {
               static void Callback(float delta_time, long param2, long* camera_ptr) {
@@ -164,48 +179,46 @@ jobs:
 
           extern "C" void exl_main(void*, void*) {
               exl::hook::Initialize();
-              nn::hid::InitializeMouse();
-              MoonwitchDirectTouchCameraHook::InstallAtOffset(CAMERA_UPDATE_142);
-              Logging.Log("Moonwitch TOTK direct touch camera: HID delta -> game camera");
+              MoonwitchDirectTouchCameraHook::InstallAtOffset(CAMERA_UPDATE);
+              Logging.Log("Moonwitch Touch Camera v2: guest memory delta -> camera yaw/pitch");
           }
 
           extern "C" NORETURN void exl_exception_entry() {
-              EXL_ABORT("Moonwitch TOTK touch camera exception");
+              EXL_ABORT("Moonwitch TOTK touch camera v2 exception");
           }
           CPP
 
-          if grep -Eq 'AnalogStickR|RightStick|menuStick|GetNpadState|GetNpadStates' /tmp/totk-touch-bridge/mod/source/program/main.cpp; then
-            echo 'Forbidden R-stick/gamepad camera path detected.'
+          if grep -Eq 'AnalogStickR|RightStick|menuStick|GetNpadState|GetNpadStates|InitializeMouse|GetMouseState' /tmp/totk-touch-bridge/mod/source/program/main.cpp; then
+            echo 'Forbidden HID/gamepad camera path detected in bridge v2.'
             exit 1
           fi
+          grep -q 'TBRIDGE2' /tmp/totk-touch-bridge/mod/source/program/main.cpp
+          grep -q 'MWTCCAM2' /tmp/totk-touch-bridge/mod/source/program/main.cpp
 
           cd /tmp/totk-touch-bridge/mod
           make clean
           make -j2
 
           test -f deploy/totk-mousecam/exefs/subsdk8
-          mkdir -p /tmp/out/Moonwitch-TOTK-Direct-Touch-Camera/exefs
-          cp deploy/totk-mousecam/exefs/subsdk8 /tmp/out/Moonwitch-TOTK-Direct-Touch-Camera/exefs/
-          if [ -f deploy/totk-mousecam/exefs/main.npdm ]; then
-            cp deploy/totk-mousecam/exefs/main.npdm /tmp/out/Moonwitch-TOTK-Direct-Touch-Camera/exefs/
-          fi
-          cat > /tmp/out/Moonwitch-TOTK-Direct-Touch-Camera/README.txt <<'TXT'
-          Moonwitch TOTK Direct Touch Camera test bridge
-          Target: The Legend of Zelda: Tears of the Kingdom 1.4.2
-          BID: 5CB42B1CF25469FB0635FD046453D843C18BC8AB
-          Requires Moonwitch BUILD #258 or newer with Native touch camera enabled.
+          mkdir -p /tmp/out/Moonwitch-TOTK-Direct-Touch-Camera-v2/exefs
+          cp deploy/totk-mousecam/exefs/subsdk8 /tmp/out/Moonwitch-TOTK-Direct-Touch-Camera-v2/exefs/
+          cat > /tmp/out/Moonwitch-TOTK-Direct-Touch-Camera-v2/README.txt <<'TXT'
+          Moonwitch TOTK Direct Touch Camera bridge v2
 
+          This build removes the guest HID mouse dependency from the TOTK adapter.
           Pipeline:
-          Android MotionEvent delta -> Switch HID Mouse delta -> TOTK camera yaw/pitch.
-          This bridge does not translate camera touch into R-Stick input.
+          Android MotionEvent relative delta -> Moonwitch host TouchLook -> guest bridge memory -> camera yaw/pitch.
+
+          There is no R-Stick mapping, no virtual joystick center/radius and no analog magnitude.
+          Use together with the matching Moonwitch APK containing TouchLook guest bridge v2.
           TXT
           cd /tmp/out
-          zip -r /tmp/Moonwitch-TOTK-Direct-Touch-Camera.zip Moonwitch-TOTK-Direct-Touch-Camera
+          zip -r /tmp/Moonwitch-TOTK-Direct-Touch-Camera-v2.zip Moonwitch-TOTK-Direct-Touch-Camera-v2
 
-      - name: Upload TOTK bridge
+      - name: Upload TOTK bridge v2
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-TOTK-DIRECT-TOUCH-CAMERA
-          path: /tmp/Moonwitch-TOTK-Direct-Touch-Camera.zip
+          name: MOONWITCH-TOTK-DIRECT-TOUCH-CAMERA-V2
+          path: /tmp/Moonwitch-TOTK-Direct-Touch-Camera-v2.zip
           if-no-files-found: error
           retention-days: 7
