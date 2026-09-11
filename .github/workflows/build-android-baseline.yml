@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - feat/moonwitch-frontend-ui
 
 jobs:
   build:

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Moonwitch Frontend visual language. Kept separate from emulator settings so this
+         layer can evolve without changing any emulation defaults or configuration keys. -->
+    <color name="moonwitch_frontend_background">#07070F</color>
+    <color name="moonwitch_frontend_surface">#10101A</color>
+    <color name="moonwitch_frontend_surface_high">#171725</color>
+    <color name="moonwitch_frontend_outline">#34264B</color>
+    <color name="moonwitch_frontend_accent">#9B4DFF</color>
+    <color name="moonwitch_frontend_accent_soft">#26143D</color>
+    <color name="moonwitch_frontend_text">#F7F4FF</color>
+    <color name="moonwitch_frontend_text_secondary">#AAA4B5</color>
+
+    <dimen name="moonwitch_frontend_screen_padding">20dp</dimen>
+    <dimen name="moonwitch_frontend_card_radius">18dp</dimen>
+    <dimen name="moonwitch_frontend_card_gap">6dp</dimen>
+
+    <string name="moonwitch_settings_title">Configurações</string>
+    <string name="moonwitch_performance_system">Desempenho e Sistema</string>
+    <string name="moonwitch_performance_system_desc">Velocidade, modo portátil, clocks, memória e sistema</string>
+    <string name="moonwitch_graphics_desc">Resolução, qualidade, sincronização e recursos da GPU</string>
+    <string name="moonwitch_controls_desc">Mapeamento, perfis e controles físicos</string>
+    <string name="moonwitch_interface_desc">Tema, aparência e preferências do aplicativo</string>
+    <string name="moonwitch_paths_desc">Biblioteca, diretórios e caminhos personalizados</string>
+    <string name="moonwitch_drivers_desc">Driver gráfico e opções específicas da GPU</string>
+    <string name="moonwitch_advanced_desc">Diagnóstico, recursos experimentais e opções de desenvolvedor</string>
+    <string name="moonwitch_framegen_desc">Geração de quadros com suporte real detectado no dispositivo</string>
+</resources>
