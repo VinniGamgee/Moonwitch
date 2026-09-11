@@ -91,8 +91,6 @@ jobs:
         shell: bash
         run: |
           python3 .github/scripts/apply_moonwitch_reference_layout.py
-
-          # Refuse to build unless the measured reference layout and glass renderer are active.
           grep -q '<integer name="BUTTON_A_X">934</integer>' src/android/app/src/main/res/values/integers.xml
           grep -q '<integer name="BUTTON_HOME_Y">52</integer>' src/android/app/src/main/res/values/integers.xml
           grep -q '<integer name="STICK_L_Y">774</integer>' src/android/app/src/main/res/values/integers.xml
@@ -118,6 +116,21 @@ jobs:
           fi
           if sed -n '/private fun handleNativeTouchCamera/,/private fun playHaptics/p' src/android/app/src/main/java/org/yuzu/yuzu_emu/overlay/InputOverlay.kt | grep -Eq 'onOverlayJoystickEvent|NativeAnalog.RStick|xAxis|yAxis'; then
             echo "Android native touch camera contains analog-stick semantics; refusing to build."
+            exit 1
+          fi
+          git diff --check
+
+      - name: Apply native TouchLook guest bridge v2
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_native_touch_camera_bridge_v2.py
+          grep -q "MOONWITCH_TOUCH_BRIDGE_MAGIC_A" src/android/app/src/main/jni/native_input.cpp
+          grep -q "MoonwitchFindTouchBridge" src/android/app/src/main/jni/native_input.cpp
+          grep -q "MoonwitchPublishTouchBridge" src/android/app/src/main/jni/native_input.cpp
+          grep -q "GetAliasCodeRegionStart" src/android/app/src/main/jni/native_input.cpp
+          grep -q "ApplicationMemory().WriteBlock" src/android/app/src/main/jni/native_input.cpp
+          if sed -n '/MOONWITCH_NATIVE_TOUCH_CAMERA_BEGIN/,/MOONWITCH_NATIVE_TOUCH_CAMERA_END/p' src/android/app/src/main/jni/native_input.cpp | grep -Eq 'VirtualGamepad|Npad|RightStick|SetStickPosition|AnalogStick'; then
+            echo "TouchLook bridge v2 contains a gamepad camera path; refusing to build."
             exit 1
           fi
           git diff --check
