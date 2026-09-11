@@ -111,8 +111,6 @@ jobs:
           insns=list(md.disasm(text, text_base))
           print(f'===== AARCH64 TEXT: {len(insns)} instructions =====')
 
-          # Reconstruct MOVZ/MOVK constants. This catches the common exlaunch
-          # InstallAtOffset codegen pattern without dumping the entire NSO.
           regs={}
           candidates=[]
           for idx,ins in enumerate(insns):
@@ -134,14 +132,12 @@ jobs:
               if 0x00100000 <= val <= 0x08000000:
                   candidates.append((val,idx,reg))
 
-          # Unique constants with a small instruction context.
           seen=set()
           print('===== OFFSET-LIKE CONSTANTS (MOVZ/MOVK) =====')
           for val,idx,reg in candidates:
               key=(val,insns[idx].address)
               if key in seen: continue
               seen.add(key)
-              # Prioritize values likely to be MAIN offsets.
               if val < 0x00200000 and val not in known:
                   continue
               lo=max(0,idx-4); hi=min(len(insns),idx+6)
@@ -149,8 +145,6 @@ jobs:
               for x in insns[lo:hi]:
                   print(f'  {x.address:08X}: {x.mnemonic:8s} {x.op_str}')
 
-          # Dump instruction windows around every literal-load/compare of exact known offsets
-          # if the compiler emitted them directly.
           print('===== IMMEDIATE REFERENCES NEAR KNOWN VALUES =====')
           for idx,ins in enumerate(insns):
               textline=f'{ins.mnemonic} {ins.op_str}'.lower()
@@ -161,3 +155,5 @@ jobs:
                           print(f'  {x.address:08X}: {x.mnemonic:8s} {x.op_str}')
           PY
           python3 /tmp/inspect_nso.py
+
+# rerun 2026-09-11 direct touch diagnosis
