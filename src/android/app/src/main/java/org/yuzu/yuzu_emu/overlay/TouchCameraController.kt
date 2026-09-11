@@ -86,8 +86,7 @@ class TouchCameraController {
 
         // Keep the same perceived speed on 60/120/240 Hz touch panels.
         val sampleScale = REFERENCE_SAMPLE_MILLIS / elapsedMillis.toFloat()
-        val sensitivity = BASE_SENSITIVITY *
-            (sensitivityLevel.toFloat() / DEFAULT_SENSITIVITY_LEVEL.toFloat())
+        val sensitivity = BASE_SENSITIVITY * calculateSensitivityMultiplier(sensitivityLevel)
         val accelerationGain = calculateAccelerationGain(deltaX, deltaY, sampleScale)
 
         val xDirection = if (invertX) -1f else 1f
@@ -111,6 +110,24 @@ class TouchCameraController {
         xAxis = xAxis.coerceIn(-1f, 1f)
         yAxis = yAxis.coerceIn(-1f, 1f)
         return true
+    }
+
+    private fun calculateSensitivityMultiplier(level: Int): Float {
+        val clampedLevel = level.coerceIn(MIN_SENSITIVITY_LEVEL, MAX_SENSITIVITY_LEVEL)
+
+        // Keep levels 1..10 bit-for-bit compatible with Build #247 so existing configs do not
+        // suddenly become slower or faster after upgrading. Levels 11..100 extend the range
+        // smoothly up to four times the previous maximum sensitivity.
+        if (clampedLevel <= LEGACY_MAX_SENSITIVITY_LEVEL) {
+            return clampedLevel.toFloat() / DEFAULT_SENSITIVITY_LEVEL.toFloat()
+        }
+
+        val extendedProgress =
+            (clampedLevel - LEGACY_MAX_SENSITIVITY_LEVEL).toFloat() /
+                (MAX_SENSITIVITY_LEVEL - LEGACY_MAX_SENSITIVITY_LEVEL).toFloat()
+        return LEGACY_MAX_SENSITIVITY_MULTIPLIER +
+            (EXTENDED_MAX_SENSITIVITY_MULTIPLIER - LEGACY_MAX_SENSITIVITY_MULTIPLIER) *
+                extendedProgress
     }
 
     private fun calculateAccelerationGain(deltaX: Float, deltaY: Float, sampleScale: Float): Float {
@@ -151,7 +168,7 @@ class TouchCameraController {
 
     companion object {
         const val MIN_SENSITIVITY_LEVEL = 1
-        const val MAX_SENSITIVITY_LEVEL = 10
+        const val MAX_SENSITIVITY_LEVEL = 100
         const val DEFAULT_SENSITIVITY_LEVEL = 5
 
         private const val INVALID_POINTER_ID = -1
@@ -159,6 +176,10 @@ class TouchCameraController {
         private const val REFERENCE_SAMPLE_MILLIS = 16f
         private const val MIN_SAMPLE_INTERVAL_MILLIS = 4L
         private const val MAX_SAMPLE_INTERVAL_MILLIS = 32L
+
+        private const val LEGACY_MAX_SENSITIVITY_LEVEL = 10
+        private const val LEGACY_MAX_SENSITIVITY_MULTIPLIER = 2f
+        private const val EXTENDED_MAX_SENSITIVITY_MULTIPLIER = 8f
 
         private const val ACCELERATION_START_DISTANCE = 4f
         private const val ACCELERATION_FULL_DISTANCE = 24f
