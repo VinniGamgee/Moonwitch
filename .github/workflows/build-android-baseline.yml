@@ -128,7 +128,7 @@ jobs:
           grep -q "MoonwitchFindTouchBridge" src/android/app/src/main/jni/native_input.cpp
           grep -q "MoonwitchPublishTouchBridge" src/android/app/src/main/jni/native_input.cpp
           grep -q "GetAliasCodeRegionStart" src/android/app/src/main/jni/native_input.cpp
-          grep -q "ApplicationMemory().WriteBlock" src/android/app/src/main/jni/native_input.cpp
+          grep -q "memory.WriteBlock" src/android/app/src/main/jni/native_input.cpp
           if sed -n '/MOONWITCH_NATIVE_TOUCH_CAMERA_BEGIN/,/MOONWITCH_NATIVE_TOUCH_CAMERA_END/p' src/android/app/src/main/jni/native_input.cpp | grep -Eq 'VirtualGamepad|Npad|RightStick|SetStickPosition|AnalogStick'; then
             echo "TouchLook bridge v2 contains a gamepad camera path; refusing to build."
             exit 1
