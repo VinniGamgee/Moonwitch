@@ -1,16 +1,16 @@
-name: Moonwitch Reference Layout
+name: Moonwitch #244 Color Grading
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - exp/moonwitch-reference-layout-build200
+      - exp/color-grading-build244
 
 permissions:
   contents: read
 
 concurrency:
-  group: moonwitch-reference-layout-${{ github.ref }}
+  group: moonwitch-color-grading-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -45,6 +45,17 @@ jobs:
           grep -q "Moonwitch Reconstruction Stage 2" src/video_core/renderer_vulkan/present/layer.cpp
           grep -q "target_scale > render_scale" src/video_core/renderer_vulkan/present/layer.cpp
           grep -q "sr_filter.emplace<SGSR>(device, memory_allocator, image_count, output_size, true)" src/video_core/renderer_vulkan/present/layer.cpp
+          git diff --check
+
+      - name: Apply Moonwitch Color Grading
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_moonwitch_color_grading.py
+          grep -q "moonwitch_color_grading_mode" src/common/settings.h
+          grep -q "class MoonwitchColorGrading final" src/video_core/renderer_vulkan/present/color_grading.h
+          grep -q "MOONWITCH_COLOR_GRADING_MODE" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/IntSetting.kt
+          grep -q "moonwitchColorGradingNames" src/android/app/src/main/res/values/arrays.xml
+          grep -q "moonwitch_color_grading.frag" src/video_core/host_shaders/CMakeLists.txt
           git diff --check
 
       - name: Guard Moonwitch core features
@@ -169,7 +180,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-REFERENCE-LAYOUT
+          name: MOONWITCH-244-COLOR-GRADING
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7
