@@ -79,7 +79,7 @@ jobs:
           grep -q "MOONWITCH_SAFE_GPU_BARRIERS_MODE" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/IntSetting.kt
           grep -q "moonwitchSafeGpuBarrierNames" src/android/app/src/main/res/values/arrays.xml
           grep -q "IntSetting.MOONWITCH_SAFE_GPU_BARRIERS_MODE" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/EmulationFragment.kt
-          grep -q "mw_graphics_fixes_header" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/SettingsFragmentPresenter.kt
+          grep -q "mw_graphics_fixes_header" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/ui/SettingsFragmentPresenter.kt
           git diff --check
 
       - name: Guard Moonwitch core features
