@@ -1,16 +1,16 @@
-name: Moonwitch Color Grading Quick Settings + HDR+
+name: Moonwitch Safe GPU Barriers
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - exp/color-grading-quick-settings-hdr
+      - exp/safe-gpu-barriers-build271
 
 permissions:
   contents: read
 
 concurrency:
-  group: moonwitch-color-grading-quick-hdr-${{ github.ref }}
+  group: moonwitch-safe-gpu-barriers-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -60,6 +60,26 @@ jobs:
           grep -q "mw_color_grading_hdr_plus" src/android/app/src/main/res/values/arrays.xml
           grep -q "IntSetting.MOONWITCH_COLOR_GRADING_MODE" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/EmulationFragment.kt
           grep -q "IntSetting.MOONWITCH_COLOR_GRADING_STRENGTH" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/EmulationFragment.kt
+          git diff --check
+
+      - name: Apply Moonwitch Safe GPU Barriers core
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_moonwitch_safe_gpu_barriers_core.py
+          grep -q "moonwitch_safe_gpu_barriers_mode" src/common/settings.h
+          grep -q "ApplyMoonwitchGpuBarrier" src/video_core/renderer_vulkan/vk_rasterizer.cpp
+          grep -q "VK_PIPELINE_STAGE_ALL_COMMANDS_BIT" src/video_core/renderer_vulkan/vk_rasterizer.cpp
+          grep -q "VK_DEPENDENCY_BY_REGION_BIT" src/video_core/renderer_vulkan/vk_rasterizer.cpp
+          git diff --check
+
+      - name: Apply Moonwitch Safe GPU Barriers Android UI
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_moonwitch_safe_gpu_barriers_android.py
+          grep -q "MOONWITCH_SAFE_GPU_BARRIERS_MODE" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/IntSetting.kt
+          grep -q "moonwitchSafeGpuBarrierNames" src/android/app/src/main/res/values/arrays.xml
+          grep -q "IntSetting.MOONWITCH_SAFE_GPU_BARRIERS_MODE" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/EmulationFragment.kt
+          grep -q "mw_graphics_fixes_header" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/SettingsFragmentPresenter.kt
           git diff --check
 
       - name: Guard Moonwitch core features
@@ -184,7 +204,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-COLOR-GRADING-QUICK-HDR
+          name: MOONWITCH-SAFE-GPU-BARRIERS
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7
