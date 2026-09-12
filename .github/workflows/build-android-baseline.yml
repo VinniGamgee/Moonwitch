@@ -1,10 +1,11 @@
-name: Moonwitch Reference Layout
+name: Moonwitch #244 TOTK SYNC-A
 
 on:
   workflow_dispatch:
   push:
     branches:
       - exp/moonwitch-reference-layout-build200
+      - exp/totk-sync-a-build244
 
 permissions:
   contents: read
@@ -47,13 +48,23 @@ jobs:
           grep -q "sr_filter.emplace<SGSR>(device, memory_allocator, image_count, output_size, true)" src/video_core/renderer_vulkan/present/layer.cpp
           git diff --check
 
-      - name: Guard Moonwitch core features
+      - name: Guard Moonwitch #244 and TOTK SYNC-A
         shell: bash
         run: |
           if ! grep -q "TOTK_PROGRAM_ID" src/video_core/renderer_vulkan/vk_rasterizer.cpp; then
             echo "TOTK foliage workaround is missing; refusing to build."
             exit 1
           fi
+          if grep -Fq "totk_compute_may_write_guest_memory" src/video_core/renderer_vulkan/vk_rasterizer.cpp; then
+            echo "TOTK SYNC-A write-metadata pruning is active; refusing diagnostic build."
+            exit 1
+          fi
+          if grep -Fq "MayWriteGuestMemory() const noexcept" src/video_core/renderer_vulkan/vk_compute_pipeline.h; then
+            echo "TOTK SYNC-A v2 predicate is active; refusing diagnostic build."
+            exit 1
+          fi
+          grep -Fq "[this, apply_totk_compute_visibility_workaround] {" src/video_core/renderer_vulkan/vk_rasterizer.cpp
+          test "$(grep -Fc "record_totk_compute_visibility_barrier();" src/video_core/renderer_vulkan/vk_rasterizer.cpp)" -eq 2
           grep -q "moonwitch_reconstruction" src/common/settings.h
           grep -q "reconstruction_bias" src/video_core/renderer_vulkan/vk_texture_cache.cpp
           grep -q "MOONWITCH_RECONSTRUCTION" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/BooleanSetting.kt
@@ -169,7 +180,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-REFERENCE-LAYOUT
+          name: MOONWITCH-244-TOTK-SYNC-A
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7
