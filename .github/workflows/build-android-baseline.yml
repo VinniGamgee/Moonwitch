@@ -1,16 +1,16 @@
-name: Moonwitch #244 Color Grading
+name: Moonwitch Color Grading Quick Settings + HDR+
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - exp/color-grading-build244
+      - exp/color-grading-quick-settings-hdr
 
 permissions:
   contents: read
 
 concurrency:
-  group: moonwitch-color-grading-${{ github.ref }}
+  group: moonwitch-color-grading-quick-hdr-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -56,6 +56,10 @@ jobs:
           grep -q "MOONWITCH_COLOR_GRADING_MODE" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/IntSetting.kt
           grep -q "moonwitchColorGradingNames" src/android/app/src/main/res/values/arrays.xml
           grep -q "moonwitch_color_grading.frag" src/video_core/host_shaders/CMakeLists.txt
+          grep -q "mode == 8" src/video_core/host_shaders/moonwitch_color_grading.frag
+          grep -q "mw_color_grading_hdr_plus" src/android/app/src/main/res/values/arrays.xml
+          grep -q "IntSetting.MOONWITCH_COLOR_GRADING_MODE" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/EmulationFragment.kt
+          grep -q "IntSetting.MOONWITCH_COLOR_GRADING_STRENGTH" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/EmulationFragment.kt
           git diff --check
 
       - name: Guard Moonwitch core features
@@ -180,7 +184,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-244-COLOR-GRADING
+          name: MOONWITCH-COLOR-GRADING-QUICK-HDR
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7
