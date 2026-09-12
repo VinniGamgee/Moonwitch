@@ -43,6 +43,9 @@ presenter = root / (
     "src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/ui/"
     "SettingsFragmentPresenter.kt"
 )
+emulation_fragment = root / (
+    "src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/EmulationFragment.kt"
+)
 arrays_xml = root / "src/android/app/src/main/res/values/arrays.xml"
 strings_xml = root / "src/android/app/src/main/res/values/strings.xml"
 strings_pt_xml = root / "src/android/app/src/main/res/values-pt-rBR/strings.xml"
@@ -58,7 +61,7 @@ replace_once(
     '    // Moonwitch Color Grading is independent from the window scaling filter. Mode 0 keeps\n'
     '    // the pass disabled, so the default path has no additional GPU work.\n'
     '    SwitchableSetting<int, true> moonwitch_color_grading_mode{\n'
-    '        linkage, 0, 0, 7, "moonwitch_color_grading_mode", Category::Renderer,\n'
+    '        linkage, 0, 0, 8, "moonwitch_color_grading_mode", Category::Renderer,\n'
     '        Specialization::Default, true, true};\n'
     '    SwitchableSetting<int, true> moonwitch_color_grading_strength{\n'
     '        linkage, 100, 0, 100, "moonwitch_color_grading_strength", Category::Renderer,\n'
@@ -152,6 +155,7 @@ replace_once(
         <item>@string/mw_color_grading_cool</item>
         <item>@string/mw_color_grading_moonlight</item>
         <item>@string/mw_color_grading_monochrome</item>
+        <item>@string/mw_color_grading_hdr_plus</item>
     </string-array>
 
     <integer-array name="moonwitchColorGradingValues">
@@ -163,6 +167,7 @@ replace_once(
         <item>5</item>
         <item>6</item>
         <item>7</item>
+        <item>8</item>
     </integer-array>
 
     <string-array name="statsPosition">
@@ -188,6 +193,7 @@ replace_once(
     <string name="mw_color_grading_cool">Cool</string>
     <string name="mw_color_grading_moonlight">Moonlight</string>
     <string name="mw_color_grading_monochrome">Monochrome</string>
+    <string name="mw_color_grading_hdr_plus">HDR+</string>
 
     <!-- Screen Layouts -->
 """,
@@ -212,6 +218,7 @@ replace_once(
     <string name="mw_color_grading_cool">Frio</string>
     <string name="mw_color_grading_moonlight">Luar</string>
     <string name="mw_color_grading_monochrome">Monocromático</string>
+    <string name="mw_color_grading_hdr_plus">HDR+</string>
 
     <!-- Screen Layouts -->
 """,
@@ -237,6 +244,47 @@ replace_once(
     "    ${CMAKE_CURRENT_SOURCE_DIR}/vulkan_present.frag\n",
     "moonwitch_color_grading.frag",
     "register host shader",
+)
+
+replace_once(
+    emulation_fragment,
+    """            quickSettings.addIntSetting(
+                R.string.renderer_anti_aliasing,
+                container,
+                IntSetting.RENDERER_ANTI_ALIASING,
+                R.array.rendererAntiAliasingNames,
+                R.array.rendererAntiAliasingValues
+            )
+""",
+    """            quickSettings.addIntSetting(
+                R.string.renderer_anti_aliasing,
+                container,
+                IntSetting.RENDERER_ANTI_ALIASING,
+                R.array.rendererAntiAliasingNames,
+                R.array.rendererAntiAliasingValues
+            )
+
+            quickSettings.addDivider(container)
+
+            quickSettings.addIntSetting(
+                R.string.mw_color_grading_title,
+                container,
+                IntSetting.MOONWITCH_COLOR_GRADING_MODE,
+                R.array.moonwitchColorGradingNames,
+                R.array.moonwitchColorGradingValues
+            )
+
+            quickSettings.addSliderSetting(
+                R.string.mw_color_grading_strength,
+                container,
+                IntSetting.MOONWITCH_COLOR_GRADING_STRENGTH,
+                minValue = 0,
+                maxValue = 100,
+                units = "%"
+            )
+""",
+    "IntSetting.MOONWITCH_COLOR_GRADING_MODE",
+    "add live Quick Settings controls",
 )
 
 replace_once(
@@ -506,7 +554,7 @@ write_new(
                                                 VkImageView source_image_view) {
             auto& image = images[image_index];
             const s32 mode = std::clamp(
-                Settings::values.moonwitch_color_grading_mode.GetValue(), 0, 7);
+                Settings::values.moonwitch_color_grading_mode.GetValue(), 0, 8);
             const f32 strength = std::clamp(
                 static_cast<f32>(Settings::values.moonwitch_color_grading_strength.GetValue()) /
                     100.0f,
@@ -627,6 +675,16 @@ write_new(
             } else if (mode == 7) {
                 // Monochrome: neutral luminance with a little extra definition.
                 result = change_contrast(vec3(luminance), 1.07);
+            } else if (mode == 8) {
+                // HDR+: SDR-safe tone shaping that reveals shadow and highlight detail.
+                float mapped_luminance = luminance +
+                    0.72 * luminance * (1.0 - luminance) * (0.52 - luminance);
+                float luminance_gain = mapped_luminance / max(luminance, 0.0001);
+                result = source * luminance_gain;
+                result = change_contrast(result, 1.04);
+                result = change_saturation(result, 1.10);
+                float highlights = smoothstep(0.62, 1.0, luminance);
+                result = mix(result, result / (0.92 + 0.08 * result), 0.28 * highlights);
             }
 
             return clamp(result, 0.0, 1.0);
@@ -644,5 +702,5 @@ write_new(
 )
 
 print(
-    "Applied Moonwitch Color Grading: independent Vulkan pass, eight presets and live strength."
+    "Applied Moonwitch Color Grading: nine presets, HDR+ and live Quick Settings controls."
 )
