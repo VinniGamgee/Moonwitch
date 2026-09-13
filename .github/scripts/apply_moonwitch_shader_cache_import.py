@@ -223,6 +223,36 @@ bool CopyCacheBytes(std::ifstream& input, std::ofstream& output, u64 bytes) {
     return true;
 }
 
+u32 ReadLittleEndianU32(std::span<const char> data, size_t offset) {
+    return static_cast<u32>(static_cast<u8>(data[offset])) |
+           (static_cast<u32>(static_cast<u8>(data[offset + 1])) << 8) |
+           (static_cast<u32>(static_cast<u8>(data[offset + 2])) << 16) |
+           (static_cast<u32>(static_cast<u8>(data[offset + 3])) << 24);
+}
+
+bool IsVulkanDriverCacheCompatible(const Device& device, std::span<const char> data) {
+    if (data.empty()) {
+        return true;
+    }
+    constexpr size_t VULKAN_HEADER_SIZE = 32;
+    if (data.size() < VULKAN_HEADER_SIZE ||
+        ReadLittleEndianU32(data, 0) != VULKAN_HEADER_SIZE ||
+        ReadLittleEndianU32(data, 4) != VK_PIPELINE_CACHE_HEADER_VERSION_ONE) {
+        return false;
+    }
+
+    const auto properties{device.GetPhysical().GetProperties()};
+    if (ReadLittleEndianU32(data, 8) != properties.vendorID ||
+        ReadLittleEndianU32(data, 12) != properties.deviceID) {
+        return false;
+    }
+    return std::equal(data.begin() + 16, data.begin() + VULKAN_HEADER_SIZE,
+                      properties.pipelineCacheUUID,
+                      [](char cached, u8 current) {
+                          return static_cast<u8>(cached) == current;
+                      });
+}
+
 bool MigrateTransferableCacheV18(const std::filesystem::path& filename,
                                  u64 shader_precision_mode) {
     std::ifstream input(filename, std::ios::binary | std::ios::ate);
@@ -457,6 +487,26 @@ replace_once(
     new_driver_rejection,
     'QuarantineCacheFile(filename, ".driver-incompatible.bak"',
     "preserve rejected Vulkan driver cache",
+)
+
+
+replace_once(
+    pipeline_cache,
+    "        std::vector<char> cache_data(cache_size);\n"
+    "        file.read(cache_data.data(), cache_size);\n\n"
+    "        LOG_INFO(Render_Vulkan,\n",
+    "        std::vector<char> cache_data(cache_size);\n"
+    "        file.read(cache_data.data(), cache_size);\n"
+    "        if (!IsVulkanDriverCacheCompatible(\n"
+    "                device, std::span<const char>{cache_data.data(), cache_data.size()})) {\n"
+    "            file.close();\n"
+    "            QuarantineCacheFile(filename, \".driver-foreign.bak\",\n"
+    "                                \"Vulkan cache belongs to another GPU or driver\");\n"
+    "            return create_pipeline_cache(0, nullptr);\n"
+    "        }\n\n"
+    "        LOG_INFO(Render_Vulkan,\n",
+    'QuarantineCacheFile(filename, ".driver-foreign.bak"',
+    "validate Vulkan vendor, device and pipeline UUID",
 )
 
 
