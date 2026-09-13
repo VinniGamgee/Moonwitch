@@ -1,16 +1,16 @@
-name: Moonwitch Render Target Init/Alias Guard
+name: Moonwitch Texture Coherency
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - exp/render-target-guard-build274
+      - exp/texture-coherency-build276
 
 permissions:
   contents: read
 
 concurrency:
-  group: moonwitch-render-target-guard-${{ github.ref }}
+  group: moonwitch-texture-coherency-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -101,6 +101,28 @@ jobs:
           grep -q "mw_render_target_guard_title" src/android/app/src/main/res/values/strings.xml
           grep -q "BooleanSetting.MOONWITCH_RENDER_TARGET_INIT_ALIAS_GUARD" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/EmulationFragment.kt
           grep -q "MOONWITCH_RENDER_TARGET_INIT_ALIAS_GUARD.key" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/ui/SettingsFragmentPresenter.kt
+          git diff --check
+
+      - name: Apply Moonwitch Texture Coherency core
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_moonwitch_texture_coherency_core.py
+          grep -q "moonwitch_texture_coherency" src/common/settings.h
+          grep -q "runtime.ApplyTextureCoherency" src/video_core/texture_cache/texture_cache.h
+          grep -q "NeedsMoonwitchTextureCoherency" src/video_core/renderer_vulkan/vk_texture_cache.h
+          grep -q "Moonwitch Texture Coherency enabled" src/video_core/renderer_vulkan/vk_texture_cache.cpp
+          grep -q "VK_ACCESS_SHADER_READ_BIT" src/video_core/renderer_vulkan/vk_texture_cache.cpp
+          grep -q "ApplyTextureCoherency" src/video_core/renderer_opengl/gl_texture_cache.h
+          git diff --check
+
+      - name: Apply Moonwitch Texture Coherency Android UI
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_moonwitch_texture_coherency_android.py
+          grep -q "MOONWITCH_TEXTURE_COHERENCY" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/BooleanSetting.kt
+          grep -q "mw_texture_coherency_title" src/android/app/src/main/res/values/strings.xml
+          grep -q "BooleanSetting.MOONWITCH_TEXTURE_COHERENCY" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/EmulationFragment.kt
+          grep -q "MOONWITCH_TEXTURE_COHERENCY.key" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/ui/SettingsFragmentPresenter.kt
           git diff --check
 
       - name: Guard Moonwitch core features
@@ -225,7 +247,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-RENDER-TARGET-GUARD
+          name: MOONWITCH-TEXTURE-COHERENCY
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7
