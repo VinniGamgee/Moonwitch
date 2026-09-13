@@ -1,16 +1,16 @@
-name: Moonwitch Maximum Compatibility
+name: Moonwitch External Shader Cache Import
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - exp/maximum-compatibility-build278
+      - exp/external-shader-cache-import-build279
 
 permissions:
   contents: read
 
 concurrency:
-  group: moonwitch-maximum-compatibility-${{ github.ref }}
+  group: moonwitch-shader-cache-import-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -170,6 +170,17 @@ jobs:
           grep -Fq "BooleanSetting.MOONWITCH_MAXIMUM_COMPATIBILITY" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/EmulationFragment.kt
           git diff --check
 
+      - name: Apply Moonwitch External Shader Cache Import
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_moonwitch_shader_cache_import.py
+          grep -Fq "MigrateTransferableCacheV18" src/video_core/renderer_vulkan/vk_pipeline_cache.cpp
+          grep -Fq "PrepareTransferablePipelineCache(pipeline_cache_filename)" src/video_core/renderer_vulkan/vk_pipeline_cache.cpp
+          grep -Fq ".v18.migration-failed.bak" src/video_core/renderer_vulkan/vk_pipeline_cache.cpp
+          grep -Fq "GPU or driver rejected Vulkan pipeline data" src/video_core/renderer_vulkan/vk_pipeline_cache.cpp
+          grep -Fq "constexpr u32 CACHE_VERSION = 19" src/video_core/renderer_vulkan/vk_pipeline_cache.cpp
+          git diff --check
+
       - name: Guard Moonwitch core features
         shell: bash
         run: |
@@ -292,7 +303,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-MAXIMUM-COMPATIBILITY
+          name: MOONWITCH-EXTERNAL-SHADER-CACHE-IMPORT
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7
