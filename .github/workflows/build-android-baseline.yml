@@ -1,16 +1,16 @@
-name: Moonwitch Maximum Compatibility
+name: Moonwitch Unleashed
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - exp/maximum-compatibility-build278
+      - exp/moonwitch-unleashed
 
 permissions:
   contents: read
 
 concurrency:
-  group: moonwitch-maximum-compatibility-${{ github.ref }}
+  group: moonwitch-unleashed-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -170,6 +170,31 @@ jobs:
           grep -Fq "BooleanSetting.MOONWITCH_MAXIMUM_COMPATIBILITY" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/EmulationFragment.kt
           git diff --check
 
+      - name: Apply Moonwitch Unleashed core
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_moonwitch_unleashed_core.py
+          grep -Fq "moonwitch_unleashed" src/common/settings.h
+          grep -Fq "SYS_sched_setattr" src/common/moonwitch_unleashed.cpp
+          grep -Fq "BASE_UTIL_MIN = 768" src/common/moonwitch_unleashed.cpp
+          grep -Fq "BURST_UTIL_MIN = 922" src/common/moonwitch_unleashed.cpp
+          grep -Fq "ThreadRole::CPUCore" src/core/cpu_manager.cpp
+          grep -Fq "ThreadRole::GPU" src/video_core/gpu_thread.cpp
+          grep -Fq "ThreadRole::VulkanWorker" src/video_core/renderer_vulkan/vk_scheduler.cpp
+          grep -Fq "MoonwitchUnleashed::EndSession" src/core/core.cpp
+          git diff --check
+
+      - name: Apply Moonwitch Unleashed Android UI
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_moonwitch_unleashed_android.py
+          grep -Fq "MOONWITCH_UNLEASHED" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/BooleanSetting.kt
+          grep -Fq "SECTION_MOONWITCH_UNLEASHED" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/Settings.kt
+          grep -Fq "unleashedAppliedThreads" src/android/app/src/main/java/org/yuzu/yuzu_emu/utils/PerformanceLabNative.kt
+          grep -Fq "UNLEASHED | PARTIAL" src/android/app/src/main/java/org/yuzu/yuzu_emu/views/PerformanceLabOverlayView.kt
+          grep -Fq "BooleanSetting.MOONWITCH_UNLEASHED" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/EmulationFragment.kt
+          git diff --check
+
       - name: Guard Moonwitch core features
         shell: bash
         run: |
@@ -292,7 +317,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-MAXIMUM-COMPATIBILITY
+          name: MOONWITCH-UNLEASHED
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7
