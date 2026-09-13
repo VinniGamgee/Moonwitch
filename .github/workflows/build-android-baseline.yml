@@ -1,16 +1,16 @@
-name: Moonwitch Safe GPU Barriers
+name: Moonwitch Render Target Init/Alias Guard
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - exp/safe-gpu-barriers-build271
+      - exp/render-target-guard-build274
 
 permissions:
   contents: read
 
 concurrency:
-  group: moonwitch-safe-gpu-barriers-${{ github.ref }}
+  group: moonwitch-render-target-guard-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -80,6 +80,27 @@ jobs:
           grep -q "moonwitchSafeGpuBarrierNames" src/android/app/src/main/res/values/arrays.xml
           grep -q "IntSetting.MOONWITCH_SAFE_GPU_BARRIERS_MODE" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/EmulationFragment.kt
           grep -q "mw_graphics_fixes_header" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/ui/SettingsFragmentPresenter.kt
+          git diff --check
+
+      - name: Apply Moonwitch Render Target Guard core
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_moonwitch_render_target_guard_core.py
+          grep -q "moonwitch_render_target_init_alias_guard" src/common/settings.h
+          grep -q "ApplyRenderTargetInitAliasGuard" src/video_core/texture_cache/texture_cache.h
+          grep -q "ApplyRenderTargetInitAliasGuard" src/video_core/renderer_vulkan/vk_texture_cache.cpp
+          grep -q "moonwitch_rt_alias_barriers" src/video_core/renderer_vulkan/vk_texture_cache.h
+          grep -q "ApplyRenderTargetInitAliasGuard" src/video_core/renderer_opengl/gl_texture_cache.h
+          git diff --check
+
+      - name: Apply Moonwitch Render Target Guard Android UI
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_moonwitch_render_target_guard_android.py
+          grep -q "MOONWITCH_RENDER_TARGET_INIT_ALIAS_GUARD" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/BooleanSetting.kt
+          grep -q "mw_render_target_guard_title" src/android/app/src/main/res/values/strings.xml
+          grep -q "BooleanSetting.MOONWITCH_RENDER_TARGET_INIT_ALIAS_GUARD" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/EmulationFragment.kt
+          grep -q "MOONWITCH_RENDER_TARGET_INIT_ALIAS_GUARD.key" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/ui/SettingsFragmentPresenter.kt
           git diff --check
 
       - name: Guard Moonwitch core features
@@ -204,7 +225,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-SAFE-GPU-BARRIERS
+          name: MOONWITCH-RENDER-TARGET-GUARD
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7
