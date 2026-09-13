@@ -1,16 +1,16 @@
-name: Moonwitch Texture Coherency
+name: Moonwitch Selective Shader Precision
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - exp/texture-coherency-build276
+      - exp/selective-shader-precision-build277
 
 permissions:
   contents: read
 
 concurrency:
-  group: moonwitch-texture-coherency-${{ github.ref }}
+  group: moonwitch-shader-precision-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -123,6 +123,29 @@ jobs:
           grep -q "mw_texture_coherency_title" src/android/app/src/main/res/values/strings.xml
           grep -q "BooleanSetting.MOONWITCH_TEXTURE_COHERENCY" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/EmulationFragment.kt
           grep -q "MOONWITCH_TEXTURE_COHERENCY.key" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/ui/SettingsFragmentPresenter.kt
+          git diff --check
+
+      - name: Apply Moonwitch Selective Shader Precision core
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_moonwitch_shader_precision_core.py
+          grep -Fq "moonwitch_shader_precision_mode" src/common/settings.h
+          grep -Fq "ShouldForceNoContraction" src/shader_recompiler/backend/spirv/emit_spirv_floating_point.cpp
+          grep -Fq "ShouldKeepRelaxedPrecision" src/shader_recompiler/backend/spirv/emit_spirv_image.cpp
+          grep -Fq "sizeof(moonwitch_shader_precision_mode)" src/video_core/renderer_vulkan/vk_graphics_pipeline.h
+          grep -Fq ".moonwitch_shader_precision_mode = CurrentShaderPrecisionMode()" src/video_core/renderer_vulkan/vk_pipeline_cache.cpp
+          grep -Fq "constexpr u32 CACHE_VERSION = 19" src/video_core/renderer_vulkan/vk_pipeline_cache.cpp
+          git diff --check
+
+      - name: Apply Moonwitch Selective Shader Precision Android UI
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_moonwitch_shader_precision_android.py
+          grep -Fq "MOONWITCH_SHADER_PRECISION_MODE" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/IntSetting.kt
+          grep -Fq "moonwitchShaderPrecisionNames" src/android/app/src/main/res/values/arrays.xml
+          grep -Fq "IntSetting.MOONWITCH_SHADER_PRECISION_MODE" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/view/SettingsItem.kt
+          grep -Fq "MOONWITCH_SHADER_PRECISION_MODE.key" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/ui/SettingsFragmentPresenter.kt
+          grep -Fq "IntSetting.MOONWITCH_SHADER_PRECISION_MODE" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/EmulationFragment.kt
           git diff --check
 
       - name: Guard Moonwitch core features
@@ -247,7 +270,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-TEXTURE-COHERENCY
+          name: MOONWITCH-SHADER-PRECISION
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7
