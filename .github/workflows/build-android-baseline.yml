@@ -1,16 +1,16 @@
-name: Moonwitch Selective Shader Precision
+name: Moonwitch Maximum Compatibility
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - exp/selective-shader-precision-build277
+      - exp/maximum-compatibility-build278
 
 permissions:
   contents: read
 
 concurrency:
-  group: moonwitch-shader-precision-${{ github.ref }}
+  group: moonwitch-maximum-compatibility-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -148,6 +148,28 @@ jobs:
           grep -Fq "IntSetting.MOONWITCH_SHADER_PRECISION_MODE" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/EmulationFragment.kt
           git diff --check
 
+      - name: Apply Moonwitch Maximum Compatibility core
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_moonwitch_maximum_compatibility_core.py
+          grep -Fq "moonwitch_maximum_compatibility" src/common/settings.h
+          grep -Fq "maximum_compatibility" src/video_core/renderer_vulkan/vk_rasterizer.cpp
+          grep -Fq "maximum_compatibility" src/video_core/texture_cache/texture_cache.h
+          grep -Fq "moonwitch_maximum_compatibility.GetValue()" src/video_core/renderer_vulkan/vk_pipeline_cache.cpp
+          grep -Fq "return 2;" src/video_core/renderer_vulkan/vk_pipeline_cache.cpp
+          git diff --check
+
+      - name: Apply Moonwitch Maximum Compatibility Android UI
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_moonwitch_maximum_compatibility_android.py
+          grep -Fq "MOONWITCH_MAXIMUM_COMPATIBILITY" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/BooleanSetting.kt
+          grep -Fq "mw_maximum_compatibility_title" src/android/app/src/main/res/values/strings.xml
+          grep -Fq "BooleanSetting.MOONWITCH_MAXIMUM_COMPATIBILITY" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/view/SettingsItem.kt
+          grep -Fq "MOONWITCH_MAXIMUM_COMPATIBILITY.key" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/ui/SettingsFragmentPresenter.kt
+          grep -Fq "BooleanSetting.MOONWITCH_MAXIMUM_COMPATIBILITY" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/EmulationFragment.kt
+          git diff --check
+
       - name: Guard Moonwitch core features
         shell: bash
         run: |
@@ -270,7 +292,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-SHADER-PRECISION
+          name: MOONWITCH-MAXIMUM-COMPATIBILITY
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7
