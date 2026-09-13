@@ -266,7 +266,7 @@ void TextureCacheRuntime::ApplyRenderTargetInitAliasGuard(Image& image,
         },
     };
     scheduler.RequestOutsideRenderPassOperationContext();
-    scheduler.Record([alias_barrier, destination_stages](vk::CommandBuffer cmdbuf) {
+    scheduler.Record([alias_barrier](vk::CommandBuffer cmdbuf) {
         cmdbuf.PipelineBarrier(vk::PIPELINE_STAGE_GRAPHICS_COMPUTE_TRANSFER,
                                destination_stages, 0, alias_barrier);
     });
