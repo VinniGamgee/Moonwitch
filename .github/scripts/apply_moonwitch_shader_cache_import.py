@@ -385,7 +385,11 @@ bool MigrateTransferableCacheV18(const std::filesystem::path& filename,
         return false;
     }
     if (!Common::FS::RenameFile(temporary, filename)) {
-        Common::FS::RenameFile(backup, filename);
+        if (!Common::FS::RenameFile(backup, filename)) {
+            LOG_ERROR(Common_Filesystem,
+                      "Moonwitch failed to restore original shader cache from {}",
+                      Common::FS::PathToUTF8String(backup));
+        }
         Common::FS::RemoveFile(temporary);
         return false;
     }
