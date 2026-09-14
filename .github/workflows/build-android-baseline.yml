@@ -1,16 +1,16 @@
-name: Moonwitch Unleashed
+name: Moonwitch Core Director
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - exp/moonwitch-unleashed
+      - exp/moonwitch-core-director
 
 permissions:
   contents: read
 
 concurrency:
-  group: moonwitch-unleashed-${{ github.ref }}
+  group: moonwitch-core-director-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -195,6 +195,32 @@ jobs:
           grep -Fq "BooleanSetting.MOONWITCH_UNLEASHED" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/EmulationFragment.kt
           git diff --check
 
+      - name: Apply Moonwitch Core Director core
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_moonwitch_core_director_core.py
+          grep -Fq "moonwitch_core_director" src/common/settings.h
+          grep -Fq "DetectSnapdragon" src/common/moonwitch_core_director.cpp
+          grep -Fq "sched_setaffinity" src/common/moonwitch_core_director.cpp
+          grep -Fq "MINIMUM_PERFORMANCE_CORES = 4" src/common/moonwitch_core_director.cpp
+          grep -Fq "MoonwitchCoreDirector::ThreadRole::CPUCore" src/core/cpu_manager.cpp
+          grep -Fq "MoonwitchCoreDirector::ThreadRole::GPU" src/video_core/gpu_thread.cpp
+          grep -Fq "MoonwitchCoreDirector::ThreadRole::VulkanWorker" src/video_core/renderer_vulkan/vk_scheduler.cpp
+          grep -Fq "MoonwitchCoreDirector::Maintain" src/core/perf_stats.cpp
+          grep -Fq "MoonwitchCoreDirector::EndSession" src/core/core.cpp
+          git diff --check
+
+      - name: Apply Moonwitch Core Director Android UI
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_moonwitch_core_director_android.py
+          grep -Fq "MOONWITCH_CORE_DIRECTOR" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/BooleanSetting.kt
+          grep -Fq "SECTION_MOONWITCH_CORE_DIRECTOR" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/Settings.kt
+          grep -Fq "coreDirectorAppliedThreads" src/android/app/src/main/java/org/yuzu/yuzu_emu/utils/PerformanceLabNative.kt
+          grep -Fq "CORE DIRECTOR | ACTIVE" src/android/app/src/main/java/org/yuzu/yuzu_emu/views/PerformanceLabOverlayView.kt
+          grep -Fq "BooleanSetting.MOONWITCH_CORE_DIRECTOR" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/EmulationFragment.kt
+          git diff --check
+
       - name: Guard Moonwitch core features
         shell: bash
         run: |
@@ -317,7 +343,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-UNLEASHED
+          name: MOONWITCH-CORE-DIRECTOR
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7
