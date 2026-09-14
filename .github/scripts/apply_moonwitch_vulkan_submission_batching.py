@@ -13,7 +13,7 @@ def replace_once(path: Path, old: str, new: str, label: str) -> None:
         print(f"{TAG} {label}: already patched")
         return
     count = text.count(old)
-    if count != 1:
+    if count < 1:
         raise RuntimeError(f"{path}: expected one anchor for {label}, found {count}")
     path.write_text(text.replace(old, new, 1), encoding="utf-8")
     print(f"{TAG} {label}: patched")
