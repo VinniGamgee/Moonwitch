@@ -1,0 +1,116 @@
+name: Moonwitch Vulkan Submission Batching
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [exp/moonwitch-vulkan-batching]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Apply existing Moonwitch core stack
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_moonwitch_transparent_overlay.py
+          python3 .github/scripts/apply_vulkan_vertex_binding_perf.py
+          python3 .github/scripts/apply_moonwitch_reconstruction_stage2.py
+          python3 .github/scripts/apply_moonwitch_color_grading.py
+          python3 .github/scripts/apply_moonwitch_safe_gpu_barriers_core.py
+          python3 .github/scripts/apply_moonwitch_safe_gpu_barriers_android.py
+          python3 .github/scripts/apply_moonwitch_render_target_guard_core.py
+          python3 .github/scripts/apply_moonwitch_render_target_guard_android.py
+          python3 .github/scripts/apply_moonwitch_texture_coherency_core.py
+          python3 .github/scripts/apply_moonwitch_texture_coherency_android.py
+          python3 .github/scripts/apply_moonwitch_shader_precision_core.py
+          python3 .github/scripts/apply_moonwitch_shader_precision_android.py
+          python3 .github/scripts/apply_moonwitch_maximum_compatibility_core.py
+          python3 .github/scripts/apply_moonwitch_maximum_compatibility_android.py
+          python3 .github/scripts/apply_moonwitch_unleashed_core.py
+          python3 .github/scripts/apply_moonwitch_unleashed_android.py
+          python3 .github/scripts/apply_moonwitch_core_director_core.py
+          python3 .github/scripts/apply_moonwitch_core_director_android.py
+          python3 .github/scripts/apply_moonwitch_reference_layout.py
+          git diff --check
+
+      - name: Apply Moonwitch Vulkan Submission Batching
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_moonwitch_vulkan_submission_batching_v4.py
+          grep -Fq "upload_work_pending" src/video_core/renderer_vulkan/vk_scheduler.h
+          grep -Fq "bool has_upload_work" src/video_core/renderer_vulkan/vk_master_semaphore.h
+          grep -Fq "commandBufferInfoCount = has_upload_work ? 2u : 1u" src/video_core/renderer_vulkan/vk_master_semaphore.cpp
+          grep -Fq "commandBufferCount = has_upload_work ? 2u : 1u" src/video_core/renderer_vulkan/vk_master_semaphore.cpp
+          grep -Fq "const bool has_upload_work = upload_work_pending" src/video_core/renderer_vulkan/vk_scheduler.cpp
+          grep -Fq "if (has_upload_work)" src/video_core/renderer_vulkan/vk_scheduler.cpp
+          git diff --check
+
+      - name: Validate feature stack
+        shell: bash
+        run: |
+          grep -q "TOTK_PROGRAM_ID" src/video_core/renderer_vulkan/vk_rasterizer.cpp
+          grep -q "moonwitch_reconstruction" src/common/settings.h
+          grep -q "enum class ThreadWorkerPriority" src/common/thread_worker.h
+          grep -q "Smart Shader Pipeline v2" src/video_core/renderer_vulkan/vk_pipeline_cache.cpp
+          grep -q "Moonwitch Glass preserves the authored cyan/graphite palette" src/android/app/src/main/java/org/yuzu/yuzu_emu/overlay/InputOverlay.kt
+          grep -q "reference_layout_1536x691_v1" src/android/app/src/main/java/org/yuzu/yuzu_emu/overlay/InputOverlay.kt
+          grep -q '<integer name="BUTTON_A_X">934</integer>' src/android/app/src/main/res/values/integers.xml
+          if grep -q "setTint(Color.WHITE)" src/android/app/src/main/java/org/yuzu/yuzu_emu/overlay/InputOverlay.kt; then exit 1; fi
+          git diff --check
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y glslang-tools spirv-tools
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0" "ndk;28.2.13676358" "cmake;3.31.6"
+
+      - name: Build
+        shell: bash
+        env:
+          CCACHE: 'false'
+        run: |
+          chmod +x .ci/android/build.sh src/android/gradlew
+          set +e
+          (cd src/android && ./gradlew :app:compileMainlineReleaseKotlin --console=plain --warning-mode none) > /tmp/moonwitch-kotlin.log 2>&1
+          kotlin_status=$?
+          set -e
+          if [ "$kotlin_status" -ne 0 ]; then
+            grep -nE '(^e: |error:|FAILURE:|Execution failed|Unresolved reference|Type mismatch|Cannot infer|Expecting |CMake Error|FATAL_ERROR)' /tmp/moonwitch-kotlin.log | tail -n 220 || true
+            exit "$kotlin_status"
+          fi
+          set +e
+          .ci/android/build.sh -t standard -b Release > /tmp/moonwitch-build.log 2>&1
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            grep -nE '(^e: |error:|FAILURE:|Execution failed|Unresolved reference|Type mismatch|Cannot infer|Expecting |CMake Error|FATAL_ERROR|not found)' /tmp/moonwitch-build.log | tail -n 220 || true
+          else
+            tail -n 80 /tmp/moonwitch-build.log
+          fi
+          exit "$status"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MOONWITCH-VULKAN-BATCHING
+          path: artifacts/*.apk
+          if-no-files-found: error
+          retention-days: 7
