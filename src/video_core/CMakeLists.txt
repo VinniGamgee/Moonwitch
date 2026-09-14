@@ -162,7 +162,6 @@ add_library(video_core STATIC
     renderer_vulkan/vk_compute_pipeline.h
     renderer_vulkan/vk_descriptor_buffer.cpp
     renderer_vulkan/vk_descriptor_buffer.h
-    renderer_vulkan/vk_descriptor_buffer.h
     renderer_vulkan/vk_descriptor_pool.cpp
     renderer_vulkan/vk_descriptor_pool.h
     renderer_vulkan/vk_fence_manager.cpp
@@ -210,8 +209,6 @@ add_library(video_core STATIC
     vulkan_common/vulkan_library.h
     vulkan_common/vulkan_memory_allocator.cpp
     vulkan_common/vulkan_memory_allocator.h
-    vulkan_common/vulkan_memory_pressure_manager.cpp
-    vulkan_common/vulkan_memory_pressure_manager.h
     vulkan_common/vulkan_surface.cpp
     vulkan_common/vulkan_surface.h
     vulkan_common/vulkan_wrapper.cpp
@@ -331,21 +328,115 @@ if (ENABLE_OPENGL)
         renderer_opengl/gl_buffer_cache.h
         renderer_opengl/gl_compute_pipeline.cpp
         renderer_opengl/gl_compute_pipeline.h
+        renderer_opengl/gl_device.cpp
+        renderer_opengl/gl_device.h
+        renderer_opengl/gl_fence_manager.cpp
+        renderer_opengl/gl_fence_manager.h
+        renderer_opengl/gl_graphics_pipeline.cpp
+        renderer_opengl/gl_graphics_pipeline.h
+        renderer_opengl/gl_rasterizer.cpp
+        renderer_opengl/gl_rasterizer.h
+        renderer_opengl/gl_resource_manager.cpp
+        renderer_opengl/gl_resource_manager.h
+        renderer_opengl/gl_shader_cache.cpp
+        renderer_opengl/gl_shader_cache.h
+        renderer_opengl/gl_shader_manager.cpp
+        renderer_opengl/gl_shader_manager.h
+        renderer_opengl/gl_shader_context.h
+        renderer_opengl/gl_shader_util.cpp
+        renderer_opengl/gl_shader_util.h
+        renderer_opengl/gl_state_tracker.cpp
+        renderer_opengl/gl_state_tracker.h
+        renderer_opengl/gl_staging_buffer_pool.cpp
+        renderer_opengl/gl_staging_buffer_pool.h
+        renderer_opengl/gl_texture_cache.cpp
+        renderer_opengl/gl_texture_cache.h
+        renderer_opengl/gl_texture_cache_base.cpp
+        renderer_opengl/gl_query_cache.cpp
+        renderer_opengl/gl_query_cache.h
+        renderer_opengl/maxwell_to_gl.h
+        renderer_opengl/renderer_opengl.cpp
+        renderer_opengl/renderer_opengl.h
+        renderer_opengl/util_shaders.cpp
+        renderer_opengl/util_shaders.h
     )
 endif()
 
-if (ENABLE_WEB_SERVICE)
-    target_sources(video_core PRIVATE renderer_vulkan/present/lsfg_gamma.cpp)
+target_link_libraries(video_core PUBLIC common core)
+target_link_libraries(video_core PUBLIC shader_recompiler stb bc_decoder gpu_logging)
+if (ENABLE_OPENGL)
+    target_link_libraries(video_core PUBLIC glad)
 endif()
 
-create_target_directory_groups(video_core)
+if (YUZU_USE_EXTERNAL_FFMPEG)
+    add_dependencies(video_core ffmpeg-build)
+endif()
+
+target_include_directories(video_core PUBLIC ${FFmpeg_INCLUDE_DIR})
+
+target_link_libraries(video_core PRIVATE ${FFmpeg_LIBRARIES})
+target_link_options(video_core PRIVATE ${FFmpeg_LDFLAGS})
+
+add_dependencies(video_core host_shaders)
+target_include_directories(video_core PRIVATE ${HOST_SHADERS_INCLUDE})
 
 target_link_libraries(video_core PRIVATE sirit::sirit)
+
+# Header-only stuff needed by all dependent targets
 target_link_libraries(video_core PUBLIC Vulkan::Headers Vulkan::UtilityHeaders GPUOpen::VulkanMemoryAllocator)
 
 if (ENABLE_NSIGHT_AFTERMATH)
     if (NOT DEFINED ENV{NSIGHT_AFTERMATH_SDK})
-        message(FATAL_ERROR "NSIGHT_AFTERMATH_SDK environment variable is not set")
+        message(FATAL_ERROR "Environment variable NSIGHT_AFTERMATH_SDK has to be provided")
     endif()
-    target_link_libraries(video_core PRIVATE GFSDK_Aftermath_Lib)
+    if (NOT WIN32)
+        message(FATAL_ERROR "Nsight Aftermath doesn't support non-Windows platforms")
+    endif()
+    target_compile_definitions(video_core PRIVATE HAS_NSIGHT_AFTERMATH)
+    target_include_directories(video_core PRIVATE "$ENV{NSIGHT_AFTERMATH_SDK}/include")
 endif()
+
+if (MSVC)
+    target_compile_options(video_core PRIVATE
+        /we4242 # 'identifier': conversion from 'type1' to 'type2', possible loss of data
+        /we4244 # 'conversion': conversion from 'type1' to 'type2', possible loss of data
+    )
+else()
+    if (APPLE)
+        # error: declaration shadows a typedef in 'interval_base_set<SubType, DomainT, Compare, Interval, Alloc>'
+        # error: implicit conversion loses integer precision: 'int' to 'boost::icl::bound_type' (aka 'unsigned char')
+        target_compile_options(video_core PRIVATE
+            $<$<COMPILE_LANGUAGE:C,CXX>:-Wno-shadow>
+            $<$<COMPILE_LANGUAGE:C,CXX>:-Wno-unused-local-typedef>)
+    else()
+        target_compile_options(video_core PRIVATE $<$<COMPILE_LANGUAGE:C,CXX>:-Wconversion>)
+    endif()
+
+    target_compile_options(video_core PRIVATE $<$<COMPILE_LANGUAGE:C,CXX>:-Wno-sign-conversion>)
+
+    # xbyak
+    set_source_files_properties(macro/macro_jit_x64.cpp PROPERTIES COMPILE_OPTIONS "-Wno-conversion;-Wno-shadow")
+
+    # Get around GCC failing with intrinsics in Debug
+    if (CXX_GCC AND CMAKE_BUILD_TYPE MATCHES "Debug")
+        set_source_files_properties(host1x/vic.cpp PROPERTIES COMPILE_OPTIONS "-O2")
+    endif()
+endif()
+
+if (ENABLE_OPENGL)
+    target_compile_definitions(video_core PUBLIC HAS_OPENGL)
+endif()
+
+if (ARCHITECTURE_x86_64)
+    target_link_libraries(video_core PUBLIC xbyak::xbyak)
+endif()
+
+if (ARCHITECTURE_x86_64 OR ARCHITECTURE_arm64)
+    target_link_libraries(video_core PRIVATE dynarmic::dynarmic)
+endif()
+
+if (ANDROID AND ARCHITECTURE_arm64)
+    target_link_libraries(video_core PRIVATE adrenotools)
+endif()
+
+create_target_directory_groups(video_core)
