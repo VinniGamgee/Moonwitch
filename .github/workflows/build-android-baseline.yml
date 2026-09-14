@@ -1,16 +1,16 @@
-name: Moonwitch Core Director
+name: Moonwitch Vulkan Submission Batching
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - exp/moonwitch-core-director
+      - exp/moonwitch-vulkan-batching
 
 permissions:
   contents: read
 
 concurrency:
-  group: moonwitch-core-director-${{ github.ref }}
+  group: moonwitch-vulkan-batching-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -26,8 +26,7 @@ jobs:
 
       - name: Apply Moonwitch Glass touch controls
         shell: bash
-        run: |
-          python3 .github/scripts/apply_moonwitch_transparent_overlay.py
+        run: python3 .github/scripts/apply_moonwitch_transparent_overlay.py
 
       - name: Apply Vulkan vertex binding optimization
         shell: bash
@@ -221,6 +220,18 @@ jobs:
           grep -Fq "BooleanSetting.MOONWITCH_CORE_DIRECTOR" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/EmulationFragment.kt
           git diff --check
 
+      - name: Apply Moonwitch Vulkan Submission Batching
+        shell: bash
+        run: |
+          python3 .github/scripts/apply_moonwitch_vulkan_submission_batching.py
+          grep -Fq "upload_work_pending" src/video_core/renderer_vulkan/vk_scheduler.h
+          grep -Fq "has_upload_work" src/video_core/renderer_vulkan/vk_master_semaphore.h
+          grep -Fq "commandBufferInfoCount = has_upload_work ? 2u : 1u" src/video_core/renderer_vulkan/vk_master_semaphore.cpp
+          grep -Fq "commandBufferCount = has_upload_work ? 2u : 1u" src/video_core/renderer_vulkan/vk_master_semaphore.cpp
+          grep -Fq "const bool has_upload_work = upload_work_pending" src/video_core/renderer_vulkan/vk_scheduler.cpp
+          grep -Fq "if (has_upload_work)" src/video_core/renderer_vulkan/vk_scheduler.cpp
+          git diff --check
+
       - name: Guard Moonwitch core features
         shell: bash
         run: |
@@ -247,7 +258,6 @@ jobs:
           grep -q "Estilo Moonwitch Glass" src/android/app/src/main/res/values-pt-rBR/moonwitch_overlay_strings.xml
           grep -q "#56101824" src/android/app/src/main/res/drawable/facebutton_home.xml
           grep -q "M26,3H77.6" src/android/app/src/main/res/drawable/facebutton_a.xml
-
           for file in \
             src/video_core/renderer_vulkan/present/sgsr2_resources.cpp \
             src/video_core/renderer_vulkan/present/sgsr2_resources.h \
@@ -265,8 +275,6 @@ jobs:
         shell: bash
         run: |
           python3 .github/scripts/apply_moonwitch_reference_layout.py
-
-          # Refuse to build unless the measured reference layout and glass renderer are active.
           grep -q '<integer name="BUTTON_A_X">934</integer>' src/android/app/src/main/res/values/integers.xml
           grep -q '<integer name="BUTTON_HOME_Y">52</integer>' src/android/app/src/main/res/values/integers.xml
           grep -q '<integer name="STICK_L_Y">774</integer>' src/android/app/src/main/res/values/integers.xml
@@ -311,12 +319,8 @@ jobs:
           CCACHE: 'false'
         run: |
           chmod +x .ci/android/build.sh src/android/gradlew
-
           set +e
-          (
-            cd src/android
-            ./gradlew :app:compileMainlineReleaseKotlin --console=plain --warning-mode none
-          ) > /tmp/moonwitch-kotlin.log 2>&1
+          (cd src/android && ./gradlew :app:compileMainlineReleaseKotlin --console=plain --warning-mode none) > /tmp/moonwitch-kotlin.log 2>&1
           kotlin_status=$?
           set -e
           if [ "$kotlin_status" -ne 0 ]; then
@@ -325,7 +329,6 @@ jobs:
             echo "===== END KOTLIN ERROR EXTRACT ====="
             exit "$kotlin_status"
           fi
-
           echo "Kotlin preflight passed; starting full Android build."
           set +e
           .ci/android/build.sh -t standard -b Release > /tmp/moonwitch-build.log 2>&1
@@ -343,7 +346,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-CORE-DIRECTOR
+          name: MOONWITCH-VULKAN-BATCHING
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 7
