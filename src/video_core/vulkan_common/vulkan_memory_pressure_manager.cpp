@@ -4,7 +4,7 @@
 #include "video_core/vulkan_common/vulkan_memory_pressure_manager.h"
 
 #include <algorithm>
-#include <limits>
+#include <vector>
 
 namespace Vulkan {
 namespace {
