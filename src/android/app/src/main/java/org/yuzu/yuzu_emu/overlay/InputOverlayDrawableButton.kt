@@ -18,15 +18,6 @@ import org.yuzu.yuzu_emu.features.settings.model.BooleanSetting
 import org.yuzu.yuzu_emu.features.settings.model.IntSetting
 import org.yuzu.yuzu_emu.overlay.model.OverlayControlData
 
-/**
- * Custom [BitmapDrawable] that is capable
- * of storing it's own ID.
- *
- * @param res                [Resources] instance.
- * @param defaultStateBitmap [Bitmap] to use with the default state Drawable.
- * @param pressedStateBitmap [Bitmap] to use with the pressed state Drawable.
- * @param button             [NativeButton] for this type of button.
- */
 class InputOverlayDrawableButton(
     res: Resources,
     defaultStateBitmap: Bitmap,
@@ -34,20 +25,15 @@ class InputOverlayDrawableButton(
     val button: NativeButton,
     val overlayControlData: OverlayControlData
 ) {
-    // The ID value what motion event is tracking
     var trackId: Int
-
-    // The drawable position on the screen
     private var buttonPositionX = 0
     private var buttonPositionY = 0
-
     val width: Int
     val height: Int
-
     private val defaultStateBitmap: BitmapDrawable
     private val pressedStateBitmap: BitmapDrawable
     private var pressedState = false
-
+    private var opacity = 255
     private var previousTouchX = 0
     private var previousTouchY = 0
     var controlPositionX = 0
@@ -61,40 +47,26 @@ class InputOverlayDrawableButton(
         height = this.defaultStateBitmap.intrinsicHeight
     }
 
-    /**
-     * Updates button status based on the motion event.
-     *
-     * @return true if value was changed
-     */
     fun updateStatus(event: MotionEvent): Boolean {
         val pointerIndex = event.actionIndex
         val xPosition = event.getX(pointerIndex).toInt()
         val yPosition = event.getY(pointerIndex).toInt()
         val pointerId = event.getPointerId(pointerIndex)
         val motionEvent = event.action and MotionEvent.ACTION_MASK
-        val isActionDown =
-            motionEvent == MotionEvent.ACTION_DOWN || motionEvent == MotionEvent.ACTION_POINTER_DOWN
-        val isActionUp =
-            motionEvent == MotionEvent.ACTION_UP || motionEvent == MotionEvent.ACTION_POINTER_UP
-
+        val isActionDown = motionEvent == MotionEvent.ACTION_DOWN || motionEvent == MotionEvent.ACTION_POINTER_DOWN
+        val isActionUp = motionEvent == MotionEvent.ACTION_UP || motionEvent == MotionEvent.ACTION_POINTER_UP
         if (isActionDown) {
-            if (!bounds.contains(xPosition, yPosition)) {
-                return false
-            }
+            if (!bounds.contains(xPosition, yPosition)) return false
             pressedState = true
             trackId = pointerId
             return true
         }
-
         if (isActionUp) {
-            if (trackId != pointerId) {
-                return false
-            }
+            if (trackId != pointerId) return false
             pressedState = false
             trackId = -1
             return true
         }
-
         return false
     }
 
@@ -104,7 +76,8 @@ class InputOverlayDrawableButton(
     }
 
     fun draw(canvas: Canvas?) {
-        currentStateBitmapDrawable.draw(canvas!!)
+        canvas ?: return
+        MoonwitchOverlayStyle.drawButton(canvas, bounds, overlayControlData.id, pressedState, opacity)
     }
 
     private val currentStateBitmapDrawable: BitmapDrawable
@@ -114,7 +87,6 @@ class InputOverlayDrawableButton(
         val pointerIndex = event.actionIndex
         val fingerPositionX = event.getX(pointerIndex).toInt()
         val fingerPositionY = event.getY(pointerIndex).toInt()
-
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 previousTouchX = fingerPositionX
@@ -122,28 +94,12 @@ class InputOverlayDrawableButton(
                 controlPositionX = fingerPositionX - (width / 2)
                 controlPositionY = fingerPositionY - (height / 2)
             }
-
             MotionEvent.ACTION_MOVE -> {
                 controlPositionX += fingerPositionX - previousTouchX
                 controlPositionY += fingerPositionY - previousTouchY
-
-                val finalX = if (BooleanSetting.OVERLAY_SNAP_TO_GRID.getBoolean()) {
-                    snapToGrid(controlPositionX)
-                } else {
-                    controlPositionX
-                }
-                val finalY = if (BooleanSetting.OVERLAY_SNAP_TO_GRID.getBoolean()) {
-                    snapToGrid(controlPositionY)
-                } else {
-                    controlPositionY
-                }
-
-                setBounds(
-                    finalX,
-                    finalY,
-                    width + finalX,
-                    height + finalY
-                )
+                val finalX = if (BooleanSetting.OVERLAY_SNAP_TO_GRID.getBoolean()) snapToGrid(controlPositionX) else controlPositionX
+                val finalY = if (BooleanSetting.OVERLAY_SNAP_TO_GRID.getBoolean()) snapToGrid(controlPositionY) else controlPositionY
+                setBounds(finalX, finalY, width + finalX, height + finalY)
                 previousTouchX = fingerPositionX
                 previousTouchY = fingerPositionY
             }
@@ -162,8 +118,9 @@ class InputOverlayDrawableButton(
     }
 
     fun setOpacity(value: Int) {
-        defaultStateBitmap.alpha = value
-        pressedStateBitmap.alpha = value
+        opacity = value.coerceIn(0, 255)
+        defaultStateBitmap.alpha = opacity
+        pressedStateBitmap.alpha = opacity
     }
 
     val status: Int
