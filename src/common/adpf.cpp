@@ -23,6 +23,11 @@ namespace {
 
 constexpr std::chrono::nanoseconds DEFAULT_TARGET = std::chrono::nanoseconds{16'666'667};
 constexpr std::int64_t MAX_REPORTED_TARGETS = 4;
+constexpr s64 ADAPTIVE_TARGET_FLOOR_NS = 8'000'000;
+constexpr std::array<int, 4> ADAPTIVE_TARGET_PERCENT = {100, 92, 85, 78};
+constexpr std::uint32_t BOOST_AFTER_MISSED_FRAMES = 3;
+constexpr std::uint32_t BURST_BOOST_AFTER_SEVERE_MISS = 1;
+constexpr std::uint32_t RECOVERY_FRAMES = 120;
 
 struct AHintManager;
 struct AHintSession;
@@ -102,9 +107,13 @@ struct SessionState {
 std::mutex g_mutex;
 std::array<SessionState, 2> g_sessions;
 
-std::atomic<s64> g_target_ns{DEFAULT_TARGET.count()};
+std::atomic<s64> g_requested_target_ns{DEFAULT_TARGET.count()};
+std::atomic<s64> g_effective_target_ns{DEFAULT_TARGET.count()};
 std::atomic<s64> g_last_actual_ns{0};
 std::atomic<std::uint64_t> g_successful_reports{0};
+std::atomic<std::uint32_t> g_boost_level{0};
+std::atomic<std::uint32_t> g_missed_frames{0};
+std::atomic<std::uint32_t> g_recovery_frames{0};
 thread_local std::chrono::steady_clock::time_point t_last_frame{};
 
 SessionState& StateOf(Session session) {
@@ -113,6 +122,13 @@ SessionState& StateOf(Session session) {
 
 bool IsBackgroundUsable(const Api& api) {
     return api.set_power_efficiency != nullptr;
+}
+
+s64 CalculateEffectiveTarget(s64 requested, std::uint32_t level) {
+    const std::uint32_t clamped_level =
+        (std::min)(level, static_cast<std::uint32_t>(ADAPTIVE_TARGET_PERCENT.size() - 1));
+    const s64 scaled = requested * ADAPTIVE_TARGET_PERCENT[clamped_level] / 100;
+    return (std::max)(scaled, ADAPTIVE_TARGET_FLOOR_NS);
 }
 
 void CloseLocked(SessionState& state) {
@@ -124,7 +140,7 @@ void CloseLocked(SessionState& state) {
 
 AHintSession* CreateSessionFor(Session session, const std::vector<pid_t>& threads) {
     const Api& api = Resolve();
-    const s64 target = g_target_ns.load(std::memory_order_relaxed);
+    const s64 target = g_effective_target_ns.load(std::memory_order_relaxed);
 
     std::vector<s32> ids;
     ids.reserve(threads.size());
@@ -168,6 +184,63 @@ bool SyncLocked(Session session, SessionState& state) {
     CloseLocked(state);
     state.handle = replacement;
     return true;
+}
+
+void ApplyAdaptiveTargetLocked(const Api& api) {
+    SessionState& state = StateOf(Session::Render);
+    if (state.handle == nullptr) {
+        return;
+    }
+
+    const s64 requested = g_requested_target_ns.load(std::memory_order_relaxed);
+    const std::uint32_t level = g_boost_level.load(std::memory_order_relaxed);
+    const s64 effective = CalculateEffectiveTarget(requested, level);
+    const s64 previous = g_effective_target_ns.exchange(effective, std::memory_order_relaxed);
+    if (previous != effective) {
+        api.update_target(state.handle, effective);
+    }
+}
+
+void UpdateAdaptivePressureLocked(const Api& api, s64 actual) {
+    const s64 requested = g_requested_target_ns.load(std::memory_order_relaxed);
+    if (requested <= 0) {
+        return;
+    }
+
+    const bool missed = actual > requested + requested / 20;
+    const bool severe_miss = actual > requested + requested / 2;
+    const bool comfortably_under = actual < requested * 9 / 10;
+
+    std::uint32_t boost = g_boost_level.load(std::memory_order_relaxed);
+    std::uint32_t missed_frames = g_missed_frames.load(std::memory_order_relaxed);
+    std::uint32_t recovery = g_recovery_frames.load(std::memory_order_relaxed);
+
+    if (missed) {
+        recovery = 0;
+        missed_frames = (std::min)(missed_frames + 1, 1000U);
+        if ((severe_miss && missed_frames >= BURST_BOOST_AFTER_SEVERE_MISS) ||
+            missed_frames >= BOOST_AFTER_MISSED_FRAMES) {
+            boost = (std::min)(boost + 1,
+                               static_cast<std::uint32_t>(ADAPTIVE_TARGET_PERCENT.size() - 1));
+            missed_frames = 0;
+        }
+    } else {
+        missed_frames = 0;
+        if (comfortably_under && boost > 0) {
+            recovery = (std::min)(recovery + 1, RECOVERY_FRAMES);
+            if (recovery >= RECOVERY_FRAMES) {
+                --boost;
+                recovery = 0;
+            }
+        } else {
+            recovery = 0;
+        }
+    }
+
+    g_boost_level.store(boost, std::memory_order_relaxed);
+    g_missed_frames.store(missed_frames, std::memory_order_relaxed);
+    g_recovery_frames.store(recovery, std::memory_order_relaxed);
+    ApplyAdaptiveTargetLocked(api);
 }
 
 } // Anonymous namespace
@@ -238,14 +311,14 @@ void SetTargetWorkDuration(std::chrono::nanoseconds target) {
     if (!api.usable || target.count() <= 0) {
         return;
     }
-    if (g_target_ns.exchange(target.count(), std::memory_order_relaxed) == target.count()) {
+
+    std::scoped_lock lock{g_mutex};
+    const s64 requested = target.count();
+    if (g_requested_target_ns.exchange(requested, std::memory_order_relaxed) == requested) {
         return;
     }
-    std::scoped_lock lock{g_mutex};
-    SessionState& state = StateOf(Session::Render);
-    if (state.handle != nullptr) {
-        api.update_target(state.handle, target.count());
-    }
+
+    ApplyAdaptiveTargetLocked(api);
 }
 
 void ReportActualWorkDuration(std::chrono::nanoseconds actual_duration) {
@@ -254,8 +327,8 @@ void ReportActualWorkDuration(std::chrono::nanoseconds actual_duration) {
         return;
     }
 
-    const s64 target = g_target_ns.load(std::memory_order_relaxed);
-    const s64 ceiling = target * MAX_REPORTED_TARGETS;
+    const s64 requested = g_requested_target_ns.load(std::memory_order_relaxed);
+    const s64 ceiling = requested * MAX_REPORTED_TARGETS;
     const s64 actual = (std::min)(static_cast<s64>(actual_duration.count()), ceiling);
 
     std::scoped_lock lock{g_mutex};
@@ -267,6 +340,7 @@ void ReportActualWorkDuration(std::chrono::nanoseconds actual_duration) {
     if (api.report_actual(state.handle, actual) == 0) {
         g_last_actual_ns.store(actual, std::memory_order_relaxed);
         g_successful_reports.fetch_add(1, std::memory_order_relaxed);
+        UpdateAdaptivePressureLocked(api, actual);
     }
 }
 
@@ -293,7 +367,7 @@ Telemetry GetTelemetry() {
         .available = api.usable,
         .successful_reports = g_successful_reports.load(std::memory_order_relaxed),
         .target_work_duration =
-            std::chrono::nanoseconds{g_target_ns.load(std::memory_order_relaxed)},
+            std::chrono::nanoseconds{g_effective_target_ns.load(std::memory_order_relaxed)},
         .last_actual_work_duration =
             std::chrono::nanoseconds{g_last_actual_ns.load(std::memory_order_relaxed)},
     };
@@ -320,9 +394,13 @@ void Shutdown() {
             state.unsupported = false;
         }
     }
-    g_target_ns.store(DEFAULT_TARGET.count(), std::memory_order_relaxed);
+    g_requested_target_ns.store(DEFAULT_TARGET.count(), std::memory_order_relaxed);
+    g_effective_target_ns.store(DEFAULT_TARGET.count(), std::memory_order_relaxed);
     g_last_actual_ns.store(0, std::memory_order_relaxed);
     g_successful_reports.store(0, std::memory_order_relaxed);
+    g_boost_level.store(0, std::memory_order_relaxed);
+    g_missed_frames.store(0, std::memory_order_relaxed);
+    g_recovery_frames.store(0, std::memory_order_relaxed);
 }
 
 } // namespace Common::ADPF
