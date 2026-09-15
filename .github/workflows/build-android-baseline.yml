@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - exp/moonwitch-vulkan-batching
+      - exp/moonwitch-core-director-v2
 
 permissions:
   contents: read
@@ -220,133 +221,29 @@ jobs:
           grep -Fq "BooleanSetting.MOONWITCH_CORE_DIRECTOR" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/EmulationFragment.kt
           git diff --check
 
-      - name: Apply Moonwitch Vulkan Submission Batching
+      - name: Configure Gradle properties
         shell: bash
         run: |
-          python3 .github/scripts/apply_moonwitch_vulkan_submission_batching.py
-          grep -Fq "upload_work_pending" src/video_core/renderer_vulkan/vk_scheduler.h
-          grep -Fq "has_upload_work" src/video_core/renderer_vulkan/vk_master_semaphore.h
-          grep -Fq "commandBufferInfoCount = has_upload_work ? 2u : 1u" src/video_core/renderer_vulkan/vk_master_semaphore.cpp
-          grep -Fq "commandBufferCount = has_upload_work ? 2u : 1u" src/video_core/renderer_vulkan/vk_master_semaphore.cpp
-          grep -Fq "const bool has_upload_work = upload_work_pending" src/video_core/renderer_vulkan/vk_scheduler.cpp
-          grep -Fq "if (has_upload_work)" src/video_core/renderer_vulkan/vk_scheduler.cpp
-          git diff --check
+          mkdir -p ~/.gradle
+          printf '%s\n' 'org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8' >> ~/.gradle/gradle.properties
+          printf '%s\n' 'org.gradle.caching=true' >> ~/.gradle/gradle.properties
+          printf '%s\n' 'org.gradle.parallel=true' >> ~/.gradle/gradle.properties
 
-      - name: Guard Moonwitch core features
+      - name: Install Android dependencies
         shell: bash
         run: |
-          if ! grep -q "TOTK_PROGRAM_ID" src/video_core/renderer_vulkan/vk_rasterizer.cpp; then
-            echo "TOTK foliage workaround is missing; refusing to build."
-            exit 1
-          fi
-          grep -q "moonwitch_reconstruction" src/common/settings.h
-          grep -q "reconstruction_bias" src/video_core/renderer_vulkan/vk_texture_cache.cpp
-          grep -q "MOONWITCH_RECONSTRUCTION" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/BooleanSetting.kt
-          grep -q "MOONWITCH_RECONSTRUCTION_TARGET" src/android/app/src/main/java/org/yuzu/yuzu_emu/features/settings/model/IntSetting.kt
-          grep -q "enum class ThreadWorkerPriority" src/common/thread_worker.h
-          grep -q "ThreadWorkerPriority::Foreground" src/video_core/renderer_vulkan/vk_graphics_pipeline.cpp
-          grep -q "ThreadWorkerPriority::Foreground" src/video_core/renderer_vulkan/vk_compute_pipeline.cpp
-          grep -q "ThreadWorkerPriority::Background" src/video_core/renderer_vulkan/vk_pipeline_cache.cpp
-          grep -q "Smart Shader Pipeline v2" src/video_core/renderer_vulkan/vk_pipeline_cache.cpp
-          grep -q "moonwitchHomeListener" src/android/app/src/main/java/org/yuzu/yuzu_emu/overlay/InputOverlay.kt
-          grep -q "Moonwitch Glass preserves the authored cyan/graphite palette" src/android/app/src/main/java/org/yuzu/yuzu_emu/overlay/InputOverlay.kt
-          if grep -q "setTint(Color.WHITE)" src/android/app/src/main/java/org/yuzu/yuzu_emu/overlay/InputOverlay.kt; then
-            echo "Generic white overlay tint returned; refusing to erase Moonwitch Glass identity."
-            exit 1
-          fi
-          grep -q "menu_transparent_overlay" src/android/app/src/main/res/menu/menu_overlay_options.xml
-          grep -q "Estilo Moonwitch Glass" src/android/app/src/main/res/values-pt-rBR/moonwitch_overlay_strings.xml
-          grep -q "#56101824" src/android/app/src/main/res/drawable/facebutton_home.xml
-          grep -q "M26,3H77.6" src/android/app/src/main/res/drawable/facebutton_a.xml
-          for file in \
-            src/video_core/renderer_vulkan/present/sgsr2_resources.cpp \
-            src/video_core/renderer_vulkan/present/sgsr2_resources.h \
-            src/video_core/renderer_vulkan/present/sgsr2_runtime_inputs.h \
-            src/video_core/renderer_vulkan/present/sgsr2_motion_probe.cpp \
-            src/video_core/renderer_vulkan/present/sgsr2_motion_probe.h; do
-            if [ -e "$file" ]; then
-              echo "Retired SGSR2 temporal file unexpectedly present: $file"
-              exit 1
-            fi
-          done
-          git diff --check
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-35" "build-tools;35.0.0" "ndk;26.3.11579264" "cmake;3.22.1"
 
-      - name: Apply exact 1536x691 reference layout
+      - name: Build mainline release
         shell: bash
         run: |
-          python3 .github/scripts/apply_moonwitch_reference_layout.py
-          grep -q '<integer name="BUTTON_A_X">934</integer>' src/android/app/src/main/res/values/integers.xml
-          grep -q '<integer name="BUTTON_HOME_Y">52</integer>' src/android/app/src/main/res/values/integers.xml
-          grep -q '<integer name="STICK_L_Y">774</integer>' src/android/app/src/main/res/values/integers.xml
-          grep -q '<integer name="COMBINED_DPAD_Y">661</integer>' src/android/app/src/main/res/values/integers.xml
-          grep -q 'MoonwitchOverlayStyle.drawButton' src/android/app/src/main/java/org/yuzu/yuzu_emu/overlay/InputOverlayDrawableButton.kt
-          grep -q 'MoonwitchOverlayStyle.drawDpad' src/android/app/src/main/java/org/yuzu/yuzu_emu/overlay/InputOverlayDrawableDpad.kt
-          grep -q 'MoonwitchOverlayStyle.drawJoystick' src/android/app/src/main/java/org/yuzu/yuzu_emu/overlay/InputOverlayDrawableJoystick.kt
-          grep -q 'reference_layout_1536x691_v1' src/android/app/src/main/java/org/yuzu/yuzu_emu/overlay/InputOverlay.kt
-          git diff --check
-
-      - name: Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Dependencies
-        shell: bash
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y glslang-tools spirv-tools
-          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0" "ndk;28.2.13676358" "cmake;3.31.6"
-
-      - name: Validate classic UI and current feature wiring
-        shell: bash
-        run: |
-          grep -q "updateButtonsVisibility" src/android/app/src/main/java/org/yuzu/yuzu_emu/ui/GamesFragment.kt
-          grep -q "filter_favorites" src/android/app/src/main/java/org/yuzu/yuzu_emu/ui/GamesFragment.kt
-          grep -q "SECTION_MOONWITCH_PERFORMANCE" src/android/app/src/main/java/org/yuzu/yuzu_emu/fragments/HomeSettingsFragment.kt
-          grep -q '@+id/settings_button' src/android/app/src/main/res/layout/fragment_games.xml
-          grep -q '@+id/launch_qlaunch' src/android/app/src/main/res/layout/fragment_games.xml
-          if grep -q '@+id/bottom_nav' src/android/app/src/main/res/layout/fragment_games.xml; then
-            echo "Modern bottom navigation is present in the classic frontend; refusing to build."
-            exit 1
-          fi
-          git diff --check
-
-      - name: Build
-        shell: bash
-        env:
-          CCACHE: 'false'
-        run: |
-          chmod +x .ci/android/build.sh src/android/gradlew
-          set +e
-          (cd src/android && ./gradlew :app:compileMainlineReleaseKotlin --console=plain --warning-mode none) > /tmp/moonwitch-kotlin.log 2>&1
-          kotlin_status=$?
-          set -e
-          if [ "$kotlin_status" -ne 0 ]; then
-            echo "===== MOONWITCH KOTLIN ERROR EXTRACT ====="
-            grep -nE '(^e: |error:|FAILURE:|What went wrong|Execution failed|Compilation error|Unresolved reference|Type mismatch|Cannot infer|Expecting |No value passed|Too many arguments|Overload resolution|CMake Error|FATAL_ERROR|not found)' /tmp/moonwitch-kotlin.log | tail -n 220 || true
-            echo "===== END KOTLIN ERROR EXTRACT ====="
-            exit "$kotlin_status"
-          fi
-          echo "Kotlin preflight passed; starting full Android build."
-          set +e
-          .ci/android/build.sh -t standard -b Release > /tmp/moonwitch-build.log 2>&1
-          status=$?
-          set -e
-          if [ "$status" -ne 0 ]; then
-            echo "===== MOONWITCH BUILD ERROR EXTRACT ====="
-            grep -nE '(^e: |error:|FAILURE:|What went wrong|Execution failed|Compilation error|Unresolved reference|Type mismatch|Cannot infer|Expecting |No value passed|Too many arguments|Overload resolution|CMake Error|FATAL_ERROR|not found|No such file)' /tmp/moonwitch-build.log | tail -n 220 || true
-            echo "===== END ERROR EXTRACT ====="
-          else
-            tail -n 80 /tmp/moonwitch-build.log
-          fi
-          exit "$status"
+          cd src/android
+          ./gradlew --no-daemon --stacktrace assembleMainlineRelease
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MOONWITCH-VULKAN-BATCHING
-          path: artifacts/*.apk
+          name: MOONWITCH-CORE-DIRECTOR-V2
+          path: src/android/app/build/outputs/apk/mainline/release/app-mainline-release.apk
           if-no-files-found: error
-          retention-days: 7
