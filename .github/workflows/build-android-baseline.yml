@@ -232,6 +232,11 @@ jobs:
       - name: Install Android dependencies
         shell: bash
         run: |
+          sudo apt-get update
+          sudo apt-get install -y glslang-tools
+          command -v glslangValidator
+          glslangValidator --version | head -n 2
+
           SDKMANAGER="$(command -v sdkmanager || true)"
           if [[ -z "$SDKMANAGER" ]]; then
             for candidate in \
