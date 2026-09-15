@@ -19,19 +19,6 @@ import org.yuzu.yuzu_emu.features.input.model.NativeButton
 import org.yuzu.yuzu_emu.features.settings.model.BooleanSetting
 import org.yuzu.yuzu_emu.features.settings.model.IntSetting
 
-/**
- * Custom [BitmapDrawable] that is capable
- * of storing it's own ID.
- *
- * @param res                [Resources] instance.
- * @param bitmapOuter        [Bitmap] which represents the outer non-movable part of the joystick.
- * @param bitmapInnerDefault [Bitmap] which represents the default inner movable part of the joystick.
- * @param bitmapInnerPressed [Bitmap] which represents the pressed inner movable part of the joystick.
- * @param rectOuter          [Rect] which represents the outer joystick bounds.
- * @param rectInner          [Rect] which represents the inner joystick bounds.
- * @param joystick           The [NativeAnalog] this Drawable represents.
- * @param button             The [NativeButton] this Drawable represents.
- */
 class InputOverlayDrawableJoystick(
     res: Resources,
     bitmapOuter: Bitmap,
@@ -43,47 +30,31 @@ class InputOverlayDrawableJoystick(
     val button: NativeButton,
     val prefId: String
 ) {
-    // The ID value what motion event is tracking
     var trackId = -1
-
     var xAxis = 0f
     private var yAxis = 0f
-
     val width: Int
     val height: Int
-
     var individualScale: Float = 1.0f
-
     private var opacity: Int = 0
-
     private var virtBounds: Rect
     private var origBounds: Rect
-
     private val outerBitmap: BitmapDrawable
     private val defaultStateInnerBitmap: BitmapDrawable
     private val pressedStateInnerBitmap: BitmapDrawable
-
     private var previousTouchX = 0
     private var previousTouchY = 0
     var controlPositionX = 0
     var controlPositionY = 0
-
     private val boundsBoxBitmap: BitmapDrawable
-
     private var pressedState = false
 
-    // TODO: Add button support
-    val buttonStatus: Int
-        get() = ButtonState.RELEASED
+    val buttonStatus: Int get() = ButtonState.RELEASED
     var bounds: Rect
         get() = outerBitmap.bounds
-        set(bounds) {
-            outerBitmap.bounds = bounds
-        }
+        set(bounds) { outerBitmap.bounds = bounds }
 
-    // Nintendo joysticks have y axis inverted
-    val realYAxis: Float
-        get() = -yAxis
+    val realYAxis: Float get() = -yAxis
 
     private val currentStateBitmapDrawable: BitmapDrawable
         get() = if (pressedState) pressedStateInnerBitmap else defaultStateInnerBitmap
@@ -106,9 +77,9 @@ class InputOverlayDrawableJoystick(
     }
 
     fun draw(canvas: Canvas?) {
-        outerBitmap.draw(canvas!!)
-        currentStateBitmapDrawable.draw(canvas)
-        boundsBoxBitmap.draw(canvas)
+        canvas ?: return
+        val visualBounds = if (pressedState) virtBounds else bounds
+        MoonwitchOverlayStyle.drawJoystick(canvas, visualBounds, xAxis, yAxis, pressedState, opacity)
     }
 
     fun updateStatus(event: MotionEvent): Boolean {
@@ -117,60 +88,35 @@ class InputOverlayDrawableJoystick(
         val yPosition = event.getY(pointerIndex).toInt()
         val pointerId = event.getPointerId(pointerIndex)
         val motionEvent = event.action and MotionEvent.ACTION_MASK
-        val isActionDown =
-            motionEvent == MotionEvent.ACTION_DOWN || motionEvent == MotionEvent.ACTION_POINTER_DOWN
-        val isActionUp =
-            motionEvent == MotionEvent.ACTION_UP || motionEvent == MotionEvent.ACTION_POINTER_UP
-
+        val isActionDown = motionEvent == MotionEvent.ACTION_DOWN || motionEvent == MotionEvent.ACTION_POINTER_DOWN
+        val isActionUp = motionEvent == MotionEvent.ACTION_UP || motionEvent == MotionEvent.ACTION_POINTER_UP
         if (isActionDown) {
-            if (!bounds.contains(xPosition, yPosition)) {
-                return false
-            }
+            if (!bounds.contains(xPosition, yPosition)) return false
             pressedState = true
             outerBitmap.alpha = 0
             boundsBoxBitmap.alpha = opacity
             if (BooleanSetting.JOYSTICK_REL_CENTER.getBoolean()) {
-                virtBounds.offset(
-                    xPosition - virtBounds.centerX(),
-                    yPosition - virtBounds.centerY()
-                )
+                virtBounds.offset(xPosition - virtBounds.centerX(), yPosition - virtBounds.centerY())
             }
             boundsBoxBitmap.bounds = virtBounds
             trackId = pointerId
         }
-
         if (isActionUp) {
-            if (trackId != pointerId) {
-                return false
-            }
+            if (trackId != pointerId) return false
             pressedState = false
             xAxis = 0.0f
             yAxis = 0.0f
             outerBitmap.alpha = opacity
             boundsBoxBitmap.alpha = 0
-            virtBounds = Rect(
-                origBounds.left,
-                origBounds.top,
-                origBounds.right,
-                origBounds.bottom
-            )
-            bounds = Rect(
-                origBounds.left,
-                origBounds.top,
-                origBounds.right,
-                origBounds.bottom
-            )
+            virtBounds = Rect(origBounds.left, origBounds.top, origBounds.right, origBounds.bottom)
+            bounds = Rect(origBounds.left, origBounds.top, origBounds.right, origBounds.bottom)
             setInnerBounds()
             trackId = -1
             return true
         }
-
         if (trackId == -1) return false
-
         for (i in 0 until event.pointerCount) {
-            if (trackId != event.getPointerId(i)) {
-                continue
-            }
+            if (trackId != event.getPointerId(i)) continue
             var touchX = event.getX(i)
             var touchY = event.getY(i)
             var maxY = virtBounds.bottom.toFloat()
@@ -183,13 +129,9 @@ class InputOverlayDrawableJoystick(
             val axisY = touchY / maxY
             val oldXAxis = xAxis
             val oldYAxis = yAxis
-
-            // Clamp the circle pad input to a circle
             val angle = atan2(axisY.toDouble(), axisX.toDouble()).toFloat()
             var radius = sqrt((axisX * axisX + axisY * axisY).toDouble()).toFloat()
-            if (radius > 1.0f) {
-                radius = 1.0f
-            }
+            if (radius > 1.0f) radius = 1.0f
             xAxis = cos(angle.toDouble()).toFloat() * radius
             yAxis = sin(angle.toDouble()).toFloat() * radius
             setInnerBounds()
@@ -202,7 +144,6 @@ class InputOverlayDrawableJoystick(
         val pointerIndex = event.actionIndex
         val fingerPositionX = event.getX(pointerIndex).toInt()
         val fingerPositionY = event.getY(pointerIndex).toInt()
-
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 previousTouchX = fingerPositionX
@@ -210,43 +151,15 @@ class InputOverlayDrawableJoystick(
                 controlPositionX = fingerPositionX - (width / 2)
                 controlPositionY = fingerPositionY - (height / 2)
             }
-
             MotionEvent.ACTION_MOVE -> {
                 controlPositionX += fingerPositionX - previousTouchX
                 controlPositionY += fingerPositionY - previousTouchY
-
-                val finalX = if (BooleanSetting.OVERLAY_SNAP_TO_GRID.getBoolean()) {
-                    snapToGrid(controlPositionX)
-                } else {
-                    controlPositionX
-                }
-                val finalY = if (BooleanSetting.OVERLAY_SNAP_TO_GRID.getBoolean()) {
-                    snapToGrid(controlPositionY)
-                } else {
-                    controlPositionY
-                }
-
-                bounds = Rect(
-                    finalX,
-                    finalY,
-                    outerBitmap.intrinsicWidth + finalX,
-                    outerBitmap.intrinsicHeight + finalY
-                )
-                virtBounds = Rect(
-                    finalX,
-                    finalY,
-                    outerBitmap.intrinsicWidth + finalX,
-                    outerBitmap.intrinsicHeight + finalY
-                )
+                val finalX = if (BooleanSetting.OVERLAY_SNAP_TO_GRID.getBoolean()) snapToGrid(controlPositionX) else controlPositionX
+                val finalY = if (BooleanSetting.OVERLAY_SNAP_TO_GRID.getBoolean()) snapToGrid(controlPositionY) else controlPositionY
+                bounds = Rect(finalX, finalY, outerBitmap.intrinsicWidth + finalX, outerBitmap.intrinsicHeight + finalY)
+                virtBounds = Rect(finalX, finalY, outerBitmap.intrinsicWidth + finalX, outerBitmap.intrinsicHeight + finalY)
                 setInnerBounds()
-                bounds = Rect(
-                    Rect(
-                        finalX,
-                        finalY,
-                        outerBitmap.intrinsicWidth + finalX,
-                        outerBitmap.intrinsicHeight + finalY
-                    )
-                )
+                bounds = Rect(finalX, finalY, outerBitmap.intrinsicWidth + finalX, outerBitmap.intrinsicHeight + finalY)
                 previousTouchX = fingerPositionX
                 previousTouchY = fingerPositionY
             }
@@ -263,30 +176,13 @@ class InputOverlayDrawableJoystick(
     private fun setInnerBounds() {
         var x = virtBounds.centerX() + (xAxis * (virtBounds.width() / 2)).toInt()
         var y = virtBounds.centerY() + (yAxis * (virtBounds.height() / 2)).toInt()
-        if (x > virtBounds.centerX() + virtBounds.width() / 2) {
-            x =
-                virtBounds.centerX() + virtBounds.width() / 2
-        }
-        if (x < virtBounds.centerX() - virtBounds.width() / 2) {
-            x =
-                virtBounds.centerX() - virtBounds.width() / 2
-        }
-        if (y > virtBounds.centerY() + virtBounds.height() / 2) {
-            y =
-                virtBounds.centerY() + virtBounds.height() / 2
-        }
-        if (y < virtBounds.centerY() - virtBounds.height() / 2) {
-            y =
-                virtBounds.centerY() - virtBounds.height() / 2
-        }
+        if (x > virtBounds.centerX() + virtBounds.width() / 2) x = virtBounds.centerX() + virtBounds.width() / 2
+        if (x < virtBounds.centerX() - virtBounds.width() / 2) x = virtBounds.centerX() - virtBounds.width() / 2
+        if (y > virtBounds.centerY() + virtBounds.height() / 2) y = virtBounds.centerY() + virtBounds.height() / 2
+        if (y < virtBounds.centerY() - virtBounds.height() / 2) y = virtBounds.centerY() - virtBounds.height() / 2
         val width = pressedStateInnerBitmap.bounds.width() / 2
         val height = pressedStateInnerBitmap.bounds.height() / 2
-        defaultStateInnerBitmap.setBounds(
-            x - width,
-            y - height,
-            x + width,
-            y + height
-        )
+        defaultStateInnerBitmap.setBounds(x - width, y - height, x + width, y + height)
         pressedStateInnerBitmap.bounds = defaultStateInnerBitmap.bounds
     }
 
@@ -297,10 +193,8 @@ class InputOverlayDrawableJoystick(
 
     fun setOpacity(value: Int) {
         opacity = value
-
         defaultStateInnerBitmap.alpha = value
         pressedStateInnerBitmap.alpha = value
-
         if (trackId == -1) {
             outerBitmap.alpha = value
             boundsBoxBitmap.alpha = 0
