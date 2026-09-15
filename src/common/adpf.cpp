@@ -109,6 +109,8 @@ std::array<SessionState, 2> g_sessions;
 
 std::atomic<s64> g_requested_target_ns{DEFAULT_TARGET.count()};
 std::atomic<s64> g_effective_target_ns{DEFAULT_TARGET.count()};
+// Compatibility alias for Moonwitch Unleashed's lock-free target integration.
+std::atomic<s64>& g_target_ns = g_requested_target_ns;
 std::atomic<s64> g_last_actual_ns{0};
 std::atomic<std::uint64_t> g_successful_reports{0};
 std::atomic<std::uint32_t> g_boost_level{0};
@@ -319,6 +321,10 @@ void SetTargetWorkDuration(std::chrono::nanoseconds target) {
     }
 
     ApplyAdaptiveTargetLocked(api);
+    SessionState& state = StateOf(Session::Render);
+    if (state.handle != nullptr) {
+        api.update_target(state.handle, g_effective_target_ns.load(std::memory_order_relaxed));
+    }
 }
 
 void ReportActualWorkDuration(std::chrono::nanoseconds actual_duration) {
