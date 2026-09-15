@@ -321,9 +321,12 @@ void SetTargetWorkDuration(std::chrono::nanoseconds target) {
     }
 
     ApplyAdaptiveTargetLocked(api);
+    const std::chrono::nanoseconds target_duration{
+        g_effective_target_ns.load(std::memory_order_relaxed)};
+    const auto target = target_duration;
     SessionState& state = StateOf(Session::Render);
     if (state.handle != nullptr) {
-        api.update_target(state.handle, g_effective_target_ns.load(std::memory_order_relaxed));
+        api.update_target(state.handle, target.count());
     }
 }
 
