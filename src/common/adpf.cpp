@@ -308,22 +308,21 @@ void RemoveCurrentThread() {
     }
 }
 
-void SetTargetWorkDuration(std::chrono::nanoseconds target) {
+void SetTargetWorkDuration(std::chrono::nanoseconds requested_target) {
     const Api& api = Resolve();
-    if (!api.usable || target.count() <= 0) {
+    if (!api.usable || requested_target.count() <= 0) {
         return;
     }
 
     std::scoped_lock lock{g_mutex};
-    const s64 requested = target.count();
+    const s64 requested = requested_target.count();
     if (g_requested_target_ns.exchange(requested, std::memory_order_relaxed) == requested) {
         return;
     }
 
     ApplyAdaptiveTargetLocked(api);
-    const std::chrono::nanoseconds target_duration{
+    const std::chrono::nanoseconds target{
         g_effective_target_ns.load(std::memory_order_relaxed)};
-    const auto target = target_duration;
     SessionState& state = StateOf(Session::Render);
     if (state.handle != nullptr) {
         api.update_target(state.handle, target.count());
