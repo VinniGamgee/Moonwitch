@@ -207,6 +207,8 @@ add_library(video_core STATIC
     vulkan_common/vulkan_library.h
     vulkan_common/vulkan_memory_allocator.cpp
     vulkan_common/vulkan_memory_allocator.h
+    vulkan_common/vulkan_memory_pressure_manager.cpp
+    vulkan_common/vulkan_memory_pressure_manager.h
     vulkan_common/vulkan_surface.cpp
     vulkan_common/vulkan_surface.h
     vulkan_common/vulkan_wrapper.cpp
@@ -378,45 +380,13 @@ target_include_directories(video_core PRIVATE ${HOST_SHADERS_INCLUDE})
 
 target_link_libraries(video_core PRIVATE sirit::sirit)
 
-# Header-only stuff needed by all dependent targets
 target_link_libraries(video_core PUBLIC Vulkan::Headers Vulkan::UtilityHeaders GPUOpen::VulkanMemoryAllocator)
 
 if (ENABLE_NSIGHT_AFTERMATH)
     if (NOT DEFINED ENV{NSIGHT_AFTERMATH_SDK})
-        message(FATAL_ERROR "Environment variable NSIGHT_AFTERMATH_SDK has to be provided")
+        message(FATAL_ERROR "NSIGHT_AFTERMATH_SDK environment variable is not set")
     endif()
-    if (NOT WIN32)
-        message(FATAL_ERROR "Nsight Aftermath doesn't support non-Windows platforms")
-    endif()
-    target_compile_definitions(video_core PRIVATE HAS_NSIGHT_AFTERMATH)
-    target_include_directories(video_core PRIVATE "$ENV{NSIGHT_AFTERMATH_SDK}/include")
-endif()
-
-if (MSVC)
-    target_compile_options(video_core PRIVATE
-        /we4242 # 'identifier': conversion from 'type1' to 'type2', possible loss of data
-        /we4244 # 'conversion': conversion from 'type1' to 'type2', possible loss of data
-    )
-else()
-    if (APPLE)
-        # error: declaration shadows a typedef in 'interval_base_set<SubType, DomainT, Compare, Interval, Alloc>'
-        # error: implicit conversion loses integer precision: 'int' to 'boost::icl::bound_type' (aka 'unsigned char')
-        target_compile_options(video_core PRIVATE
-            $<$<COMPILE_LANGUAGE:C,CXX>:-Wno-shadow>
-            $<$<COMPILE_LANGUAGE:C,CXX>:-Wno-unused-local-typedef>)
-    else()
-        target_compile_options(video_core PRIVATE $<$<COMPILE_LANGUAGE:C,CXX>:-Wconversion>)
-    endif()
-
-    target_compile_options(video_core PRIVATE $<$<COMPILE_LANGUAGE:C,CXX>:-Wno-sign-conversion>)
-
-    # xbyak
-    set_source_files_properties(macro/macro_jit_x64.cpp PROPERTIES COMPILE_OPTIONS "-Wno-conversion;-Wno-shadow")
-
-    # Get around GCC failing with intrinsics in Debug
-    if (CXX_GCC AND CMAKE_BUILD_TYPE MATCHES "Debug")
-        set_source_files_properties(host1x/vic.cpp PROPERTIES COMPILE_OPTIONS "-O2")
-    endif()
+    target_link_libraries(video_core PRIVATE GFSDK_Aftermath_Lib)
 endif()
 
 if (ENABLE_OPENGL)
