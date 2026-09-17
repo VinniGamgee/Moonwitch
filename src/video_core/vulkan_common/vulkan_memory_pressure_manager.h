@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <mutex>
 
@@ -22,25 +23,102 @@ public:
         Critical,
     };
 
-    MemoryPressureManager(VmaAllocator allocator,
-                          const VkPhysicalDeviceMemoryProperties& properties);
+    MemoryPressureManager(VmaAllocator allocator_,
+                          const VkPhysicalDeviceMemoryProperties& properties_)
+        : allocator{allocator_}, properties{properties_} {}
 
     MemoryPressureManager(const MemoryPressureManager&) = delete;
     MemoryPressureManager& operator=(const MemoryPressureManager&) = delete;
 
     /// Samples heap budgets at a bounded cadence. Cheap no-op between samples.
-    void Refresh();
+    void Refresh() {
+        std::scoped_lock lock{mutex};
+        ++allocation_count;
+        if (++allocations_since_sample < kSampleEveryAllocations) {
+            return;
+        }
+        allocations_since_sample = 0;
+        SampleLocked();
+    }
 
-    [[nodiscard]] State GetState() const;
+    [[nodiscard]] State GetState() const {
+        std::scoped_lock lock{mutex};
+        return state;
+    }
 
     /// Returns VMA allocation strategy flags appropriate for current pressure.
-    [[nodiscard]] VmaAllocationCreateFlags AllocationFlags() const;
+    [[nodiscard]] VmaAllocationCreateFlags AllocationFlags() const {
+        std::scoped_lock lock{mutex};
+        if (state == State::Critical) {
+            return VMA_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT;
+        }
+        return VMA_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT;
+    }
 
-    [[nodiscard]] u64 AllocationCount() const;
-    [[nodiscard]] VkDeviceSize PeakUsage() const;
+    [[nodiscard]] u64 AllocationCount() const {
+        std::scoped_lock lock{mutex};
+        return allocation_count;
+    }
+
+    [[nodiscard]] VkDeviceSize PeakUsage() const {
+        std::scoped_lock lock{mutex};
+        return peak_usage;
+    }
 
 private:
-    void SampleLocked();
+    static constexpr u32 kSampleEveryAllocations = 32;
+    static constexpr double kElevatedThreshold = 0.82;
+    static constexpr double kCriticalThreshold = 0.92;
+    static constexpr double kRecoveryThreshold = 0.74;
+
+    void SampleLocked() {
+        std::array<VmaBudget, VK_MAX_MEMORY_HEAPS> budgets{};
+        vmaGetHeapBudgets(allocator, budgets.data());
+
+        double worst_ratio = 0.0;
+        VkDeviceSize current_usage = 0;
+
+        for (u32 i = 0; i < properties.memoryHeapCount; ++i) {
+            const VkDeviceSize usage = budgets[i].usage;
+            VkDeviceSize budget = budgets[i].budget;
+            if (budget == 0) {
+                budget = properties.memoryHeaps[i].size;
+            }
+            if (budget == 0) {
+                continue;
+            }
+
+            current_usage = std::max(current_usage, usage);
+            worst_ratio = std::max(
+                worst_ratio, static_cast<double>(usage) / static_cast<double>(budget));
+        }
+
+        peak_usage = std::max(peak_usage, current_usage);
+
+        switch (state) {
+        case State::Normal:
+            if (worst_ratio >= kCriticalThreshold) {
+                state = State::Critical;
+            } else if (worst_ratio >= kElevatedThreshold) {
+                state = State::Elevated;
+            }
+            break;
+        case State::Elevated:
+            if (worst_ratio >= kCriticalThreshold) {
+                state = State::Critical;
+            } else if (worst_ratio < kRecoveryThreshold) {
+                state = State::Normal;
+            }
+            break;
+        case State::Critical:
+            if (worst_ratio < kRecoveryThreshold) {
+                state = State::Normal;
+            } else if (worst_ratio < kElevatedThreshold) {
+                state = State::Elevated;
+            }
+            break;
+        }
+    }
 
     VmaAllocator allocator{};
     VkPhysicalDeviceMemoryProperties properties{};
