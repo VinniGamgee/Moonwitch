@@ -1,10 +1,9 @@
-// SPDX-FileCopyrightText: Copyright 2026 Eden Emulator Project
+// SPDX-FileCopyrightText: Copyright 2026 Moonwitch Project
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 // SPDX-FileCopyrightText: Copyright yuzu/Citra Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-// import android.annotation.SuppressLint
 import com.android.build.gradle.api.ApplicationVariant
 import kotlin.collections.setOf
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
@@ -22,14 +21,9 @@ plugins {
     id("idea")
 }
 
-/**
- * Use the number of seconds/10 since Jan 1 2016 as the versionCode.
- * This lets us upload a new build at most every 10 seconds for the
- * next 680 years.
- */
 val autoVersion = (((System.currentTimeMillis() / 1000) - 1451606400) / 10).toInt()
 
-val edenDir = project(":Eden").projectDir
+val moonwitchDir = project(":Moonwitch").projectDir
 
 @Suppress("UnstableApiUsage")
 android {
@@ -55,7 +49,6 @@ android {
     }
 
     packaging {
-        // This is necessary for libadrenotools custom driver loading
         jniLibs.useLegacyPackaging = true
     }
 
@@ -64,7 +57,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "dev.eden.eden_emulator"
+        applicationId = "com.moonwitch.emulator"
         minSdk = 24
         targetSdk = 36
         versionName = getGitVersion()
@@ -78,9 +71,9 @@ android {
 
                 arguments.addAll(
                     listOf(
-                        "-DENABLE_QT=0", // Don't use QT
-                        "-DENABLE_WEB_SERVICE=1", // Enable web service
-                        "-DANDROID_ARM_NEON=true", // cryptopp requires Neon to work
+                        "-DENABLE_QT=0",
+                        "-DENABLE_WEB_SERVICE=1",
+                        "-DANDROID_ARM_NEON=true",
                         "-DYUZU_USE_CPM=ON",
                         "-DCPMUTIL_FORCE_BUNDLED=ON",
                         "-DYUZU_USE_BUNDLED_FFMPEG=ON",
@@ -93,10 +86,12 @@ android {
                 )
 
                 if (isNightly) {
-                    arguments.addAll(listOf(
-                        "-DENABLE_UPDATE_CHECKER=ON",
-                        "-DNIGHTLY_BUILD=ON",
-                    ))
+                    arguments.addAll(
+                        listOf(
+                            "-DENABLE_UPDATE_CHECKER=ON",
+                            "-DNIGHTLY_BUILD=ON",
+                        )
+                    )
                 }
 
                 abiFilters("arm64-v8a")
@@ -122,12 +117,7 @@ android {
         }
     }
 
-    // The app name is constructed with the appNameSuffix and appNameBase manifest placeholders
-    // suffix is used for build type--remember to include a space beforehand
-
-    // Define build types, which are orthogonal to product flavors.
     buildTypes {
-        // Signed by release key, allowing for upload to Play Store.
         release {
             signingConfig = if (keystoreFile != null) {
                 signingConfigs.getByName("release")
@@ -150,8 +140,6 @@ android {
             )
         }
 
-        // builds a release build that doesn't need signing
-        // Attaches 'debug' suffix to version and package name, allowing installation alongside the release build.
         register("relWithDebInfo") {
             isDefault = true
             signingConfig = signingConfigs.getByName("default")
@@ -160,127 +148,84 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-
             manifestPlaceholders += mapOf("appNameSuffix" to " Debug Release")
-
             versionNameSuffix = "-relWithDebInfo"
             applicationIdSuffix = ".relWithDebInfo"
             isJniDebuggable = true
         }
 
-        // Signed by debug key disallowing distribution on Play Store.
-        // Attaches 'debug' suffix to version and package name, allowing installation alongside the release build.
         debug {
             signingConfig = signingConfigs.getByName("default")
             isDebuggable = true
             isJniDebuggable = true
             versionNameSuffix = "-debug"
             applicationIdSuffix = ".debug"
-
             manifestPlaceholders += mapOf("appNameSuffix" to " Debug")
         }
     }
 
-    // appNameBase is used for the primary identifier
-    // this should be "Eden <flavorName>"
     flavorDimensions.add("version")
     productFlavors {
         create("mainline") {
             dimension = "version"
             isDefault = true
             minSdk = 33
-
-            manifestPlaceholders += mapOf("appNameBase" to "Eden")
-            resValue("string", "app_name_suffixed", "Eden")
-
-            ndk {
-                abiFilters += listOf("arm64-v8a")
-            }
+            manifestPlaceholders += mapOf("appNameBase" to "Moonwitch")
+            resValue("string", "app_name_suffixed", "Moonwitch")
+            ndk { abiFilters += listOf("arm64-v8a") }
         }
 
         create("genshinSpoof") {
             dimension = "version"
             minSdk = 35
-            manifestPlaceholders += mapOf("appNameBase" to "Eden Optimized")
-            resValue("string", "app_name_suffixed", "Eden Optimized")
+            manifestPlaceholders += mapOf("appNameBase" to "Moonwitch Optimized")
+            resValue("string", "app_name_suffixed", "Moonwitch Optimized")
             applicationId = "com.miHoYo.Yuanshen"
-
-            externalNativeBuild {
-                cmake {
-                    arguments.add("-DGENSHIN_SPOOF=ON")
-                }
-            }
-
-            ndk {
-                abiFilters += listOf("arm64-v8a")
-            }
+            externalNativeBuild { cmake { arguments.add("-DGENSHIN_SPOOF=ON") } }
+            ndk { abiFilters += listOf("arm64-v8a") }
         }
 
         create("legacy") {
             dimension = "version"
             minSdk = 29
-            manifestPlaceholders += mapOf("appNameBase" to "Eden Legacy")
-            resValue("string", "app_name_suffixed", "Eden Legacy")
-            applicationId = "dev.legacy.eden_emulator"
-
-            externalNativeBuild {
-                cmake {
-                    arguments.add("-DYUZU_LEGACY=ON")
-                }
-            }
-
+            manifestPlaceholders += mapOf("appNameBase" to "Moonwitch Legacy")
+            resValue("string", "app_name_suffixed", "Moonwitch Legacy")
+            applicationId = "com.moonwitch.emulator.legacy"
+            externalNativeBuild { cmake { arguments.add("-DYUZU_LEGACY=ON") } }
             sourceSets {
-                getByName("legacy") {
-                    res.srcDirs("src/main/legacy")
-                }
+                getByName("legacy") { res.srcDirs("src/main/legacy") }
             }
-
-            ndk {
-                abiFilters += listOf("arm64-v8a")
-            }
+            ndk { abiFilters += listOf("arm64-v8a") }
         }
 
         create("chromeOS") {
             dimension = "version"
-            manifestPlaceholders += mapOf("appNameBase" to "Eden ChromeOS")
-            resValue("string", "app_name_suffixed", "Eden ChromeOS")
-
-            ndk {
-                abiFilters += listOf("x86_64")
-            }
-
-            externalNativeBuild {
-                cmake {
-                    abiFilters("x86_64")
-                }
-            }
+            manifestPlaceholders += mapOf("appNameBase" to "Moonwitch ChromeOS")
+            resValue("string", "app_name_suffixed", "Moonwitch ChromeOS")
+            ndk { abiFilters += listOf("x86_64") }
+            externalNativeBuild { cmake { abiFilters("x86_64") } }
         }
     }
 
     externalNativeBuild {
         cmake {
             version = "3.31.6"
-            path = file("${edenDir}/CMakeLists.txt")
+            path = file("${moonwitchDir}/CMakeLists.txt")
         }
     }
 
     productFlavors.all {
-        val currentName = manifestPlaceholders["appNameBase"] as? String ?: "Eden"
+        val currentName = manifestPlaceholders["appNameBase"] as? String ?: "Moonwitch"
         val suffix = if (isNightly) " Nightly" else ""
-
-        // apply nightly suffix I/A
         resValue("string", "app_name_suffixed", "$currentName$suffix")
-        resValue("string", "app_name", "Eden$suffix")
+        resValue("string", "app_name", "Moonwitch$suffix")
     }
 }
 
 idea {
     module {
-        // Inclusion to exclude build/ dir from non-Android
-        excludeDirs.add(file("${edenDir}/build"))
-
-        // also exclude CPM cache from automatic indexing
-        excludeDirs.add(file("${edenDir}/.cache"))
+        excludeDirs.add(file("${moonwitchDir}/build"))
+        excludeDirs.add(file("${moonwitchDir}/.cache"))
     }
 }
 
@@ -302,23 +247,13 @@ ktlint {
     version.set("0.47.1")
     android.set(true)
     ignoreFailures.set(false)
-    disabledRules.set(
-        setOf(
-            "no-wildcard-imports",
-            "package-name",
-            "import-ordering"
-        )
-    )
-    reporters {
-        reporter(ReporterType.CHECKSTYLE)
-    }
+    disabledRules.set(setOf("no-wildcard-imports", "package-name", "import-ordering"))
+    reporters { reporter(ReporterType.CHECKSTYLE) }
 }
 
 play {
     val keyPath = System.getenv("SERVICE_ACCOUNT_KEY_PATH")
-    if (keyPath != null) {
-        serviceAccountCredentials.set(File(keyPath))
-    }
+    if (keyPath != null) serviceAccountCredentials.set(File(keyPath))
     track.set(System.getenv("STORE_TRACK") ?: "internal")
     releaseStatus.set(ReleaseStatus.COMPLETED)
 }
@@ -366,14 +301,8 @@ fun runGitCommand(command: List<String>): String {
 }
 
 fun getGitVersion(): String {
-    val gitVersion = runGitCommand(
-        listOf(
-            "git",
-            "describe",
-            "--always",
-            "--long"
-        )
-    ).replace(Regex("(-0)?-[^-]+$"), "")
+    val gitVersion = runGitCommand(listOf("git", "describe", "--always", "--long"))
+        .replace(Regex("(-0)?-[^-]+$"), "")
     val versionName = if (System.getenv("GITHUB_ACTIONS") != null) {
         System.getenv("GIT_TAG_NAME") ?: gitVersion
     } else {
@@ -383,31 +312,25 @@ fun getGitVersion(): String {
 }
 
 afterEvaluate {
-    val artifactsDir = layout.projectDirectory.dir("${edenDir}/artifacts")
+    val artifactsDir = layout.projectDirectory.dir("${moonwitchDir}/artifacts")
     val outputsDir = layout.buildDirectory.dir("outputs").get()
 
     android.applicationVariants.forEach { variant ->
         val variantName = variant.name
         val variantTask = variantName.replaceFirstChar { it.uppercaseChar() }
-
         val flavor = variant.flavorName
         val type = variant.buildType.name
-
         val baseName = "app-$flavor-$type"
-
         val apkFile = outputsDir.file("apk/$flavor/$type/$baseName.apk")
         val aabFile = outputsDir.file("bundle/$variantName/$baseName.aab")
-
         val taskName = "copy${variantTask}Outputs"
 
         tasks.register<Copy>(taskName) {
             group = "publishing"
             description = "Copy APK and AAB for $variantName to $artifactsDir"
-
             from(apkFile)
             from(aabFile)
             into(artifactsDir)
-
             dependsOn("assemble${variantTask}")
             dependsOn("bundle${variantTask}")
         }
