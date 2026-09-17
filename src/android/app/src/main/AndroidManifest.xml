@@ -4,11 +4,7 @@
 SPDX-FileCopyrightText: 2023 yuzu Emulator Project
 SPDX-License-Identifier: GPL-3.0-or-later
 
-SPDX-FileCopyrightText: 2025 Eden Emulator Project
-SPDX-License-Identifier: GPL-3.0-or-later
--->
-<!--
-SPDX-FileCopyrightText: Eden Emulator Project
+SPDX-FileCopyrightText: 2026 Moonwitch Project
 SPDX-License-Identifier: GPL-3.0-or-later
 -->
 
@@ -96,7 +92,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
                 <data android:mimeType="application/octet-stream" android:scheme="content"/>
             </intent-filter>
             <intent-filter>
-                <action android:name="dev.eden.eden_emulator.LAUNCH_WITH_CUSTOM_CONFIG" />
+                <action android:name="com.moonwitch.emulator.LAUNCH_WITH_CUSTOM_CONFIG" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
             <meta-data android:name="android.nfc.action.TECH_DISCOVERED" android:resource="@xml/nfc_tech_filter" />
