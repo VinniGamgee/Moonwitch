@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright 2025 Eden Emulator Project
+// SPDX-FileCopyrightText: Copyright 2025 Moonwitch Project
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 // SPDX-FileCopyrightText: 2023 yuzu Emulator Project
@@ -23,5 +23,5 @@ dependencyResolutionManagement {
 
 include(":app")
 
-include("Eden")
-project(":Eden").projectDir = file("../..")
+include("Moonwitch")
+project(":Moonwitch").projectDir = file("../..")
