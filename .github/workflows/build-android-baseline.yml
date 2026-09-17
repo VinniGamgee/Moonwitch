@@ -36,7 +36,7 @@ jobs:
           CCACHE: 'false'
         run: |
           chmod +x .ci/android/build.sh src/android/gradlew
-          .ci/android/build.sh -n -t standard -b Release
+          .ci/android/build.sh -t standard -b Release
 
       - name: Verify Moonwitch identity
         shell: bash
@@ -45,10 +45,14 @@ jobs:
           test -n "$APK"
           echo "APK: $APK"
           "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | tee /tmp/moonwitch-badging.txt
-          grep -F "package: name='com.moonwitch.emulator.nightly'" /tmp/moonwitch-badging.txt
-          grep -F "application-label:'Moonwitch Nightly'" /tmp/moonwitch-badging.txt
+          grep -F "package: name='com.moonwitch.emulator'" /tmp/moonwitch-badging.txt
+          grep -F "application-label:'Moonwitch'" /tmp/moonwitch-badging.txt
           if grep -Fqi 'Eden' /tmp/moonwitch-badging.txt; then
             echo "ERROR: legacy branding detected in APK identity."
+            exit 1
+          fi
+          if grep -Fqi 'Nightly' /tmp/moonwitch-badging.txt; then
+            echo "ERROR: nightly branding detected in standard Moonwitch build."
             exit 1
           fi
 
