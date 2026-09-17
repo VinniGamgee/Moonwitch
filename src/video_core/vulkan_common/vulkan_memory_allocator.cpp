@@ -21,6 +21,7 @@
 #include "video_core/vulkan_common/vma.h"
 #include "video_core/vulkan_common/vulkan_device.h"
 #include "video_core/vulkan_common/vulkan_memory_allocator.h"
+#include "video_core/vulkan_common/vulkan_memory_pressure_manager.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 #include "video_core/gpu_logging/gpu_logging.h"
 #include "common/settings.h"
@@ -204,7 +205,8 @@ namespace Vulkan {
             : device{device_}, allocator{device.GetAllocator()},
               properties{device_.GetPhysical().GetMemoryProperties().memoryProperties},
               buffer_image_granularity{
-                      device_.GetPhysical().GetProperties().limits.bufferImageGranularity} {
+                      device_.GetPhysical().GetProperties().limits.bufferImageGranularity},
+              pressure_manager{allocator, properties} {
 
         // Preserve the previous "RenderDoc small heap" trimming behavior that we had in original vma minus the heap bug
         if (device.HasDebuggingToolAttached())
@@ -226,8 +228,9 @@ namespace Vulkan {
 
     vk::Image MemoryAllocator::CreateImage(const VkImageCreateInfo &ci) const
     {
+        pressure_manager.Refresh();
         const VmaAllocationCreateInfo alloc_ci = {
-                .flags = VMA_ALLOCATION_CREATE_WITHIN_BUDGET_BIT,
+                .flags = VMA_ALLOCATION_CREATE_WITHIN_BUDGET_BIT | pressure_manager.AllocationFlags(),
                 .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
                 .requiredFlags = 0,
                 .preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -257,12 +260,14 @@ namespace Vulkan {
     }
 
     vk::Buffer MemoryAllocator::CreateBuffer(const VkBufferCreateInfo &ci, MemoryUsage usage) const {
+        pressure_manager.Refresh();
         // MESA will do memcpy() if not marked as host cached, so just force mark it for most buffers
         auto const anv_flags = (usage == MemoryUsage::Stream
             && device.GetDriverID() == VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA)
             ? VK_MEMORY_PROPERTY_HOST_CACHED_BIT : 0;
         const VmaAllocationCreateInfo alloc_ci = {
-            .flags = VMA_ALLOCATION_CREATE_WITHIN_BUDGET_BIT | MemoryUsageVmaFlags(usage),
+            .flags = VMA_ALLOCATION_CREATE_WITHIN_BUDGET_BIT | MemoryUsageVmaFlags(usage) |
+                     pressure_manager.AllocationFlags(),
             .usage = MemoryUsageVma(usage),
             .requiredFlags = 0,
             .preferredFlags = MemoryUsagePreferredVmaFlags(usage) | anv_flags,
@@ -301,9 +306,11 @@ namespace Vulkan {
 
     MemoryCommit MemoryAllocator::Commit(const VkMemoryRequirements &reqs, MemoryUsage usage)
     {
+        pressure_manager.Refresh();
         const auto vma_usage = MemoryUsageVma(usage);
         VmaAllocationCreateInfo ci{};
-        ci.flags = VMA_ALLOCATION_CREATE_WITHIN_BUDGET_BIT | MemoryUsageVmaFlags(usage);
+        ci.flags = VMA_ALLOCATION_CREATE_WITHIN_BUDGET_BIT | MemoryUsageVmaFlags(usage) |
+                   pressure_manager.AllocationFlags();
         ci.usage = vma_usage;
         ci.memoryTypeBits = reqs.memoryTypeBits & valid_memory_types;
         ci.requiredFlags = 0;
@@ -333,11 +340,13 @@ namespace Vulkan {
     }
 
     MemoryCommit MemoryAllocator::Commit(const vk::Buffer &buffer, MemoryUsage usage) {
+        pressure_manager.Refresh();
         // Allocate memory appropriate for this buffer automatically
         const auto vma_usage = MemoryUsageVma(usage);
 
         VmaAllocationCreateInfo ci{};
-        ci.flags = VMA_ALLOCATION_CREATE_WITHIN_BUDGET_BIT | MemoryUsageVmaFlags(usage);
+        ci.flags = VMA_ALLOCATION_CREATE_WITHIN_BUDGET_BIT | MemoryUsageVmaFlags(usage) |
+                   pressure_manager.AllocationFlags();
         ci.usage = vma_usage;
         ci.requiredFlags = 0;
         ci.preferredFlags = MemoryUsagePreferredVmaFlags(usage);
