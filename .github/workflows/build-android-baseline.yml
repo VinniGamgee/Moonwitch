@@ -1,4 +1,4 @@
-name: Eden Master Android Baseline
+name: Moonwitch Android Baseline
 
 on:
   push:
@@ -46,7 +46,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: EDEN-MASTER-BASELINE-119291dc
+          name: MOONWITCH-ANDROID
           path: artifacts/*
           if-no-files-found: error
           retention-days: 7
