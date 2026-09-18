@@ -34,11 +34,6 @@ jobs:
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0" "ndk;28.2.13676358" "cmake;3.31.6"
 
-      - name: Use CMake 3.31.6 in CI
-        shell: bash
-        run: |
-          sed -i '/path = file("\${edenDir}\\/CMakeLists.txt")/a\\            version = "3.31.6"' src/android/app/build.gradle.kts
-
       - name: Build PGO APK
         shell: bash
         run: |
