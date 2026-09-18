@@ -1,0 +1,54 @@
+name: Moonwitch Android PGO
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-pgo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      PGO: 'true'
+      CCACHE: 'false'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl glslang-tools spirv-tools
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0" "ndk;28.2.13676358" "cmake;3.31.6"
+
+      - name: Use CMake 3.31.6 in CI
+        shell: bash
+        run: |
+          sed -i '/path = file("\${edenDir}\\/CMakeLists.txt")/a\\            version = "3.31.6"' src/android/app/build.gradle.kts
+
+      - name: Build PGO APK
+        shell: bash
+        run: |
+          chmod +x .ci/android/build.sh src/android/gradlew
+          .ci/android/build.sh -n -t standard -b Release
+
+      - name: Upload PGO APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MOONWITCH-ANDROID-PGO
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 7
