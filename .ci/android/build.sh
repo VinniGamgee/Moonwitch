@@ -5,9 +5,12 @@
 
 NUM_JOBS=$(nproc 2>/dev/null || getconf _NPROCESSORS_ONLN 2>/dev/null || echo 2)
 export CMAKE_BUILD_PARALLEL_LEVEL="${NUM_JOBS}"
-ARTIFACTS_DIR="$PWD/artifacts"
+ROOT_DIR="$PWD"
+ARTIFACTS_DIR="$ROOT_DIR/artifacts"
 
 : "${CCACHE:=false}"
+: "${PGO:=false}"
+: "${PGO_PROFILE_URL:=https://github.com/Eden-CI/PGO/releases/latest/download/eden.profdata}"
 RETURN=0
 
 usage() {
@@ -99,6 +102,17 @@ if [ -n "${ANDROID_KEYSTORE_B64}" ]; then
 	echo "-- Keystore SHA1 is ${SHA1SUM}"
 fi
 
+if [ "$PGO" = "true" ]; then
+    echo "-- PGO enabled"
+    CCACHE=false
+    PGO_PROFILE="$ROOT_DIR/eden.profdata"
+    rm -f "$PGO_PROFILE"
+    curl -fsSL "$PGO_PROFILE_URL" -o "$PGO_PROFILE"
+    test -s "$PGO_PROFILE" || die "PGO profile download failed."
+    PGO_FLAGS="-fprofile-use=$PGO_PROFILE -Wno-backend-plugin -Wno-profile-instr-unprofiled -Wno-profile-instr-out-of-date"
+    set -- "$@" -DCMAKE_C_FLAGS="$PGO_FLAGS" -DCMAKE_CXX_FLAGS="$PGO_FLAGS"
+fi
+
 cd src/android
 chmod +x ./gradlew
 
@@ -130,6 +144,10 @@ echo "-- building..."
 
 if [ -n "${ANDROID_KEYSTORE_B64}" ]; then
     rm "${ANDROID_KEYSTORE_FILE}"
+fi
+
+if [ "$PGO" = "true" ]; then
+    rm -f "$ROOT_DIR/eden.profdata"
 fi
 
 echo "-- Done! APK and AAB artifacts are in ${ARTIFACTS_DIR}"
